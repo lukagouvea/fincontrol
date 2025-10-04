@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 type ExpenseModalProps = {
@@ -23,7 +23,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
   const [isInstallment, setIsInstallment] = useState(false);
   const [installmentCount, setInstallmentCount] = useState('1');
   // Filtrar apenas categorias de despesa
-  const expenseCategories = categories.filter(cat => cat.type === 'expense');
+  const expenseCategories = useMemo(() => {
+    return categories.filter(cat => cat.type === 'expense');
+  }, [categories])
   // Resetar o formulário quando o modal é aberto
   useEffect(() => {
     if (isOpen) {
@@ -137,3 +139,5 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
       </div>
     </div>;
 };
+
+export default React.memo(ExpenseModal);

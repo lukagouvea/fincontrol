@@ -9,40 +9,62 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
 }) => {
   // Filtrar apenas despesas
   const expenses = transactions.filter(t => 'isInstallment' in t);
-  // Definir faixas de valores para o histograma
-  const ranges = [{
-    min: 0,
-    max: 50,
-    label: 'R$ 0-50'
-  }, {
-    min: 50,
-    max: 100,
-    label: 'R$ 50-100'
-  }, {
-    min: 100,
-    max: 200,
-    label: 'R$ 100-200'
-  }, {
-    min: 200,
-    max: 500,
-    label: 'R$ 200-500'
-  }, {
-    min: 500,
-    max: 1000,
-    label: 'R$ 500-1000'
-  }, {
-    min: 1000,
-    max: Infinity,
-    label: 'R$ 1000+'
-  }];
+
+
+  const generateHistogramData = (expenses: Transaction[], numRanges: number = 6) => {
+    // Se não houver despesas, retorna um array vazio
+    if (expenses.length === 0) {
+      return [];
+    }
+
+    // 1. Encontrar os valores mínimo e máximo
+    const amounts = expenses.map(e => e.amount);
+    const minAmount = Math.min(...amounts);
+    const maxAmount = Math.max(...amounts);
+
+    // Caso especial: se todos os valores forem iguais
+    if (minAmount === maxAmount) {
+      return [{
+        range: `R$ ${minAmount.toFixed(2)}`,
+        quantidade: expenses.length
+      }];
+    }
+
+    // 2. Calcular a amplitude de cada faixa
+    const rangeWidth = (maxAmount - minAmount) / numRanges;
+
+    // 3. Gerar as faixas dinamicamente
+    const ranges = Array.from({ length: numRanges }, (_, i) => {
+      const rangeMin = minAmount + (i * rangeWidth);
+      const rangeMax = minAmount + ((i + 1) * rangeWidth);
+      return {
+        min: rangeMin,
+        max: rangeMax,
+        // Formata o rótulo para ficar mais legível
+        label: `R$ ${Math.round(rangeMin)} - ${Math.round(rangeMax)}`
+      };
+    });
+    // 4. Agrupar despesas por faixa de valor (semelhante ao seu código original)
+    const histogramData = ranges.map((range, index) => {
+      const count = expenses.filter(expense => {
+        // Para a última faixa, inclui o valor máximo
+        if (index === numRanges - 1) {
+          return expense.amount >= range.min && expense.amount <= range.max;
+        }
+        return expense.amount >= range.min && expense.amount < range.max;
+      }).length;
+
+      return {
+        range: range.label,
+        quantidade: count
+      };
+    });
+
+    return histogramData;
+  };
+
   // Agrupar despesas por faixa de valor
-  const data = ranges.map(range => {
-    const count = expenses.filter(expense => expense.amount >= range.min && expense.amount < range.max).length;
-    return {
-      range: range.label,
-      quantidade: count
-    };
-  });
+  const data = generateHistogramData(expenses, 10);
   return <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{

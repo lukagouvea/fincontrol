@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { XIcon } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
+import { ModalPortal } from '../Modal/ModalPortal';
 type ExpenseModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -70,8 +71,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     }
     onClose();
   };
-  if (!isOpen) return null;
-  return <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+  const modalContent = <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="px-6 py-4 border-b flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">Nova Despesa</h3>
@@ -136,4 +136,5 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
         </form>
       </div>
     </div>;
+  return <ModalPortal isOpen={isOpen}>{modalContent}</ModalPortal>;
 };

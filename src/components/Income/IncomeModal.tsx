@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { ModalPortal } from '../Modal/ModalPortal';
@@ -22,7 +22,9 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('');
   // Filtrar apenas categorias de renda
-  const incomeCategories = categories.filter(cat => cat.type === 'income');
+  const incomeCategories = useMemo(() => {
+    return categories.filter(cat => cat.type === 'income');
+  }, [categories])
   // Resetar o formulário quando o modal é aberto
   useEffect(() => {
     if (isOpen) {
@@ -95,5 +97,6 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({
         </form>
       </div>
     </div>;
-  return <ModalPortal isOpen={isOpen}>{modalContent}</ModalPortal>;
 };
+
+export default React.memo(IncomeModal);

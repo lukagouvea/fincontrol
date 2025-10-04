@@ -22,6 +22,20 @@ export const VariableExpenses: React.FC = () => {
   const expenseCategories = categories.filter(cat => cat.type === 'expense');
   // Filtrar apenas transações de despesa variável
   const variableExpenses = transactions.filter(t => 'isInstallment' in t) as VariableExpense[];
+  
+  const formatDateToYYYYMMDD = (dataString : string): string => {
+    // Verifica se a entrada é uma string e corresponde ao formato esperado (usando uma expressão regular)
+    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return "Formato de data inválido. Use AAAA-MM-DD.";
+    }
+
+    // Divide a string da data em ano, mês e dia
+    const [ano, mes, dia] = dataString.split('-');
+
+    // Retorna a data no novo formato DD/MM/AAAA
+    return `${dia}/${mes}/${ano}`;
+  };
+  
   const openModal = (expense?: VariableExpense) => {
     if (expense) {
       setEditingExpense(expense);
@@ -104,7 +118,7 @@ export const VariableExpenses: React.FC = () => {
   };
   // Formatar data para exibição
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+    return formatDateToYYYYMMDD(dateStr);
   };
   // Obter categoria
   const getCategory = (categoryId: string) => {

@@ -76,16 +76,8 @@ export const Calendar: React.FC = () => {
       year: 'numeric'
     });
   };
-  const formatDayOfWeek = (date: Date): string => {
-    return date.toLocaleDateString('pt-BR', {
-      weekday: 'short'
-    }).slice(0, 3);
-  };
   const formatDayOfMonth = (date: Date): string => {
     return date.getDate().toString();
-  };
-  const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
   };
   // Check if a date is today
   const isToday = (date: Date): boolean => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { useFinance, FixedIncome as FixedIncomeType } from '../context/FinanceContext';
+import { useFinance, FixedIncome as FixedIncomeType } from '../../context/FinanceContext';
 export const FixedIncome: React.FC = () => {
   const {
     fixedIncomes,
@@ -16,6 +16,20 @@ export const FixedIncome: React.FC = () => {
   const [day, setDay] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  const formatDateToYYYYMMDD = (dataString : string): string => {
+    // Verifica se a entrada é uma string e corresponde ao formato esperado (usando uma expressão regular)
+    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return "Formato de data inválido. Use AAAA-MM-DD.";
+    }
+
+    // Divide a string da data em ano, mês e dia
+    const [ano, mes, dia] = dataString.split('-');
+
+    // Retorna a data no novo formato DD/MM/AAAA
+    return `${dia}/${mes}/${ano}`;
+  };
+
   const openModal = (income?: FixedIncomeType) => {
     if (income) {
       setEditingIncome(income);
@@ -116,8 +130,8 @@ export const FixedIncome: React.FC = () => {
                     Dia {income.day}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(income.startDate).toLocaleDateString('pt-BR')}
-                    {income.endDate ? ` até ${new Date(income.endDate).toLocaleDateString('pt-BR')}` : ' (contínua)'}
+                    {formatDateToYYYYMMDD(income.startDate)}
+                    {income.endDate ? ` até ${formatDateToYYYYMMDD(income.endDate)}` : ' (contínua)'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center space-x-3">

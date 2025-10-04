@@ -20,6 +20,20 @@ export const FixedExpenses: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   // Filtrar apenas categorias de despesa
   const expenseCategories = categories.filter(cat => cat.type === 'expense');
+
+  const formatDateToYYYYMMDD = (dataString : string): string => {
+    // Verifica se a entrada é uma string e corresponde ao formato esperado (usando uma expressão regular)
+    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return "Formato de data inválido. Use AAAA-MM-DD.";
+    }
+
+    // Divide a string da data em ano, mês e dia
+    const [ano, mes, dia] = dataString.split('-');
+
+    // Retorna a data no novo formato DD/MM/AAAA
+    return `${dia}/${mes}/${ano}`;
+  };
+
   const openModal = (expense?: FixedExpenseType) => {
     if (expense) {
       setEditingExpense(expense);
@@ -141,8 +155,8 @@ export const FixedExpenses: React.FC = () => {
                       Dia {expense.day}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(expense.startDate).toLocaleDateString('pt-BR')}
-                      {expense.endDate ? ` até ${new Date(expense.endDate).toLocaleDateString('pt-BR')}` : ' (contínua)'}
+                      {formatDateToYYYYMMDD(expense.startDate)}
+                      {expense.endDate ? ` até ${formatDateToYYYYMMDD(expense.endDate)}` : ' (contínua)'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center space-x-3">

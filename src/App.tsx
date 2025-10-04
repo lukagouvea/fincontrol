@@ -4,7 +4,7 @@ import { LoginPage } from './pages/Auth/LoginPage';
 import { SignupPage } from './pages/Auth/SignupPage';
 import { Dashboard } from './pages/Dashboard';
 import { Categories } from './pages/Categories';
-import { FixedIncome } from './pages/FixedIncome';
+import { FixedIncome } from './pages/Income/FixedIncome';
 import { VariableIncome } from './pages/Income/VariableIncome';
 import { FixedExpenses } from './pages/Expenses/FixedExpenses';
 import { VariableExpenses } from './pages/Expenses/VariableExpenses';

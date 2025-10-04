@@ -20,6 +20,20 @@ export const VariableIncome: React.FC = () => {
   const incomeCategories = categories.filter(cat => cat.type === 'income');
   // Filtrar apenas transações de renda variável
   const variableIncomes = transactions.filter(t => !('isInstallment' in t));
+  
+  const formatDateToYYYYMMDD = (dataString : string): string => {
+    // Verifica se a entrada é uma string e corresponde ao formato esperado (usando uma expressão regular)
+    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return "Formato de data inválido. Use AAAA-MM-DD.";
+    }
+
+    // Divide a string da data em ano, mês e dia
+    const [ano, mes, dia] = dataString.split('-');
+
+    // Retorna a data no novo formato DD/MM/AAAA
+    return `${dia}/${mes}/${ano}`;
+  };
+  
   const openModal = (income?: Transaction) => {
     if (income && !('isInstallment' in income)) {
       setEditingIncome(income);
@@ -70,7 +84,7 @@ export const VariableIncome: React.FC = () => {
   };
   // Formatar data para exibição
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+    return formatDateToYYYYMMDD(dateStr);
   };
   // Obter categoria
   const getCategory = (categoryId?: string) => {

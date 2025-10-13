@@ -14,13 +14,14 @@ export type FixedIncome = {
   day: number;
   startDate: string;
   endDate?: string;
+  categoryId: string;
 };
 export type VariableIncome = {
   id: string;
   description: string;
   amount: number;
   date: string;
-  categoryId?: string;
+  categoryId: string;
 };
 export type FixedExpense = {
   id: string;
@@ -38,12 +39,33 @@ export type VariableExpense = {
   date: string;
   categoryId: string;
   isInstallment: boolean;
-  installmentInfo?: {
+};
+
+export type Parcela = {
+  id: string;
+  idCompraParcelada: string;
+  description: string;
+  amount: number;
+  date: string;
+  categoryId: string;
+  isInstallment: boolean;
+  installmentInfo: {
     total: number;
     current: number;
   };
-};
-export type Transaction = VariableIncome | VariableExpense;
+}
+
+export type CompraParcelada = {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  categoryId: string;
+  numParcelas: number;
+  parcelas : Omit<Parcela, 'id'>[];
+}
+
+export type Transaction = VariableIncome | VariableExpense | Parcela;
 // Mock data inicial
 const initialCategories: Category[] = [{
   id: '1',
@@ -91,8 +113,165 @@ const initialFixedIncomes: FixedIncome[] = [{
   description: 'Salário Empresa',
   amount: 5000,
   day: 5,
-  startDate: '2023-01-05'
+  startDate: '2023-01-05',
+  categoryId: '1'
 }];
+
+const initialCompraParcelada: CompraParcelada[] = [{
+  id: '1',
+  description: 'Celular',
+  amount: 3500,
+  date: '2025-10-05',
+  categoryId: '6',
+  numParcelas: 12,
+  parcelas: [
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.63,
+      date: '2025-10-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 1
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2025-11-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 2
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2025-12-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 3
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-01-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 4
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-02-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 5
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-03-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 6
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-04-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 7
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-05-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 8
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-06-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 9
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-07-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 10
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-08-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 11
+      }
+    },
+    {
+      idCompraParcelada: '1',
+      description: 'Celular',
+      amount: 291.67,
+      date: '2026-09-05',
+      categoryId: '6',
+      isInstallment: true,
+      installmentInfo:{
+        total: 12,
+        current: 12
+      }
+    },
+
+  ]
+}]
 const initialFixedExpenses: FixedExpense[] = [{
   id: '1',
   description: 'Aluguel',
@@ -140,21 +319,16 @@ const generateRecentTransactions = () => {
     }
   }
   // Adicionar uma compra parcelada
-  const installmentDate = new Date();
-  installmentDate.setDate(today.getDate() - 5);
-  const installmentDateStr = installmentDate.toISOString().split('T')[0];
-  transactions.push({
-    id: 'inst-1',
-    description: 'Smartphone novo',
-    amount: 300,
-    date: installmentDateStr,
-    categoryId: '6',
-    isInstallment: true,
-    installmentInfo: {
-      total: 10,
-      current: 1
-    }
-  });
+  initialCompraParcelada[0].parcelas.forEach(parcela =>
+    transactions.push(
+      {
+        ...parcela,
+        id: `${Date.now()}-${Math.random()}`,
+      }
+    )
+  )
+
+
   return transactions;
 };
 const initialTransactions = generateRecentTransactions();
@@ -163,6 +337,7 @@ type FinanceContextType = {
   categories: Category[];
   fixedIncomes: FixedIncome[];
   fixedExpenses: FixedExpense[];
+  comprasParceladas: CompraParcelada[];
   transactions: Transaction[];
   addCategory: (category: Omit<Category, 'id'>) => void;
   updateCategory: (id: string, category: Partial<Omit<Category, 'id'>>) => void;
@@ -176,6 +351,7 @@ type FinanceContextType = {
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => void;
   deleteTransaction: (id: string) => void;
+  addCompraParcelada: (compra: Omit<CompraParcelada, 'id'>) => void;
 };
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 export const useFinance = () => {
@@ -191,6 +367,7 @@ export const FinanceProvider: React.FC<{
   children
 }) => {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [comprasParceladas, setComprasParceladas] = useState<CompraParcelada[]>(initialCompraParcelada);
   const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>(initialFixedIncomes);
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>(initialFixedExpenses);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
@@ -211,6 +388,25 @@ export const FinanceProvider: React.FC<{
   const deleteCategory = (id: string) => {
     setCategories(categories.filter(cat => cat.id !== id));
   };
+
+  /**
+   * Pega a data atual na localidade do usuário e a formata para a string "YYYY-MM-DD".
+   * @returns {string} A data formatada.
+   */
+  function getLocalDateString() {
+    const date = new Date();
+
+    const year = date.getFullYear();
+
+    // getMonth() é 0-indexado (0 = Janeiro), então somamos 1.
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+
   // Funções para gerenciar rendas fixas
   const addFixedIncome = (income: Omit<FixedIncome, 'id'>) => {
     const newIncome = {
@@ -226,7 +422,15 @@ export const FinanceProvider: React.FC<{
     } : inc));
   };
   const deleteFixedIncome = (id: string) => {
-    setFixedIncomes(fixedIncomes.filter(inc => inc.id !== id));
+    // 1. Pega a data de hoje e formata para 'YYYY-MM-DD'
+    const today = getLocalDateString();
+
+    // 2. Usa 'map' para encontrar e atualizar o item
+    setFixedIncomes(fixedIncomes.map(inc => 
+        inc.id === id 
+        ? { ...inc, endDate: today } // Se encontrar, atualiza o endDate
+        : inc // Senão, mantém o item como está
+    ));
   };
   // Funções para gerenciar despesas fixas
   const addFixedExpense = (expense: Omit<FixedExpense, 'id'>) => {
@@ -243,7 +447,14 @@ export const FinanceProvider: React.FC<{
     } : exp));
   };
   const deleteFixedExpense = (id: string) => {
-    setFixedExpenses(fixedExpenses.filter(exp => exp.id !== id));
+    // CORRIGIDO: Usa a função que respeita o fuso horário local
+    const today = getLocalDateString();
+
+    setFixedExpenses(fixedExpenses.map(exp => 
+        exp.id === id 
+        ? { ...exp, endDate: today } 
+        : exp
+    ));
   };
   // Funções para gerenciar transações
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
@@ -260,12 +471,45 @@ export const FinanceProvider: React.FC<{
     } : trans));
   };
   const deleteTransaction = (id: string) => {
+    const filteredTransaction = transactions.filter(t => t.id == id)
+    if (filteredTransaction.length > 0 && 'idCompraParcelada' in filteredTransaction[0]) {
+      const idCompraParcelada = filteredTransaction[0].idCompraParcelada;
+      deleteCompraParcelada(idCompraParcelada);
+      return
+    }
     setTransactions(transactions.filter(trans => trans.id !== id));
   };
+
+  const addCompraParcelada = (compra: Omit<CompraParcelada, 'id'>) => {
+    const compraId = Date.now().toString();
+    const newCompra = {
+      ...compra,
+      id: compraId
+    };
+    // 1. Crie um array com todas as novas parcelas
+    const novasParcelasParaAdicionar = newCompra.parcelas.map(parcela => ({
+      ...parcela, // Mantém os dados da parcela
+      idCompraParcelada: compraId,
+      id: `${Date.now()}-${Math.random()}` // Gera um ID único para cada
+    }));
+
+    // 2. Chame o setTransactions UMA VEZ com todas as novas parcelas
+    setTransactions(prevTransactions => [...prevTransactions, ...novasParcelasParaAdicionar]);
+
+    setComprasParceladas([...comprasParceladas, newCompra]);
+
+  }
+
+  const deleteCompraParcelada = (id: string) => {
+    setTransactions(transactions.filter(t => t.idCompraParcelada !== id));
+    setComprasParceladas(comprasParceladas.filter(t => t.id !== id))
+  }
+
   const value = {
     categories,
     fixedIncomes,
     fixedExpenses,
+    comprasParceladas,
     transactions,
     addCategory,
     updateCategory,
@@ -278,7 +522,8 @@ export const FinanceProvider: React.FC<{
     deleteFixedExpense,
     addTransaction,
     updateTransaction,
-    deleteTransaction
+    deleteTransaction,
+    addCompraParcelada
   };
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 };

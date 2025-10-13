@@ -4,13 +4,23 @@ import { Transaction, Category } from '../../context/FinanceContext';
 type CategoryPieChartProps = {
   transactions: Transaction[];
   categories: Category[];
+  date: Date;
 };
 export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   transactions,
-  categories
+  categories,
+  date
 }) => {
+  // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
+  const anoAtual = date.getFullYear(); // Ex: 2025
+  const mesAtual = date.getMonth() + 1; // Ex: Para Outubro, retorna 10
+
+  // padStart(2, '0') garante que o mês tenha sempre dois dígitos. Ex: 9 vira "09", 10 continua "10".
+  const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, '0')}`; // Ex: "2025-10"
+
+
   // Filtrar apenas despesas
-  const expenses = transactions.filter(t => 'isInstallment' in t);
+  const expenses = transactions.filter(t => ('isInstallment' in t || 'startDate' in t) && t.date.startsWith(anoMesAtualString))
   // Calcular o total por categoria
   const categoryTotals = categories.filter(cat => cat.type === 'expense').map(category => {
     const total = expenses.filter(expense => expense.categoryId === category.id).reduce((sum, expense) => sum + expense.amount, 0);

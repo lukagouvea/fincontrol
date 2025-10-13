@@ -6,11 +6,13 @@ type SortableDashboardItemProps = {
   id: string;
   title: string;
   children: React.ReactNode;
+  span: number;
 };
 export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
   id,
   title,
-  children
+  children,
+  span
 }) => {
   const {
     attributes,
@@ -28,7 +30,11 @@ export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1 : 0
   };
-  return <div ref={setNodeRef} style={style} className="bg-white rounded-lg shadow">
+  const containerClasses = `
+    bg-white shadow rounded-lg
+    ${span === 2 ? 'col-span-2' : 'col-span-1'} 
+  `;
+  return <div ref={setNodeRef} style={style} className={containerClasses}>
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-800">{title}</h3>
         <button className="cursor-grab p-1 rounded hover:bg-gray-100 text-gray-500" {...attributes} {...listeners}>

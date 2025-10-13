@@ -49,7 +49,7 @@ export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
           style: 'currency',
           currency: 'BRL'
         }).format(Number(value)), 'Valor']} />
-          <Bar dataKey="valor" fill="#ef4444" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="valor" fill="#2363eb" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>;

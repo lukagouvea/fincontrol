@@ -3,13 +3,18 @@ import { Transaction, Category } from '../../context/FinanceContext';
 type RecentTransactionsProps = {
   transactions: Transaction[];
   categories: Category[];
+  date: Date;
 };
 export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   transactions,
-  categories
+  categories,
+  date
 }) => {
+  const filteredTransactions = transactions.filter(t => {
+    return ('isInstallment' in t || 'installmentInfo' in t) && new Date(t.date) <= new Date();
+  });
   // Ordenar transações por data (mais recentes primeiro)
-  const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10); // Mostrar apenas as 10 mais recentes
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10); // Mostrar apenas as 10 mais recentes
   // Formatar valor para exibição
   const formatValue = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -17,11 +22,27 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       currency: 'BRL'
     }).format(value);
   };
-  // Formatar data para exibição
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR');
+
+  // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
+  const anoAtual = date.getFullYear(); // Ex: 2025
+  const mesAtual = date.getMonth() + 1; // Ex: Para Outubro, retorna 10
+
+  // padStart(2, '0') garante que o mês tenha sempre dois dígitos. Ex: 9 vira "09", 10 continua "10".
+  const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, '0')}`; // Ex: "2025-10"
+
+  const formatDateToDDMMAAAA = (dataString : string): string => {
+    // Verifica se a entrada é uma string e corresponde ao formato esperado (usando uma expressão regular)
+    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return "Formato de data inválido. Use AAAA-MM-DD.";
+    }
+
+    // Divide a string da data em ano, mês e dia
+    const [ano, mes, dia] = dataString.split('-');
+
+    // Retorna a data no novo formato DD/MM/AAAA
+    return `${dia}/${mes}/${ano}`;
   };
+
   // Verificar se é uma despesa ou receita
   const isExpense = (transaction: Transaction): boolean => {
     return 'isInstallment' in transaction;
@@ -57,7 +78,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
           const isExpenseTransaction = isExpense(transaction);
           return <tr key={transaction.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(transaction.date)}
+                    {formatDateToDDMMAAAA(transaction.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {transaction.description}

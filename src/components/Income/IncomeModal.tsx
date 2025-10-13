@@ -1,12 +1,20 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
-import { ModalPortal } from '../Modal/ModalPortal';
 type IncomeModalProps = {
   isOpen: boolean;
   onClose: () => void;
   initialDate?: string;
 };
+
+// Função para formatar data para string YYYY-MM-DD sem problemas de fuso horário
+const formatDateToYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const IncomeModal: React.FC<IncomeModalProps> = ({
   isOpen,
   onClose,
@@ -19,7 +27,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({
   // Estado para o formulário
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(formatDateToYYYYMMDD(new Date()));
   const [categoryId, setCategoryId] = useState('');
   // Filtrar apenas categorias de renda
   const incomeCategories = useMemo(() => {
@@ -30,10 +38,13 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({
     if (isOpen) {
       setDescription('');
       setAmount('');
-      setDate(initialDate || new Date().toISOString().split('T')[0]);
+      setDate(initialDate || formatDateToYYYYMMDD(new Date()));
       setCategoryId(incomeCategories.length > 0 ? incomeCategories[0].id : '');
     }
   }, [isOpen, initialDate, incomeCategories]);
+
+  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount || !date) return;
@@ -46,7 +57,8 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({
     });
     onClose();
   };
-  const modalContent = <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+  if(!isOpen) return null;
+  return <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="px-6 py-4 border-b flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">Nova Renda</h3>

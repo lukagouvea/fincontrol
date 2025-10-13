@@ -1,27 +1,85 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useFinance, VariableIncome } from '../../context/FinanceContext';
 export const IncomeHistory: React.FC = () => {
   const {
     transactions,
+    fixedIncomes,
     categories
   } = useFinance();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  // Filtrar apenas rendas
-  const incomes = transactions.filter(t => !('isInstallment' in t)) as VariableIncome[];
-  // Filtrar por mês e ano selecionados
-  const filteredIncomes = incomes.filter(income => {
-    const incomeDate = new Date(income.date);
-    return incomeDate.getMonth() === selectedMonth && incomeDate.getFullYear() === selectedYear;
-  });
+  // useMemo cria um novo objeto Date sempre que o mês ou o ano mudarem.
+  const selectedDateObject = useMemo(() => {
+      // Criamos a data sempre no dia 1 para evitar problemas com meses de tamanhos diferentes
+      return new Date(selectedYear, selectedMonth, 1);
+    }, [selectedMonth, selectedYear]); // Lista de dependências do useMemo
+  
+
+  function isItemActiveInMonth(
+    item: { startDate: string; endDate?: string | null },
+    targetDate: Date
+  ): boolean {
+    const targetYear = targetDate.getFullYear();
+    const targetMonth = targetDate.getMonth(); // 0-11
+
+    const startDate = new Date(item.startDate);
+    // Adiciona a correção para o fuso horário ao criar a data
+    startDate.setMinutes(startDate.getMinutes() + startDate.getTimezoneOffset());
+    
+    const endDate = item.endDate ? new Date(item.endDate) : null;
+    if(endDate) {
+      endDate.setMinutes(endDate.getMinutes() + endDate.getTimezoneOffset());
+    }
+    
+    // Condição de Início: O item deve ter começado no passado ou neste mês/ano.
+    const startValid =
+      startDate.getFullYear() < targetYear ||
+      (startDate.getFullYear() === targetYear && startDate.getMonth() <= targetMonth);
+    
+    // Condição de Fim: O item não deve ter uma data de fim, ou a data de fim
+    // é no futuro ou neste mês/ano.
+    const endValid =
+      !endDate ||
+      endDate.getFullYear() > targetYear ||
+      (endDate.getFullYear() === targetYear && endDate.getMonth() >= targetMonth);
+
+    return startValid && endValid;
+  }
+  const getFixedExpenseDate = (expense: {day: number}) => {
+    const date = new Date(selectedYear, selectedMonth, expense.day);
+    return date.toISOString().split('T')[0];
+  }
+
+  const anoAtual = selectedDateObject.getFullYear(); // Ex: 2025
+  const mesAtual = selectedDateObject.getMonth() + 1; // Ex: Para Outubro, retorna 10
+
+  // 3. Formatar a string 'AAAA-MM' para garantir a comparação correta (com o zero à esquerda no mês)
+  // padStart(2, '0') garante que o mês tenha sempre dois dígitos. Ex: 9 vira "09", 10 continua "10".
+  const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, '0')}`; // Ex: "2025-10"
+  
+  const monthlyVariableIncome = transactions.filter(t => !('isInstallment' in t) && t.date.startsWith(anoMesAtualString));
+  
+  
+  const monthlyFixedIncome = fixedIncomes
+    .filter(income => isItemActiveInMonth(income, selectedDateObject))
+    .map(income => ({
+      ...income,
+      date: getFixedExpenseDate(income) // Define a data como o dia específico do mês/ano selecionado
+    }));
+  
+  
+    // Total de rendas (fixas + variáveis)
+  const monthlyIncome = [...monthlyVariableIncome, ...monthlyFixedIncome];
+  // Despesas variáveis do mês atual
+  // Filtrar apenas despesas
   // Ordenar por data (mais recentes primeiro)
-  const sortedIncomes = [...filteredIncomes].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedIncomes = [...monthlyIncome].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   // Calcular total
-  const total = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
+  const total = monthlyIncome.reduce((sum, income) => sum + income.amount, 0);
   // Agrupar por categoria
   const incomesByCategory = categories.filter(cat => cat.type === 'income').map(category => {
-    const categoryIncomes = filteredIncomes.filter(inc => inc.categoryId === category.id);
-    const categoryTotal = categoryIncomes.reduce((sum, inc) => sum + inc.amount, 0);
+    const categoryIncomes = monthlyIncome.filter(income => income.categoryId === category.id);
+    const categoryTotal = categoryIncomes.reduce((sum, income) => sum + income.amount, 0);
     return {
       category,
       total: categoryTotal,
@@ -35,9 +93,21 @@ export const IncomeHistory: React.FC = () => {
       currency: 'BRL'
     }).format(value);
   };
+  const formatDateToYYYYMMDD = (dataString : string): string => {
+    // Verifica se a entrada é uma string e corresponde ao formato esperado (usando uma expressão regular)
+    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return "Formato de data inválido. Use AAAA-MM-DD.";
+    }
+
+    // Divide a string da data em ano, mês e dia
+    const [ano, mes, dia] = dataString.split('-');
+
+    // Retorna a data no novo formato DD/MM/AAAA
+    return `${dia}/${mes}/${ano}`;
+  };
   // Formatar data
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+    return formatDateToYYYYMMDD(dateStr);
   };
   // Obter categoria
   const getCategory = (categoryId?: string) => {

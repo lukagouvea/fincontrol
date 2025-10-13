@@ -3,12 +3,28 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Transaction } from '../../context/FinanceContext';
 type ExpensesValueHistogramProps = {
   transactions: Transaction[];
+  date: Date;
 };
 export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
-  transactions
+  transactions,
+  date
 }) => {
+
+  // 1. Obter a data de hoje
+  const hoje = date;
+
+  // 2. Extrair o ano e o mês atual
+  // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
+  const anoAtual = hoje.getFullYear(); // Ex: 2025
+  const mesAtual = hoje.getMonth() + 1; // Ex: Para Outubro, retorna 10
+
+  // 3. Formatar a string 'AAAA-MM' para garantir a comparação correta (com o zero à esquerda no mês)
+  // padStart(2, '0') garante que o mês tenha sempre dois dígitos. Ex: 9 vira "09", 10 continua "10".
+  const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, '0')}`; // Ex: "2025-10"
+
+
   // Filtrar apenas despesas
-  const expenses = transactions.filter(t => 'isInstallment' in t);
+  const expenses = transactions.filter(t => ('isInstallment' in t || 'startDate' in t) && t.date.startsWith(anoMesAtualString));
 
 
   const generateHistogramData = (expenses: Transaction[], numRanges: number = 6) => {
@@ -64,7 +80,7 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   };
 
   // Agrupar despesas por faixa de valor
-  const data = generateHistogramData(expenses, 10);
+  const data = generateHistogramData(expenses, 20);
   return <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{
@@ -77,7 +93,7 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
           <XAxis dataKey="range" />
           <YAxis allowDecimals={false} />
           <Tooltip formatter={value => [`${value} transações`, 'Quantidade']} />
-          <Bar dataKey="quantidade" fill="#9333ea" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="quantidade" fill="#2563eb" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>;

@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { XIcon } from 'lucide-react';
-import { useFinance } from '../../context/FinanceContext';
-import { ModalPortal } from '../Modal/ModalPortal';
+import { Parcela, useFinance } from '../../context/FinanceContext';
 type ExpenseModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -14,12 +13,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 }) => {
   const {
     categories,
-    addTransaction
+    addTransaction,
+    addCompraParcelada
   } = useFinance();
   // Estado para o formulário
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toLocaleDateString());
   const [categoryId, setCategoryId] = useState('');
   const [isInstallment, setIsInstallment] = useState(false);
   const [installmentCount, setInstallmentCount] = useState('1');
@@ -32,12 +32,57 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     if (isOpen) {
       setDescription('');
       setAmount('');
-      setDate(initialDate || new Date().toISOString().split('T')[0]);
+      setDate(initialDate || new Date().toLocaleDateString());
       setCategoryId(expenseCategories.length > 0 ? expenseCategories[0].id : '');
       setIsInstallment(false);
       setInstallmentCount('1');
     }
   }, [isOpen, initialDate, expenseCategories]);
+
+  const generateParcelas = (valorTotal: number, numeroParcelas: number, description:string, date:string, categoryId:string) => {
+    // 1. Validação dos dados de entrada
+    if (valorTotal <= 0 || numeroParcelas <= 0) {
+      throw new Error("O valor total e o número de parcelas devem ser positivos.");
+    }
+    if (!Number.isInteger(numeroParcelas)) {
+      throw new Error("O número de parcelas deve ser um inteiro.");
+    }
+
+    // 2. Converter o valor total para centavos para trabalhar com inteiros
+    const valorTotalEmCentavos = Math.round(valorTotal * 100);
+
+    // 3. Calcular o valor base de cada parcela e o resto da divisão
+    const valorBaseParcelaEmCentavos = Math.floor(valorTotalEmCentavos / numeroParcelas);
+    const restoEmCentavos = valorTotalEmCentavos % numeroParcelas;
+
+    const parcelas : Omit<Parcela, 'id'>[] = [];
+    const baseDate = new Date(date);
+    // 4. Gerar as parcelas, distribuindo o resto
+    for (let i = 0; i < numeroParcelas; i++) {
+      let valorDaParcela = valorBaseParcelaEmCentavos;
+      // Adiciona 1 centavo às primeiras parcelas para distribuir o resto
+      if (i < restoEmCentavos) {
+        valorDaParcela += 1;
+      }
+      const installmentDate = new Date(baseDate);
+      installmentDate.setMonth(baseDate.getMonth() + i);
+      // 5. Converte o valor de volta para decimal e adiciona ao array
+      parcelas.push({
+        description: description,
+        amount: valorDaParcela/100,
+        date: installmentDate.toISOString().split('T')[0],
+        categoryId: categoryId,
+        isInstallment: true,
+        installmentInfo: {
+          total: numeroParcelas,
+          current: i+1
+        }
+      });
+    }
+
+    return parcelas;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount || !date || !categoryId) return;
@@ -45,22 +90,18 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     if (isInstallment && parseInt(installmentCount) > 1) {
       // Criar despesa parcelada
       const totalInstallments = parseInt(installmentCount);
-      const baseDate = new Date(date);
-      for (let i = 0; i < totalInstallments; i++) {
-        const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(baseDate.getMonth() + i);
-        addTransaction({
-          description,
-          amount: formattedAmount,
-          date: installmentDate.toISOString().split('T')[0],
-          categoryId,
-          isInstallment: true,
-          installmentInfo: {
-            total: totalInstallments,
-            current: i + 1
-          }
-        });
+
+      const installmentDate = new Date(date);
+      const compraParcelada = {
+        description: description,
+        amount: formattedAmount,
+        date: installmentDate.toISOString().split('T')[0],
+        categoryId: categoryId,
+        numParcelas: totalInstallments,
+        parcelas: generateParcelas(formattedAmount, totalInstallments, description, date, categoryId)
       }
+      addCompraParcelada(compraParcelada);
+      
     } else {
       // Criar despesa única
       addTransaction({
@@ -73,7 +114,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
     }
     onClose();
   };
-  const modalContent = <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+
+  if(!isOpen) return null;
+  
+  return <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="px-6 py-4 border-b flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">Nova Despesa</h3>

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { useFinance, Transaction, VariableIncome as VariableIncomeType } from '../../context/FinanceContext';
+import { Transaction, useFinance, VariableIncome as VariableIncomeType } from '../../context/FinanceContext';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
+import { IncomeModal, IncomeFormData } from '../../components/Income/IncomeModal'; // Importa o novo modal e seu tipo
+import { parseDateInputToLocal, convertDateToUTCISOString, formatUTCToDDMMAAAA } from '../../utils/dateUtils';
 
 export const VariableIncome: React.FC = () => {
   const {
@@ -11,52 +13,37 @@ export const VariableIncome: React.FC = () => {
     updateTransaction,
     deleteTransaction
   } = useFinance();
-  
-  // Estados do modal e do formulário (sem alterações)
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState<Transaction | null>(null);
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [categoryId, setCategoryId] = useState('');
-  const [incomeToDelete, setIncomeToDelete] = useState<Transaction | null>(null);
 
-  // NOVO: Estados para controlar o filtro de data
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<VariableIncomeType | null>(null);
+  const [incomeToDelete, setIncomeToDelete] = useState<Transaction | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  
-  const incomeCategories = categories.filter(cat => cat.type === 'income');
-  
-  // ALTERADO: A lógica de filtro agora é dividida em duas etapas
-  // 1. Pega todas as rendas variáveis
-  const variableIncomes = transactions.filter(t => !('isInstallment' in t));
-  
-  // 2. Filtra pelo mês e ano selecionados
-  const filteredIncomes = variableIncomes.filter(income => {
-    const incomeDate = new Date(income.date + 'T00:00:00'); // Garante consistência de fuso horário
-    return incomeDate.getMonth() === selectedMonth && incomeDate.getFullYear() === selectedYear;
-  });
-  
-  // NOVO: Gerar opções para os filtros de mês e ano
+    
+  const variableIncomes = useMemo(() => 
+    transactions.filter((t): t is VariableIncomeType => !('isInstallment' in t)), 
+    [transactions]
+  );
+
+  const filteredIncomes = useMemo(() => {
+    return variableIncomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      return incomeDate.getMonth() === selectedMonth && incomeDate.getFullYear() === selectedYear;
+    });
+  }, [variableIncomes, selectedMonth, selectedYear]);
+
   const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  // ... (Suas funções de manipulação de modal e formulário permanecem as mesmas) ...
-  const formatDateToDDMMAAAA = (dataString : string): string => {
-    if (typeof dataString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
-      return "Formato de data inválido. Use AAAA-MM-DD.";
-    }
-    const [ano, mes, dia] = dataString.split('-');
-    return `${dia}/${mes}/${ano}`;
-  };
-
   const handleRequestDelete = (income: Transaction) => {
     setIncomeToDelete(income);
   };
+
   const handleCancelDelete = () => {
     setIncomeToDelete(null);
   };
+
   const handleConfirmDelete = () => {
     if (incomeToDelete) {
       deleteTransaction(incomeToDelete.id);
@@ -64,59 +51,41 @@ export const VariableIncome: React.FC = () => {
     }
   };
 
-  let confirmationMessage = "Você tem certeza que deseja excluir esta renda? Esta ação não pode ser desfeita.";
+  const confirmationMessage = "Você tem certeza que deseja excluir esta renda? Esta ação não pode ser desfeita.";
   
-  const openModal = (income?: Transaction) => {
-    if (income && !('isInstallment' in income)) {
-      setEditingIncome(income);
-      setDescription(income.description);
-      setAmount(income.amount.toString());
-      setDate(income.date);
-      setCategoryId(income.categoryId || '');
-    } else {
-      setEditingIncome(null);
-      setDescription('');
-      setAmount('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setCategoryId(incomeCategories[0]?.id || '');
-    }
+  const handleOpenCreateModal = () => {
+    setEditingIncome(null);
     setIsModalOpen(true);
   };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingIncome(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description || !amount || !date) return;
-    const formattedAmount = parseFloat(amount.replace(',', '.'));
-    if (editingIncome) {
-      updateTransaction(editingIncome.id, {
-        description,
-        amount: formattedAmount,
-        date,
-        categoryId: categoryId || undefined
-      });
-    } else {
-      addTransaction({
-        description,
-        amount: formattedAmount,
-        date,
-        categoryId: categoryId || undefined
-      });
-    }
-    closeModal();
+  
+  const handleOpenEditModal = (income: VariableIncomeType) => {
+    setEditingIncome(income);
+    setIsModalOpen(true);
   };
   
+  const handleModalSubmit = (formData: IncomeFormData) => {
+    const localDateObject = parseDateInputToLocal(formData.date);
+    const utcTimestamp = convertDateToUTCISOString(localDateObject);
+
+    const transactionData = {
+      description: formData.description,
+      amount: formData.amount,
+      date: utcTimestamp,
+      categoryId: formData.categoryId,
+    };
+
+    if (editingIncome) {
+      updateTransaction(editingIncome.id, transactionData);
+    } else {
+      addTransaction(transactionData);
+    }
+    setIsModalOpen(false);
+  };
+
   const formatValue = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
   
-  const formatDate = (dateStr: string) => {
-    return formatDateToDDMMAAAA(dateStr);
-  };
   
   const getCategory = (categoryId?: string) => {
     return categories.find(c => c.id === categoryId);
@@ -126,20 +95,14 @@ export const VariableIncome: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Rendas Variáveis</h1>
-
-        {/* NOVO: Div para agrupar os filtros e o botão de adicionar */}
         <div className="flex items-center space-x-2">
           <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
-            {months.map((month, index) => <option key={index} value={index}>
-              {month}
-            </option>)}
+            {months.map((month, index) => <option key={index} value={index}>{month}</option>)}
           </select>
           <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
-            {years.map(year => <option key={year} value={year}>
-              {year}
-            </option>)}
+            {years.map(year => <option key={year} value={year}>{year}</option>)}
           </select>
-          <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
+          <button onClick={handleOpenCreateModal} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
             <PlusIcon className="w-4 h-4 mr-2" />
             Nova Renda
           </button>
@@ -147,10 +110,8 @@ export const VariableIncome: React.FC = () => {
       </div>
       
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        {/* ALTERADO: Usar a lista filtrada para renderizar */}
         {filteredIncomes.length > 0 ? (
           <table className="min-w-full divide-y divide-gray-200">
-            {/* O cabeçalho da tabela (thead) permanece o mesmo */}
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
@@ -161,13 +122,11 @@ export const VariableIncome: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {/* ALTERADO: Mapear sobre a lista filtrada */}
               {filteredIncomes.map(income => {
                 const category = getCategory('categoryId' in income ? income.categoryId : undefined);
                 return (
                   <tr key={income.id}>
-                    {/* ... O conteúdo da linha (td) permanece o mesmo ... */}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(income.date)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatUTCToDDMMAAAA(income.date)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{income.description}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {category ? (
@@ -179,7 +138,7 @@ export const VariableIncome: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{formatValue(income.amount)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center space-x-3">
-                        <button onClick={() => openModal(income)} className="text-blue-600 hover:text-blue-900"><PencilIcon className="w-5 h-5" /></button>
+                        <button onClick={() => handleOpenEditModal(income)} className="text-blue-600 hover:text-blue-900"><PencilIcon className="w-5 h-5" /></button>
                         <button onClick={() => handleRequestDelete(income)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5" /></button>
                       </div>
                     </td>
@@ -194,6 +153,14 @@ export const VariableIncome: React.FC = () => {
           </div>
         )}
       </div>
+      
+      <IncomeModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleModalSubmit}
+        initialData={editingIncome}
+      />
+      
       <ConfirmationModal
         isOpen={!!incomeToDelete}
         onClose={handleCancelDelete}

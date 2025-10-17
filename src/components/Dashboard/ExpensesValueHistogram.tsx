@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Transaction } from '../../context/FinanceContext';
+import { Transaction, useFinance } from '../../context/FinanceContext';
 type ExpensesValueHistogramProps = {
   transactions: Transaction[];
   date: Date;
@@ -9,6 +9,10 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   transactions,
   date
 }) => {
+
+  const {
+    getActualFixedItemAmount
+  } = useFinance();
 
   // 1. Obter a data de hoje
   const hoje = date;
@@ -24,7 +28,11 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
 
 
   // Filtrar apenas despesas
-  const expenses = transactions.filter(t => ('isInstallment' in t || 'startDate' in t) && t.date.startsWith(anoMesAtualString));
+  const expenses = transactions.filter(t => ('isInstallment' in t || 'startDate' in t) && t.date.startsWith(anoMesAtualString))
+  .map(expense => ({
+    ...expense,
+    amount: 'isInstallment' in expense ? expense.amount : getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual-1, expense.amount)
+  }))
 
 
   const generateHistogramData = (expenses: Transaction[], numRanges: number = 6) => {

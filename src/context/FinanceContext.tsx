@@ -65,6 +65,16 @@ export type CompraParcelada = {
   parcelas : Omit<Parcela, 'id'>[];
 }
 
+// Novo tipo para variações mensais de despesas/rendas fixas
+export type MonthlyVariation = {
+  id: string;
+  fixedItemId: string; // ID da despesa ou renda fixa
+  type: 'income' | 'expense'; // Tipo do item (renda ou despesa)
+  year: number;
+  month: number; // 0-11 (Janeiro-Dezembro)
+  amount: number; // Valor específico para este mês
+};
+
 export type Transaction = VariableIncome | VariableExpense | Parcela;
 // Mock data inicial
 const initialCategories: Category[] = [{
@@ -113,15 +123,17 @@ const initialFixedIncomes: FixedIncome[] = [{
   description: 'Salário Empresa',
   amount: 5000,
   day: 5,
-  startDate: '2023-01-05',
+  startDate: '2023-01-05T03:00:00.000Z',
   categoryId: '1'
 }];
+
+const initialMonthlyVariations: MonthlyVariation[] = [];
 
 const initialCompraParcelada: CompraParcelada[] = [{
   id: '1',
   description: 'Celular',
   amount: 3500,
-  date: '2025-10-05',
+  date: '2025-10-05T03:00:00.000Z',
   categoryId: '6',
   numParcelas: 12,
   parcelas: [
@@ -129,10 +141,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.63,
-      date: '2025-10-05',
+      date: '2025-10-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 1
       }
@@ -141,10 +153,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2025-11-05',
+      date: '2025-11-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 2
       }
@@ -153,10 +165,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2025-12-05',
+      date: '2025-12-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 3
       }
@@ -165,10 +177,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-01-05',
+      date: '2026-01-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 4
       }
@@ -177,10 +189,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-02-05',
+      date: '2026-02-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 5
       }
@@ -189,10 +201,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-03-05',
+      date: '2026-03-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 6
       }
@@ -201,10 +213,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-04-05',
+      date: '2026-04-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 7
       }
@@ -213,10 +225,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-05-05',
+      date: '2026-05-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 8
       }
@@ -225,10 +237,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-06-05',
+      date: '2026-06-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 9
       }
@@ -237,10 +249,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-07-05',
+      date: '2026-07-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 10
       }
@@ -249,10 +261,10 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-08-05',
+      date: '2026-08-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 11
       }
@@ -261,48 +273,51 @@ const initialCompraParcelada: CompraParcelada[] = [{
       idCompraParcelada: '1',
       description: 'Celular',
       amount: 291.67,
-      date: '2026-09-05',
+      date: '2026-09-05T03:00:00.000Z',
       categoryId: '6',
       isInstallment: true,
-      installmentInfo:{
+      installmentInfo: {
         total: 12,
         current: 12
       }
     },
-
   ]
-}]
+}];
+
 const initialFixedExpenses: FixedExpense[] = [{
   id: '1',
   description: 'Aluguel',
   amount: 1200,
   day: 10,
   categoryId: '3',
-  startDate: '2023-01-10'
+  startDate: '2023-01-10T03:00:00.000Z'
 }, {
   id: '2',
   description: 'Internet',
   amount: 100,
   day: 15,
   categoryId: '3',
-  startDate: '2023-01-15'
+  startDate: '2023-01-15T03:00:00.000Z'
 }];
-// Gerar algumas transações recentes para o dashboard
+
 const today = new Date();
+
 const generateRecentTransactions = () => {
   const transactions: Transaction[] = [];
   // Últimas 2 semanas de transações
   for (let i = 13; i >= 0; i--) {
-    const date = new Date();
+    const date = new Date("2025-10-03T02:08:59.956Z");
     date.setDate(today.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    // Gera a string UTC diretamente a partir do objeto Date local
+    const utcDateStr = date.toISOString();
+    
     // Adicionar algumas despesas variáveis
     if (i % 2 === 0) {
       transactions.push({
         id: `exp-${i}`,
         description: i % 4 === 0 ? 'Supermercado' : i % 3 === 0 ? 'Combustível' : 'Restaurante',
         amount: Math.floor(Math.random() * 200) + 50,
-        date: dateStr,
+        date: utcDateStr,
         categoryId: i % 4 === 0 ? '4' : i % 3 === 0 ? '5' : '6',
         isInstallment: false
       });
@@ -313,12 +328,13 @@ const generateRecentTransactions = () => {
         id: `inc-${i}`,
         description: 'Projeto freelance',
         amount: 1200,
-        date: dateStr,
+        date: utcDateStr,
         categoryId: '2'
       });
     }
   }
-  // Adicionar uma compra parcelada
+
+  // Adicionar as parcelas da compra parcelada ao array de transações
   initialCompraParcelada[0].parcelas.forEach(parcela =>
     transactions.push(
       {
@@ -326,8 +342,7 @@ const generateRecentTransactions = () => {
         id: `${Date.now()}-${Math.random()}`,
       }
     )
-  )
-
+  );
 
   return transactions;
 };
@@ -339,6 +354,7 @@ type FinanceContextType = {
   fixedExpenses: FixedExpense[];
   comprasParceladas: CompraParcelada[];
   transactions: Transaction[];
+  monthlyVariations: MonthlyVariation[];
   addCategory: (category: Omit<Category, 'id'>) => void;
   updateCategory: (id: string, category: Partial<Omit<Category, 'id'>>) => void;
   deleteCategory: (id: string) => void;
@@ -351,6 +367,11 @@ type FinanceContextType = {
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => void;
   deleteTransaction: (id: string) => void;
+  // Novas funções para gerenciar variações mensais
+  addMonthlyVariation: (variation: Omit<MonthlyVariation, 'id'>) => void;
+  updateMonthlyVariation: (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => void;
+  deleteMonthlyVariation: (id: string) => void;
+  getActualFixedItemAmount: (itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number) => number;
   addCompraParcelada: (compra: Omit<CompraParcelada, 'id'>) => void;
 };
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -371,6 +392,9 @@ export const FinanceProvider: React.FC<{
   const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>(initialFixedIncomes);
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>(initialFixedExpenses);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+    const [monthlyVariations, setMonthlyVariations] = useState<MonthlyVariation[]>(initialMonthlyVariations);
+
+  
   // Funções para gerenciar categorias
   const addCategory = (category: Omit<Category, 'id'>) => {
     const newCategory = {
@@ -423,7 +447,7 @@ export const FinanceProvider: React.FC<{
   };
   const deleteFixedIncome = (id: string) => {
     // 1. Pega a data de hoje e formata para 'YYYY-MM-DD'
-    const today = getLocalDateString();
+    const today = new Date().toISOString();
 
     // 2. Usa 'map' para encontrar e atualizar o item
     setFixedIncomes(fixedIncomes.map(inc => 
@@ -447,8 +471,7 @@ export const FinanceProvider: React.FC<{
     } : exp));
   };
   const deleteFixedExpense = (id: string) => {
-    // CORRIGIDO: Usa a função que respeita o fuso horário local
-    const today = getLocalDateString();
+    const today = new Date().toISOString();
 
     setFixedExpenses(fixedExpenses.map(exp => 
         exp.id === id 
@@ -499,11 +522,39 @@ export const FinanceProvider: React.FC<{
     setComprasParceladas([...comprasParceladas, newCompra]);
 
   }
+  // Funções para gerenciar variações mensais
+  const addMonthlyVariation = (variation: Omit<MonthlyVariation, 'id'>) => {
+    // Verificar se já existe uma variação para este item, mês e ano
+    const existingVariation = monthlyVariations.find(v => v.fixedItemId === variation.fixedItemId && v.type === variation.type && v.year === variation.year && v.month === variation.month);
+    if (existingVariation) {
+      // Atualizar a variação existente em vez de criar uma nova
+      updateMonthlyVariation(existingVariation.id, variation);
+      return;
+    }
+    const newVariation = {
+      ...variation,
+      id: Date.now().toString()
+    };
+    setMonthlyVariations([...monthlyVariations, newVariation]);
+  };
+  const updateMonthlyVariation = (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => {
+    setMonthlyVariations(monthlyVariations.map(var_ => var_.id === id ? {
+      ...var_,
+      ...variation
+    } : var_));
+  };
+  const deleteMonthlyVariation = (id: string) => {
+    setMonthlyVariations(monthlyVariations.filter(var_ => var_.id !== id));
+  };
 
   const deleteCompraParcelada = (id: string) => {
     setTransactions(transactions.filter(t => t.idCompraParcelada !== id));
     setComprasParceladas(comprasParceladas.filter(t => t.id !== id))
   }
+  const getActualFixedItemAmount = (itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number): number => {
+    const variation = monthlyVariations.find(v => v.fixedItemId === itemId && v.type === type && v.year === year && v.month === month);
+    return variation ? variation.amount : defaultAmount;
+  };
 
   const value = {
     categories,
@@ -511,6 +562,7 @@ export const FinanceProvider: React.FC<{
     fixedExpenses,
     comprasParceladas,
     transactions,
+    monthlyVariations,
     addCategory,
     updateCategory,
     deleteCategory,
@@ -523,6 +575,10 @@ export const FinanceProvider: React.FC<{
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    addMonthlyVariation,
+    updateMonthlyVariation,
+    deleteMonthlyVariation,
+    getActualFixedItemAmount,
     addCompraParcelada
   };
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

@@ -7,6 +7,7 @@ type ConfirmationModalProps = {
   onConfirm: () => void;
   title: string;
   message: string;
+  confirmationMessage?: string;
 };
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({

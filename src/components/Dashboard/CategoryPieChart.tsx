@@ -1,6 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { Transaction, Category } from '../../context/FinanceContext';
+import { Transaction, Category, useFinance } from '../../context/FinanceContext';
 type CategoryPieChartProps = {
   transactions: Transaction[];
   categories: Category[];
@@ -11,6 +11,9 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   categories,
   date
 }) => {
+  const {
+    getActualFixedItemAmount
+  } = useFinance();
   // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
   const anoAtual = date.getFullYear(); // Ex: 2025
   const mesAtual = date.getMonth() + 1; // Ex: Para Outubro, retorna 10
@@ -21,6 +24,10 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
 
   // Filtrar apenas despesas
   const expenses = transactions.filter(t => ('isInstallment' in t || 'startDate' in t) && t.date.startsWith(anoMesAtualString))
+  .map(expense => ({
+    ...expense,
+    amount: 'isInstallment' in expense ? expense.amount : getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual-1, expense.amount)
+  }))
   // Calcular o total por categoria
   const categoryTotals = categories.filter(cat => cat.type === 'expense').map(category => {
     const total = expenses.filter(expense => expense.categoryId === category.id).reduce((sum, expense) => sum + expense.amount, 0);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Transaction, FixedIncome, FixedExpense, Category } from '../../context/FinanceContext';
+import { Transaction, FixedIncome, FixedExpense, Category, useFinance } from '../../context/FinanceContext';
+import { isItemActiveInMonth } from '../../utils/financeUtils';
 type MonthlyHistogramProps = {
   transactions: Transaction[];
   categories: Category[];
@@ -19,37 +20,9 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
   // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
    // Ex: Para Outubro, retorna 10
 
-
-  function isItemActiveInMonth(
-    item: { startDate: string; endDate?: string | null },
-    targetDate: Date
-  ): boolean {
-    const targetYear = targetDate.getFullYear();
-    const targetMonth = targetDate.getMonth(); // 0-11
-
-    const startDate = new Date(item.startDate);
-    // Adiciona a correção para o fuso horário ao criar a data
-    startDate.setMinutes(startDate.getMinutes() + startDate.getTimezoneOffset());
-    
-    const endDate = item.endDate ? new Date(item.endDate) : null;
-    if(endDate) {
-      endDate.setMinutes(endDate.getMinutes() + endDate.getTimezoneOffset());
-    }
-    
-    // Condição de Início: O item deve ter começado no passado ou neste mês/ano.
-    const startValid =
-      startDate.getFullYear() < targetYear ||
-      (startDate.getFullYear() === targetYear && startDate.getMonth() <= targetMonth);
-    
-    // Condição de Fim: O item não deve ter uma data de fim, ou a data de fim
-    // é no futuro ou neste mês/ano.
-    const endValid =
-      !endDate ||
-      endDate.getFullYear() > targetYear ||
-      (endDate.getFullYear() === targetYear && endDate.getMonth() >= targetMonth);
-
-    return startValid && endValid;
-  }
+  const {
+    getActualFixedItemAmount
+  } = useFinance();
 
   const anoAtual = date.getFullYear(); // Ex: 2025
   const mesAtual = date.getMonth() + 1;
@@ -70,7 +43,7 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
     // Rendas fixas do mês atual
     const monthlyFixedIncome = fixedIncomes
       .filter(income => isItemActiveInMonth(income, dateObj))
-      .reduce((sum, income) => sum + income.amount, 0);
+      .reduce((sum, income) => sum + getActualFixedItemAmount(income.id, 'income', anoObj, mesObj - 1, income.amount), 0);
     // Total de rendas (fixas + variáveis)
     const monthlyIncome = monthlyVariableIncome + monthlyFixedIncome;
     // Despesas variáveis do mês atual
@@ -79,7 +52,7 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
     // Despesas fixas do mês atual (Igualmente limpo!)
     const monthlyFixedExpense = fixedExpenses
       .filter(expense => isItemActiveInMonth(expense, dateObj))
-      .reduce((sum, expense) => sum + expense.amount, 0);
+      .reduce((sum, expense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoObj, mesObj - 1, expense.amount), 0);
     // Total de despesas (fixas + variáveis)
     const monthlyExpense = monthlyVariableExpense + monthlyFixedExpense;
     // Calcular o saldo

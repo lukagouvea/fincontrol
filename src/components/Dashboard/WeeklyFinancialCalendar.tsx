@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { useFinance, Transaction, VariableExpense } from '../../context/FinanceContext';
+import { formatDateToYYYYMMDD, areSameDay, getEndOfWeek, getStartOfWeek } from '../../utils/dateUtils';
 type WeeklyFinancialCalendarProps = {
   onAddExpense?: (date: Date) => void;
 };
@@ -9,7 +10,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
 }) => {
   const {
     transactions,
-    categories
+    categories,
   } = useFinance();
   // State for tracking the current week and selected day
   const [weekStart, setWeekStart] = useState<Date>(getStartOfWeek(new Date()));
@@ -42,20 +43,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     setWeekStart(newStart);
     setSelectedDay(null);
   };
-  // Helper function to get the start of a week (Sunday)
-  function getStartOfWeek(date: Date): Date {
-    const result = new Date(date);
-    const day = result.getDay();
-    result.setDate(result.getDate() - day); // Set to previous Sunday
-    return result;
-  }
-  // Função para formatar data para string YYYY-MM-DD sem problemas de fuso horário
-  const formatDateToYYYYMMDD = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  
   // Date formatting functions
   const formatMonthYear = (date: Date): string => {
     return date.toLocaleDateString('pt-BR', {
@@ -71,9 +59,6 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   const formatDayOfMonth = (date: Date): string => {
     return date.getDate().toString();
   };
-  const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
   // Check if a date is today
   const isToday = (date: Date): boolean => {
     const today = new Date();
@@ -85,9 +70,8 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   };
   // Get expenses for a specific date
   const getExpensesForDate = (date: Date) => {
-    const dateStr = formatDateToYYYYMMDD(date);
     // Filter variable expenses for this date
-    return transactions.filter(t => 'isInstallment' in t).filter(t => t.date === dateStr).map(t => {
+    return transactions.filter(t => 'isInstallment' in t).filter(t => areSameDay(t.date, date)).map(t => {
       const expense = t as VariableExpense;
       const category = categories.find(c => c.id === expense.categoryId);
       return {
@@ -101,9 +85,40 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   };
   // Get total expenses for a specific date
   const getTotalExpensesForDate = (date: Date): number => {
-    const dateStr = formatDateToYYYYMMDD(date);
-    return transactions.filter(t => 'isInstallment' in t).filter(t => t.date === dateStr).reduce((sum, t) => sum + t.amount, 0);
+    return transactions.filter(t => 'isInstallment' in t).filter(t => areSameDay(t.date, date)).reduce((sum, t) => sum + t.amount, 0);
   };
+
+  // Função Type Guard para identificar VariableExpense de forma segura
+  const isVariableExpense = (transaction: Transaction): transaction is VariableExpense => {
+    // A propriedade 'isInstallment' só existe em VariableExpense no seu modelo
+    return 'isInstallment' in transaction;
+  }
+
+  const calculateWeeklyExpenses = (
+    variableTransactions: Transaction[],
+    dateInWeek: Date
+  ): number => {
+    // --- 1. Definir o intervalo da semana usando suas funções ---
+    const weekStart = getStartOfWeek(dateInWeek);
+    const weekEnd = getEndOfWeek(dateInWeek);
+
+    // --- 2. Encontrar as DESPESAS VARIÁVEIS da semana ---
+    const variableExpensesInWeek = variableTransactions
+      .filter(isVariableExpense) // Usa sua função Type Guard
+      .filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate >= weekStart && expenseDate <= weekEnd;
+      });
+
+    // --- 3. Somar o total ---
+    const weeklyTotal = variableExpensesInWeek.reduce(
+      (total, expense) => total + expense.amount, 
+      0
+    );
+
+    return weeklyTotal;
+  };
+
   // Format currency values
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('pt-BR', {
@@ -111,10 +126,11 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
       currency: 'BRL'
     }).format(value);
   };
-  return <div className="bg-white p-6 rounded-lg shadow mb-8">
+  return <div className="bg-white p-6 rounded-lg mb-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-medium text-gray-700">
-          Calendário Financeiro Semanal
+        <div className="w-16"></div>
+        <h2 className="text-md font-medium text-gray-600">
+          {formatMonthYear(weekStart)}
         </h2>
         <div className="flex items-center space-x-2">
           <button onClick={goToPreviousWeek} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
@@ -127,11 +143,6 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
             <ChevronRightIcon size={16} />
           </button>
         </div>
-      </div>
-      <div className="mb-4 text-center">
-        <h3 className="text-md font-medium text-gray-600">
-          {formatMonthYear(weekStart)}
-        </h3>
       </div>
       <div className="grid grid-cols-7 gap-2">
         {/* Day headers */}
@@ -146,7 +157,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
         return <div key={`day-${index}`} className={`border rounded-lg p-2 h-[150px] overflow-hidden cursor-pointer transition-all
                 ${isToday(day) ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}
                 ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : ''}
-                hover:border-blue-300 hover:shadow-sm`} onClick={() => handleDayClick(day)}>
+                hover:border-blue-300 hover:shadow-sm`} onClick={() => handleDayClick(day)} role="button">
               <div className="text-center mb-2">
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 text-blue-800' : 'text-gray-700'}`}>
                   {formatDayOfMonth(day)}
@@ -185,6 +196,16 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
             </div>;
       })}
       </div>
+      <h3 className="text-sm font-medium text-gray-500 text-right">
+        Total gasto na semana
+        <p>
+          <span className="font-medium text-red-600">
+            {formatCurrency(calculateWeeklyExpenses(transactions, weekStart))}
+          </span>
+        </p>
+      </h3>
+
+
       {/* Selected day details */}
       {selectedDay && <div className="mt-6 p-4 border border-blue-200 bg-blue-50 rounded-lg">
           <div className="flex justify-between items-center mb-3">
@@ -216,7 +237,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
               Nenhuma despesa registrada para este dia.
             </p>}
           <div className="mt-4">
-            <button className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => onAddExpense && onAddExpense(selectedDay)}>
+            <button className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => onAddExpense?.(selectedDay)} >
               Adicionar nova despesa para este dia
             </button>
           </div>

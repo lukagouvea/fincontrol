@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon, PlusIcon } from 'lucide-react';
-import { useFinance, Transaction, VariableExpense } from '../context/FinanceContext';
-import { ExpenseModal } from '../components/Expenses/ExpenseModal';
-import { IncomeModal } from '../components/Income/IncomeModal';
+import { Transaction, useFinance } from '../context/FinanceContext';
+import { ExpenseFormData, ExpenseModal } from '../components/Expenses/ExpenseModal';
+import { IncomeFormData, IncomeModal } from '../components/Income/IncomeModal';
+import { areSameDay, convertDateToUTCISOString, formatDateToYYYYMMDD, parseDateInputToLocal } from '../utils/dateUtils';
+import { generateParcelas } from '../utils/financeUtils';
 export const Calendar: React.FC = () => {
   const {
     transactions,
     categories,
     fixedExpenses,
-    fixedIncomes
+    fixedIncomes,
+    getActualFixedItemAmount,
+    addCompraParcelada,
+    addTransaction
   } = useFinance();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<Date[]>([]);
@@ -76,17 +81,11 @@ export const Calendar: React.FC = () => {
       year: 'numeric'
     });
   };
-  const formatDayOfWeek = (date: Date): string => {
-    return date.toLocaleDateString('pt-BR', {
-      weekday: 'short'
-    }).slice(0, 3);
-  };
+  
   const formatDayOfMonth = (date: Date): string => {
     return date.getDate().toString();
   };
-  const formatDate = (dateStr: string): string => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
+  
   // Check if a date is today
   const isToday = (date: Date): boolean => {
     const today = new Date();
@@ -100,18 +99,51 @@ export const Calendar: React.FC = () => {
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
   };
-  // Função para formatar data para string YYYY-MM-DD sem problemas de fuso horário
-  const formatDateToYYYYMMDD = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+
+
+  const handleExpenseSubmit = (formData: ExpenseFormData) => {
+      const localDateObject = parseDateInputToLocal(formData.date);
+      const utcTimestamp = convertDateToUTCISOString(localDateObject);
+  
+      if (formData.isInstallment && formData.installmentCount > 1) {
+        const compraParcelada = {
+          description: formData.description,
+          amount: formData.amount,
+          date: utcTimestamp,
+          categoryId: formData.categoryId,
+          numParcelas: formData.installmentCount,
+          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
+        };
+        addCompraParcelada(compraParcelada);
+      } else {
+        addTransaction({
+          description: formData.description,
+          amount: formData.amount,
+          date: utcTimestamp,
+          categoryId: formData.categoryId,
+          isInstallment: false,
+        } as Omit<Transaction, 'id'>);
+      }
+      setIsExpenseModalOpen(false);
+    };
+  
+    const handleIncomeSubmit = (formData: IncomeFormData) => {
+      const localDateObject = parseDateInputToLocal(formData.date);
+      const utcTimestamp = convertDateToUTCISOString(localDateObject);
+  
+      addTransaction({
+        description: formData.description,
+        amount: formData.amount,
+        date: utcTimestamp,
+        categoryId: formData.categoryId,
+      } as Omit<Transaction, 'id'>);
+      setIsIncomeModalOpen(false);
+    };
+
   // Get transactions for a specific date
   const getTransactionsForDate = (date: Date) => {
-    const dateStr = formatDateToYYYYMMDD(date);
     // Filter transactions for this date
-    return transactions.filter(t => t.date === dateStr).map(t => {
+    return transactions.filter(t => areSameDay(t.date, date)).map(t => {
       const isExpense = 'isInstallment' in t;
       const category = categories.find(c => 'categoryId' in t && c.id === t.categoryId);
       return {
@@ -127,6 +159,8 @@ export const Calendar: React.FC = () => {
   // Get fixed expenses for a specific date
   const getFixedExpensesForDate = (date: Date) => {
     const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
     return fixedExpenses.filter(expense => {
       const startDate = new Date(expense.startDate);
       const endDate = expense.endDate ? new Date(expense.endDate) : null;
@@ -136,20 +170,25 @@ export const Calendar: React.FC = () => {
       return expense.day === day;
     }).map(expense => {
       const category = categories.find(c => c.id === expense.categoryId);
+      const actualAmount = getActualFixedItemAmount(expense.id, 'expense', year, month, expense.amount);
       return {
         id: expense.id,
         description: expense.description,
-        amount: expense.amount,
+        amount: actualAmount,
         isExpense: true,
         category: category?.name || 'Sem categoria',
         categoryColor: category?.color || '#999',
-        isFixed: true
+        isFixed: true,
+        hasVariation: actualAmount !== expense.amount,
+        standardAmount: expense.amount
       };
     });
   };
   // Get fixed incomes for a specific date
   const getFixedIncomesForDate = (date: Date) => {
     const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
     return fixedIncomes.filter(income => {
       const startDate = new Date(income.startDate);
       const endDate = income.endDate ? new Date(income.endDate) : null;
@@ -158,14 +197,17 @@ export const Calendar: React.FC = () => {
       if (date < startDate) return false;
       return income.day === day;
     }).map(income => {
+      const actualAmount = getActualFixedItemAmount(income.id, 'income', year, month, income.amount);
       return {
         id: income.id,
         description: income.description,
-        amount: income.amount,
+        amount: actualAmount,
         isExpense: false,
         category: 'Renda Fixa',
         categoryColor: '#4CAF50',
-        isFixed: true
+        isFixed: true,
+        hasVariation: actualAmount !== income.amount,
+        standardAmount: income.amount
       };
     });
   };
@@ -258,6 +300,9 @@ export const Calendar: React.FC = () => {
                     {events.slice(0, 2).map(event => <div key={`${event.id}-${event.isFixed ? 'fixed' : 'var'}`} className="bg-gray-50 p-1 rounded text-xs hover:bg-gray-100">
                         <div className="font-medium text-gray-800 truncate text-xs">
                           {event.description}
+                          {'isFixed' in event && event.isFixed && <span className="text-[9px] ml-1 text-gray-500">
+                              (Fixo)
+                            </span>}
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] rounded-full px-1 py-0.5 truncate max-w-[60px]" style={{
@@ -266,7 +311,7 @@ export const Calendar: React.FC = () => {
                   }}>
                             {event.category}
                           </span>
-                          <span className={`text-[10px] font-medium ${event.isExpense ? 'text-red-600' : 'text-green-600'}`}>
+                          <span className={`text-[10px] font-medium ${'hasVariation' in event && event.hasVariation ? 'text-blue-600' : event.isExpense ? 'text-red-600' : 'text-green-600'}`}>
                             {event.isExpense ? '-' : '+'}{' '}
                             {formatCurrency(event.amount)}
                           </span>
@@ -352,8 +397,13 @@ export const Calendar: React.FC = () => {
                             {event.category}
                           </div>
                         </div>
-                        <div className="font-medium text-red-600">
-                          - {formatCurrency(event.amount)}
+                        <div>
+                          <div className={`font-medium ${event.hasVariation ? 'text-blue-600' : 'text-red-600'}`}>
+                            - {formatCurrency(event.amount)}
+                          </div>
+                          {event.hasVariation && <div className="text-xs text-gray-500 text-right">
+                              Padrão: {formatCurrency(event.standardAmount)}
+                            </div>}
                         </div>
                       </div>
                     </div>)}
@@ -374,8 +424,13 @@ export const Calendar: React.FC = () => {
                             {event.category}
                           </div>
                         </div>
-                        <div className="font-medium text-green-600">
-                          + {formatCurrency(event.amount)}
+                        <div>
+                          <div className={`font-medium ${event.hasVariation ? 'text-blue-600' : 'text-green-600'}`}>
+                            + {formatCurrency(event.amount)}
+                          </div>
+                          {event.hasVariation && <div className="text-xs text-gray-500 text-right">
+                              Padrão: {formatCurrency(event.standardAmount)}
+                            </div>}
                         </div>
                       </div>
                     </div>)}
@@ -387,7 +442,7 @@ export const Calendar: React.FC = () => {
           </div>
         </div>}
       {/* Modals */}
-      <ExpenseModal isOpen={isExpenseModalOpen} onClose={() => setIsExpenseModalOpen(false)} initialDate={selectedDay ? formatDateToYYYYMMDD(selectedDay) : undefined} />
-      <IncomeModal isOpen={isIncomeModalOpen} onClose={() => setIsIncomeModalOpen(false)} initialDate={selectedDay ? formatDateToYYYYMMDD(selectedDay) : undefined} />
+      <ExpenseModal isOpen={isExpenseModalOpen} onClose={() => setIsExpenseModalOpen(false)} onSubmit={handleExpenseSubmit} initialData={selectedDay ? {date : formatDateToYYYYMMDD(selectedDay)} : undefined} />
+      <IncomeModal isOpen={isIncomeModalOpen} onClose={() => setIsIncomeModalOpen(false)} onSubmit={handleIncomeSubmit} initialData={selectedDay ? {date : formatDateToYYYYMMDD(selectedDay)} : undefined} />
     </div>;
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Transaction } from '../../context/FinanceContext';
+import { areSameDay } from '../../utils/dateUtils';
 type WeeklySpendingProps = {
   transactions: Transaction[];
 };
@@ -16,11 +17,11 @@ export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
     date.setDate(today.getDate() - i);
     return date;
   }).reverse();
+
   // Formatar os dados para o gráfico
   const data = last7Days.map(date => {
-    const dateStr = date.toISOString().split('T')[0];
     // Filtrar transações apenas de despesa para esta data
-    const dailyExpenses = transactions.filter(t => 'isInstallment' in t).filter(t => t.date === dateStr).reduce((sum, t) => sum + t.amount, 0);
+    const dailyExpenses = transactions.filter(t => 'isInstallment' in t).filter(t => areSameDay(t.date, date)).reduce((sum, t) => sum + t.amount, 0);
     return {
       date: date.toLocaleDateString('pt-BR', {
         weekday: 'short',
@@ -29,6 +30,7 @@ export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
       valor: dailyExpenses
     };
   });
+
   return <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{
@@ -49,7 +51,7 @@ export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
           style: 'currency',
           currency: 'BRL'
         }).format(Number(value)), 'Valor']} />
-          <Bar dataKey="valor" fill="#ef4444" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="valor" fill="#2363eb" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>;

@@ -1,250 +1,196 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { useFinance, Transaction, VariableExpense } from '../../context/FinanceContext';
+import { Transaction, useFinance, VariableExpense as VariableExpenseType } from '../../context/FinanceContext';
+import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
+import { ExpenseModal, ExpenseFormData } from '../../components/Expenses/ExpenseModal';
+import { parseDateInputToLocal, convertDateToUTCISOString, formatUTCToDDMMAAAA } from '../../utils/dateUtils';
+import { generateParcelas } from '../../utils/financeUtils';
+
 export const VariableExpenses: React.FC = () => {
   const {
     transactions,
     categories,
     addTransaction,
     updateTransaction,
-    deleteTransaction
+    deleteTransaction,
+    addCompraParcelada
   } = useFinance();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<VariableExpense | null>(null);
-  // Estado para o formulário
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [categoryId, setCategoryId] = useState('');
-  const [isInstallment, setIsInstallment] = useState(false);
-  const [installmentCount, setInstallmentCount] = useState('1');
-  // Filtrar apenas categorias de despesa
-  const expenseCategories = categories.filter(cat => cat.type === 'expense');
-  // Filtrar apenas transações de despesa variável
-  const variableExpenses = transactions.filter(t => 'isInstallment' in t) as VariableExpense[];
-  const openModal = (expense?: VariableExpense) => {
-    if (expense) {
-      setEditingExpense(expense);
-      setDescription(expense.description);
-      setAmount(expense.amount.toString());
-      setDate(expense.date);
-      setCategoryId(expense.categoryId);
-      setIsInstallment(expense.isInstallment);
-      setInstallmentCount(expense.installmentInfo?.total.toString() || '1');
-    } else {
-      setEditingExpense(null);
-      setDescription('');
-      setAmount('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setCategoryId(expenseCategories[0]?.id || '');
-      setIsInstallment(false);
-      setInstallmentCount('1');
+  const [editingExpense, setEditingExpense] = useState<VariableExpenseType | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<Transaction | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    
+  const variableExpenses = useMemo(() => 
+    transactions.filter((t): t is VariableExpenseType => 'isInstallment' in t), 
+    [transactions]
+  );
+
+  const filteredExpenses = useMemo(() => {
+    return variableExpenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getMonth() === selectedMonth && expenseDate.getFullYear() === selectedYear;
+    });
+  }, [variableExpenses, selectedMonth, selectedYear]);
+
+  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => currentYear + 2 - i);
+
+  const handleRequestDelete = (expense: Transaction) => {
+    setExpenseToDelete(expense);
+  };
+
+  const handleCancelDelete = () => {
+    setExpenseToDelete(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (expenseToDelete) {
+      deleteTransaction(expenseToDelete.id);
+      setExpenseToDelete(null);
     }
+  };
+
+  let confirmationMessage = "Você tem certeza que deseja excluir esta despesa? Esta ação não pode ser desfeita.";
+  if (expenseToDelete?.isInstallment) {
+    confirmationMessage = "Ao excluir esta parcela, todas as outras parcelas da mesma compra também serão removidas. Deseja continuar?";
+  }
+  
+  const handleOpenCreateModal = () => {
+    setEditingExpense(null);
     setIsModalOpen(true);
   };
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingExpense(null);
+  
+  const handleOpenEditModal = (expense: VariableExpenseType) => {
+    setEditingExpense(expense);
+    setIsModalOpen(true);
   };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description || !amount || !date || !categoryId) return;
-    const formattedAmount = parseFloat(amount.replace(',', '.'));
+  
+  // 2. A lógica de negócio agora vive aqui
+  const handleModalSubmit = (formData: ExpenseFormData) => {
+    const localDateObject = parseDateInputToLocal(formData.date);
+    const utcTimestamp = convertDateToUTCISOString(localDateObject);
+
     if (editingExpense) {
       updateTransaction(editingExpense.id, {
-        description,
-        amount: formattedAmount,
-        date,
-        categoryId,
-        isInstallment,
-        installmentInfo: isInstallment ? {
-          total: parseInt(installmentCount),
-          current: editingExpense.installmentInfo?.current || 1
-        } : undefined
+        description: formData.description,
+        amount: formData.amount,
+        date: utcTimestamp,
+        categoryId: formData.categoryId,
+        isInstallment: editingExpense.isInstallment, // Não permite alterar o tipo de despesa
+        installmentInfo: editingExpense.installmentInfo,
       });
     } else {
-      if (isInstallment && parseInt(installmentCount) > 1) {
-        // Criar despesa parcelada
-        const totalInstallments = parseInt(installmentCount);
-        const baseDate = new Date(date);
-        for (let i = 0; i < totalInstallments; i++) {
-          const installmentDate = new Date(baseDate);
-          installmentDate.setMonth(baseDate.getMonth() + i);
-          addTransaction({
-            description,
-            amount: formattedAmount,
-            date: installmentDate.toISOString().split('T')[0],
-            categoryId,
-            isInstallment: true,
-            installmentInfo: {
-              total: totalInstallments,
-              current: i + 1
-            }
-          });
-        }
+      if (formData.isInstallment && formData.installmentCount > 1) {
+        const compraParcelada = {
+          description: formData.description,
+          amount: formData.amount,
+          date: utcTimestamp,
+          categoryId: formData.categoryId,
+          numParcelas: formData.installmentCount,
+          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
+        };
+        addCompraParcelada(compraParcelada);
       } else {
-        // Criar despesa única
         addTransaction({
-          description,
-          amount: formattedAmount,
-          date,
-          categoryId,
-          isInstallment: false
+          description: formData.description,
+          amount: formData.amount,
+          date: utcTimestamp,
+          categoryId: formData.categoryId,
+          isInstallment: false,
         });
       }
     }
-    closeModal();
+    setIsModalOpen(false);
   };
-  // Formatar valor para exibição
+
   const formatValue = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
-  // Formatar data para exibição
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
-  };
-  // Obter categoria
+  
   const getCategory = (categoryId: string) => {
     return categories.find(c => c.id === categoryId);
   };
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Despesas Variáveis</h1>
-        <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Nova Despesa Variável
-        </button>
+        <div className="flex items-center space-x-2">
+          <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+            {months.map((month, index) => <option key={index} value={index}>{month}</option>)}
+          </select>
+          <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} className="border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+            {years.map(year => <option key={year} value={year}>{year}</option>)}
+          </select>
+          <button onClick={handleOpenCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Nova Despesa
+          </button>
+        </div>
       </div>
-      {/* Lista de despesas variáveis */}
+
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        {variableExpenses.length > 0 ? <table className="min-w-full divide-y divide-gray-200">
+        {filteredExpenses.length > 0 ? (
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Descrição
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Categoria
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Valor
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {variableExpenses.map(expense => {
-            const category = getCategory(expense.categoryId);
-            return <tr key={expense.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(expense.date)}
-                    </td>
+              {filteredExpenses.map(expense => {
+                const category = getCategory(expense.categoryId);
+                return (
+                  <tr key={expense.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatUTCToDDMMAAAA(expense.date)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {expense.description}
-                      {expense.isInstallment && expense.installmentInfo && <span className="ml-2 text-xs text-gray-500">
-                          ({expense.installmentInfo.current}/
-                          {expense.installmentInfo.total})
-                        </span>}
+                      {expense.isInstallment && expense.installmentInfo && <span className="ml-2 text-xs text-gray-500">({expense.installmentInfo.current}/{expense.installmentInfo.total})</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{
-                  backgroundColor: `${category.color}20`,
-                  color: category.color
-                }}>
-                          {category.name}
-                        </span> : '-'}
+                      {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: `${category.color}20`, color: category.color }}>{category.name}</span> : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
-                      {formatValue(expense.amount)}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">{formatValue(expense.amount)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center space-x-3">
-                        <button onClick={() => openModal(expense)} className="text-blue-600 hover:text-blue-900">
-                          <PencilIcon className="w-5 h-5" />
-                        </button>
-                        <button onClick={() => deleteTransaction(expense.id)} className="text-red-600 hover:text-red-900">
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
+                        <button onClick={() => handleOpenEditModal(expense)} className="text-blue-600 hover:text-blue-900"><PencilIcon className="w-5 h-5" /></button>
+                        <button onClick={() => handleRequestDelete(expense)} className="text-red-600 hover:text-red-900"><TrashIcon className="w-5 h-5" /></button>
                       </div>
                     </td>
-                  </tr>;
-          })}
+                  </tr>
+                );
+              })}
             </tbody>
-          </table> : <div className="px-6 py-8 text-center text-gray-500">
-            Nenhuma despesa variável cadastrada.
-          </div>}
-      </div>
-      {/* Modal de despesa variável */}
-      {isModalOpen && <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-medium text-gray-900">
-                {editingExpense ? 'Editar Despesa Variável' : 'Nova Despesa Variável'}
-              </h3>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    Descrição
-                  </label>
-                  <input type="text" id="description" value={description} onChange={e => setDescription(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required />
-                </div>
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                    Valor (R$)
-                  </label>
-                  <input type="text" id="amount" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0,00" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required />
-                </div>
-                <div>
-                  <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-                    Data
-                  </label>
-                  <input type="date" id="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required />
-                </div>
-                <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                    Categoria
-                  </label>
-                  <select id="category" value={categoryId} onChange={e => setCategoryId(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                    {expenseCategories.map(category => <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>)}
-                  </select>
-                </div>
-                {!editingExpense && <>
-                    <div className="flex items-center">
-                      <input type="checkbox" id="isInstallment" checked={isInstallment} onChange={e => setIsInstallment(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                      <label htmlFor="isInstallment" className="ml-2 block text-sm text-gray-900">
-                        Pagamento Parcelado
-                      </label>
-                    </div>
-                    {isInstallment && <div>
-                        <label htmlFor="installmentCount" className="block text-sm font-medium text-gray-700">
-                          Número de Parcelas
-                        </label>
-                        <input type="number" id="installmentCount" value={installmentCount} onChange={e => setInstallmentCount(e.target.value)} min="2" max="48" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required />
-                      </div>}
-                  </>}
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button type="button" onClick={closeModal} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  Cancelar
-                </button>
-                <button type="submit" className="ml-3 bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  {editingExpense ? 'Salvar' : 'Criar'}
-                </button>
-              </div>
-            </form>
+          </table>
+        ) : (
+          <div className="px-6 py-8 text-center text-gray-500">
+            Nenhuma despesa variável para o período selecionado.
           </div>
-        </div>}
-    </div>;
+        )}
+      </div>
+      
+      {/* 3. Renderiza o componente ExpenseModal, passando as props necessárias */}
+      <ExpenseModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleModalSubmit}
+        initialData={editingExpense}
+      />
+      
+      <ConfirmationModal
+        isOpen={!!expenseToDelete}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão"
+        message={confirmationMessage}
+      />
+    </div>
+  );
 };

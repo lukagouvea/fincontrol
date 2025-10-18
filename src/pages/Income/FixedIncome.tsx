@@ -1,20 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, ArchiveIcon, CalendarIcon } from 'lucide-react';
-import { useFinance, FixedExpense as FixedExpenseType } from '../../context/FinanceContext';
+import { useFinance, FixedIncome as FixedIncomeType } from '../../context/FinanceContext';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
-import { FixedExpenseModal, FixedExpenseFormData } from '../../components/Expenses/FixedExpenseModal';
+import { FixedIncomeModal, FixedIncomeFormData } from '../../components/Income/FixedIncomeModal';
 import { ArchiveModal } from '../../components/Shared/ArchiveModal';
 import { VariationModal } from '../../components/Shared/VariationModal';
 import { formatUTCToDDMMAAAA, convertDateToUTCISOString, parseDateInputToLocal } from '../../utils/dateUtils';
 
-export const FixedExpenses: React.FC = () => {
+export const FixedIncome: React.FC = () => {
   const {
-    fixedExpenses,
+    fixedIncomes,
     categories,
     monthlyVariations,
-    addFixedExpense,
-    updateFixedExpense,
-    deleteFixedExpense,
+    addFixedIncome,
+    updateFixedIncome,
+    deleteFixedIncome,
     addMonthlyVariation,
     updateMonthlyVariation,
     deleteMonthlyVariation,
@@ -22,67 +22,66 @@ export const FixedExpenses: React.FC = () => {
   } = useFinance();
   
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<FixedExpenseType | null>(null);
+  const [editingIncome, setEditingIncome] = useState<FixedIncomeType | null>(null);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
-  const [selectedExpenseForVariation, setSelectedExpenseForVariation] = useState<FixedExpenseType | null>(null);
-  const [expenseToDelete, setExpenseToDelete] = useState<FixedExpenseType | null>(null);
+  const [selectedIncomeForVariation, setSelectedIncomeForVariation] = useState<FixedIncomeType | null>(null);
+  const [incomeToDelete, setIncomeToDelete] = useState<FixedIncomeType | null>(null);
 
-  const { activeExpenses, archivedExpenses } = useMemo(() => {
+  const { activeIncomes, archivedIncomes } = useMemo(() => {
     const today = new Date();
-    const active: FixedExpenseType[] = [];
-    const archived: FixedExpenseType[] = [];
-    fixedExpenses.forEach(expense => {
-      const isArchived = expense.endDate && parseDateInputToLocal(expense.endDate.split('T')[0]) < today;
+    const active: FixedIncomeType[] = [];
+    const archived: FixedIncomeType[] = [];
+    fixedIncomes.forEach(income => {
+      const isArchived = income.endDate && parseDateInputToLocal(income.endDate.split('T')[0]) < today;
       if (isArchived) {
-        archived.push(expense);
+        archived.push(income);
       } else {
-        active.push(expense);
+        active.push(income);
       }
     });
-    return { activeExpenses: active, archivedExpenses: archived };
-  }, [fixedExpenses]);
+    return { activeIncomes: active, archivedIncomes: archived };
+  }, [fixedIncomes]);
 
   const openCreateModal = () => {
-    setEditingExpense(null);
+    setEditingIncome(null);
     setIsFormModalOpen(true);
   };
 
-  const openEditModal = (expense: FixedExpenseType) => {
-    setEditingExpense(expense);
+  const openEditModal = (income: FixedIncomeType) => {
+    setEditingIncome(income);
     setIsFormModalOpen(true);
   };
   
-  const openVariationModal = (expense: FixedExpenseType) => {
-    setSelectedExpenseForVariation(expense);
+  const openVariationModal = (income: FixedIncomeType) => {
+    setSelectedIncomeForVariation(income);
     setIsVariationModalOpen(true);
   };
-
   const closeVariationModal = () => {
     setIsVariationModalOpen(false);
-    setSelectedExpenseForVariation(null);
+    setSelectedIncomeForVariation(null);
   };
 
-  const handleModalSubmit = (formData: FixedExpenseFormData) => {
-    const expenseData = {
+  const handleModalSubmit = (formData: FixedIncomeFormData) => {
+    const incomeData = {
       ...formData,
       startDate: convertDateToUTCISOString(parseDateInputToLocal(formData.startDate)),
       endDate: formData.endDate ? convertDateToUTCISOString(parseDateInputToLocal(formData.endDate)) : undefined,
     };
-    if (editingExpense) {
-      updateFixedExpense(editingExpense.id, expenseData);
+    if (editingIncome) {
+      updateFixedIncome(editingIncome.id, incomeData);
     } else {
-      addFixedExpense(expenseData);
+      addFixedIncome(incomeData);
     }
     setIsFormModalOpen(false);
   };
   
   const handleVariationSubmit = (data: { year: number, month: number, amount: number }) => {
-    if (!selectedExpenseForVariation) return;
+    if (!selectedIncomeForVariation) return;
     const { year, month, amount } = data;
-    const existingVariation = monthlyVariations.find(v => v.fixedItemId === selectedExpenseForVariation.id && v.type === 'expense' && v.year === year && v.month === month);
+    const existingVariation = monthlyVariations.find(v => v.fixedItemId === selectedIncomeForVariation.id && v.type === 'income' && v.year === year && v.month === month);
 
-    if (amount === selectedExpenseForVariation.amount) {
+    if (amount === selectedIncomeForVariation.amount) {
       if (existingVariation) {
         deleteMonthlyVariation(existingVariation.id);
       }
@@ -91,8 +90,8 @@ export const FixedExpenses: React.FC = () => {
         updateMonthlyVariation(existingVariation.id, { amount });
       } else {
         addMonthlyVariation({
-          fixedItemId: selectedExpenseForVariation.id,
-          type: 'expense',
+          fixedItemId: selectedIncomeForVariation.id,
+          type: 'income',
           year,
           month,
           amount
@@ -102,59 +101,59 @@ export const FixedExpenses: React.FC = () => {
     setIsVariationModalOpen(false);
   };
 
-  const handleRequestDelete = (expense: FixedExpenseType) => {
-    setExpenseToDelete(expense);
+  const handleRequestDelete = (income: FixedIncomeType) => {
+    setIncomeToDelete(income);
   };
   
   const handleConfirmDelete = () => {
-    if (expenseToDelete) {
-      deleteFixedExpense(expenseToDelete.id);
-      setExpenseToDelete(null);
+    if (incomeToDelete) {
+      deleteFixedIncome(incomeToDelete.id);
+      setIncomeToDelete(null);
     }
   };
 
-  const handleEditArchived = (expense: FixedExpenseType) => {
+  const handleEditArchived = (income: FixedIncomeType) => {
     setIsArchiveModalOpen(false);
-    openEditModal(expense);
+    openEditModal(income);
   };
 
-  const getCategory = (categoryId: string) => categories.find(c => c.id === categoryId);
+  const getCategory = (categoryId?: string) => categories.find(c => c.id === categoryId);
   const formatValue = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   const formatMonthYear = (month: number, year: number) => new Date(year, month, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  const getVariationsForExpense = (expenseId: string) => monthlyVariations.filter(v => v.fixedItemId === expenseId && v.type === 'expense').sort((a, b) => b.year - a.year || b.month - a.month);
+  const getVariationsForIncome = (incomeId: string) => monthlyVariations.filter(v => v.fixedItemId === incomeId && v.type === 'income').sort((a, b) => b.year - a.year || b.month - a.month);
 
   const archiveColumns = [
     { key: 'description', label: 'Descrição' }, { key: 'category', label: 'Categoria' }, { key: 'amount', label: 'Valor' }, { key: 'period', label: 'Período' }, { key: 'actions', label: 'Ações' },
   ];
 
-  const archivedExpensesData = useMemo(() => {
-    return archivedExpenses.map(expense => ({
-      ...expense,
-      endDate: expense.endDate!,
-      category: getCategory(expense.categoryId),
+  const archivedIncomesData = useMemo(() => {
+    return archivedIncomes.map(income => ({
+      ...income,
+      endDate: income.endDate!,
+      category: getCategory(income.categoryId),
     }));
-  }, [archivedExpenses, categories]);
+  }, [archivedIncomes, categories]);
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Despesas Fixas</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Rendas Fixas</h1>
         <div className="flex items-center space-x-2">
-          {archivedExpenses.length > 0 && (
+          {archivedIncomes.length > 0 && (
             <button onClick={() => setIsArchiveModalOpen(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center text-sm">
               <ArchiveIcon className="w-4 h-4 mr-2" />
-              Ver Arquivadas ({archivedExpenses.length})
+              Ver Arquivadas ({archivedIncomes.length})
             </button>
           )}
-          <button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
+          <button onClick={openCreateModal} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
             <PlusIcon className="w-4 h-4 mr-2" />
-            Nova Despesa Fixa
+            Nova Renda Fixa
           </button>
         </div>
       </div>
       
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        {activeExpenses.length > 0 ? (
+        {activeIncomes.length > 0 ? (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -162,33 +161,35 @@ export const FixedExpenses: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Padrão</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Atual</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dia do Vencimento</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dia do Recebimento</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {activeExpenses.map(expense => {
-                const category = getCategory(expense.categoryId);
-                const currentAmount = getActualFixedItemAmount(expense.id, 'expense', new Date().getFullYear(), new Date().getMonth(), expense.amount);
+              {activeIncomes.map(income => {
+                const category = getCategory(income.categoryId);
+                const currentAmount = getActualFixedItemAmount(income.id, 'income', new Date().getFullYear(), new Date().getMonth(), income.amount);
                 return (
-                  <tr key={expense.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{expense.description}</td>
+                  <tr key={income.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{income.description}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: `${category.color}20`, color: category.color }}>{category.name}</span> : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatValue(expense.amount)}</td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${currentAmount !== expense.amount ? 'text-blue-600' : 'text-gray-900'}`}>{formatValue(currentAmount)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dia {expense.day}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{formatValue(income.amount)}</td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${currentAmount !== income.amount ? 'text-blue-600' : 'text-green-600'}`}>
+                      {formatValue(currentAmount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dia {income.day}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatUTCToDDMMAAAA(expense.startDate)}
-                      {expense.endDate ? ` até ${formatUTCToDDMMAAAA(expense.endDate)}` : ' (contínua)'}
+                      {formatUTCToDDMMAAAA(income.startDate)}
+                      {income.endDate ? ` até ${formatUTCToDDMMAAAA(income.endDate)}` : ' (contínua)'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center space-x-3">
-                        <button onClick={() => openVariationModal(expense)} className="text-blue-600 hover:text-blue-900" title="Adicionar variação mensal"><CalendarIcon className="w-5 h-5" /></button>
-                        <button onClick={() => openEditModal(expense)} className="text-blue-600 hover:text-blue-900" title="Editar despesa fixa"><PencilIcon className="w-5 h-5" /></button>
-                        <button onClick={() => handleRequestDelete(expense)} className="text-red-600 hover:text-red-900" title="Remover despesa fixa"><TrashIcon className="w-5 h-5" /></button>
+                        <button onClick={() => openVariationModal(income)} className="text-blue-600 hover:text-blue-900" title="Adicionar variação mensal"><CalendarIcon className="w-5 h-5" /></button>
+                        <button onClick={() => openEditModal(income)} className="text-blue-600 hover:text-blue-900" title="Editar renda fixa"><PencilIcon className="w-5 h-5" /></button>
+                        <button onClick={() => handleRequestDelete(income)} className="text-red-600 hover:text-red-900" title="Remover renda fixa"><TrashIcon className="w-5 h-5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -197,47 +198,47 @@ export const FixedExpenses: React.FC = () => {
             </tbody>
           </table>
         ) : (
-          <div className="px-6 py-8 text-center text-gray-500">Nenhuma despesa fixa ativa cadastrada.</div>
+          <div className="px-6 py-8 text-center text-gray-500">Nenhuma renda fixa ativa cadastrada.</div>
         )}
       </div>
       
-      <FixedExpenseModal
+      <FixedIncomeModal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
         onSubmit={handleModalSubmit}
-        initialData={editingExpense}
+        initialData={editingIncome}
       />
       
       <ArchiveModal
         isOpen={isArchiveModalOpen}
         onClose={() => setIsArchiveModalOpen(false)}
-        title="Despesas Fixas Arquivadas"
-        items={archivedExpensesData}
+        title="Rendas Fixas Arquivadas"
+        items={archivedIncomesData}
         columns={archiveColumns}
         formatValue={formatValue}
         formatDate={formatUTCToDDMMAAAA}
         onEdit={handleEditArchived}
       />
 
-      {selectedExpenseForVariation && (
+      {selectedIncomeForVariation && (
         <VariationModal
           isOpen={isVariationModalOpen}
           onClose={closeVariationModal}
           onSubmit={handleVariationSubmit}
-          itemDescription={selectedExpenseForVariation.description}
-          defaultAmount={selectedExpenseForVariation.amount}
-          existingVariations={getVariationsForExpense(selectedExpenseForVariation.id)}
+          itemDescription={selectedIncomeForVariation.description}
+          defaultAmount={selectedIncomeForVariation.amount}
+          existingVariations={getVariationsForIncome(selectedIncomeForVariation.id)}
           formatValue={formatValue}
           formatMonthYear={formatMonthYear}
         />
       )}
 
       <ConfirmationModal
-        isOpen={!!expenseToDelete}
-        onClose={() => setExpenseToDelete(null)}
+        isOpen={!!incomeToDelete}
+        onClose={() => setIncomeToDelete(null)}
         onConfirm={handleConfirmDelete}
-        title="Deseja encerrar esta despesa fixa?"
-        message="A partir de hoje, esta despesa não será mais lançada. Os registros de pagamentos anteriores não serão afetados."
+        title="Deseja encerrar esta renda fixa?"
+        message="A partir de hoje, esta renda não será mais lançada. Os registros de recebimentos anteriores não serão afetados."
       />
     </div>
   );

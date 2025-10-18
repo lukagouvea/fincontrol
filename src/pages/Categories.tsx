@@ -97,10 +97,10 @@ export const Categories: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button onClick={() => openModal(category)} className="text-gray-400 hover:text-blue-600">
+                  <button onClick={() => openModal(category)} className="text-blue-600 hover:text-blue-900">
                     <PencilIcon className="w-5 h-5" />
                   </button>
-                  <button onClick={() => deleteCategory(category.id)} className="text-gray-400 hover:text-red-600">
+                  <button onClick={() => deleteCategory(category.id)} className="text-red-600 hover:text-red-900">
                     <TrashIcon className="w-5 h-5" />
                   </button>
                 </div>

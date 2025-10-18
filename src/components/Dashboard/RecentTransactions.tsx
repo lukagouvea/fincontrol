@@ -1,15 +1,17 @@
 import React from 'react';
 import { Transaction, Category } from '../../context/FinanceContext';
+import { formatUTCToDDMMAAAA } from '../../utils/dateUtils';
+
 type RecentTransactionsProps = {
   transactions: Transaction[];
   categories: Category[];
+  date: Date;
 };
 export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   transactions,
-  categories
+  categories,
+  date
 }) => {
-  // Ordenar transações por data (mais recentes primeiro)
-  const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10); // Mostrar apenas as 10 mais recentes
   // Formatar valor para exibição
   const formatValue = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -17,11 +19,32 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       currency: 'BRL'
     }).format(value);
   };
-  // Formatar data para exibição
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR');
-  };
+
+  // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
+  const anoAtual = date.getFullYear(); // Ex: 2025
+  const mesAtual = date.getMonth() + 1; // Ex: Para Outubro, retorna 10
+
+
+
+  const filteredTransactions = transactions.filter(t => {
+    // Apenas para identificar despesas, se necessário. Se quiser TODAS as transações, remova esta linha.
+    if (!('isInstallment' in t || 'installmentInfo' in t)) {
+      return false;
+    }
+    
+    // 2. Crie um objeto Date da transação de forma segura para evitar bugs de fuso horário
+    const transactionDate = new Date(t.date);
+
+    // 3. Compare o mês e o ano da transação com o mês e o ano atuais
+    return transactionDate.getMonth() === mesAtual-1 && transactionDate.getFullYear() === anoAtual;
+  });
+
+  //const filteredTransactions = transactions.filter(t => {
+  //  return ('isInstallment' in t || 'installmentInfo' in t) && new Date(t.date) <= new Date();
+  //});
+  // Ordenar transações por data (mais recentes primeiro)
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10); // Mostrar apenas as 10 mais recentes
+
   // Verificar se é uma despesa ou receita
   const isExpense = (transaction: Transaction): boolean => {
     return 'isInstallment' in transaction;
@@ -57,7 +80,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
           const isExpenseTransaction = isExpense(transaction);
           return <tr key={transaction.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(transaction.date)}
+                    {formatUTCToDDMMAAAA(transaction.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {transaction.description}

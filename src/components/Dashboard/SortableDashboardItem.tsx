@@ -30,9 +30,17 @@ export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1 : 0
   };
+  const spanClasses = {
+    1: 'col-span-1',
+    2: 'col-span-2',
+    3: 'col-span-3',
+    4: 'col-span-4',
+    5: 'col-span-5', // Adicione quantos precisar
+    6: 'col-span-6',
+  };
   const containerClasses = `
     bg-white shadow rounded-lg
-    ${span === 2 ? 'col-span-2' : 'col-span-1'} 
+    ${spanClasses[span] || 'col-span-1'}
   `;
   return <div ref={setNodeRef} style={style} className={containerClasses}>
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">

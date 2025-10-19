@@ -14,6 +14,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { SortableDashboardItem } from '../components/Dashboard/SortableDashboardItem';
 import { formatDateToYYYYMMDD, parseDateInputToLocal, convertDateToUTCISOString } from '../utils/dateUtils';
 import { generateParcelas, isItemActiveInMonth } from '../utils/financeUtils';
+import { UpcomingBills } from '../components/Dashboard/UpcomingBills';
 
 const LOCAL_STORAGE_KEY = 'dashboardLayout';
 
@@ -24,12 +25,13 @@ type DashboardComponentConfig = {
 };
 
 const defaultDashboardLayout: DashboardComponentConfig[] = [
-  { id: 'weekly-calendar', title: 'Calendário Financeiro Semanal', span: 2 },
-  { id: 'category-pie', title: 'Gastos por Categoria', span: 1 },
-  { id: 'expenses-histogram', title: 'Distribuição de Gastos por Valor', span: 1 },
-  { id: 'weekly-spending', title: 'Gastos Semanais', span: 2 },
-  { id: 'monthly-histogram', title: 'Histórico de Saldo Mensal', span: 2 },
-  { id: 'recent-transactions', title: 'Transações Recentes', span: 2 },
+  { id: 'weekly-calendar', title: 'Calendário Financeiro Semanal', span: 3 },
+  { id: 'upcoming-bills', title: 'Contas a Pagar no Mês', span: 1 },
+  { id: 'category-pie', title: 'Gastos por Categoria', span: 2 },
+  { id: 'expenses-histogram', title: 'Distribuição de Gastos por Valor', span: 2 },
+  { id: 'weekly-spending', title: 'Gastos Semanais', span: 4 },
+  { id: 'monthly-histogram', title: 'Histórico de Saldo Mensal', span: 4 },
+  { id: 'recent-transactions', title: 'Transações Recentes', span: 4 },
 ];
 
 export const Dashboard: React.FC = () => {
@@ -170,6 +172,8 @@ export const Dashboard: React.FC = () => {
     switch (id) {
       case 'weekly-calendar':
         return <WeeklyFinancialCalendar onAddExpense={handleAddExpenseForDate} />;
+      case 'upcoming-bills':
+        return <UpcomingBills fixedExpenses={fixedExpenses} transactions={transactions} date={selectedDateObject} />;
       case 'category-pie':
         return <CategoryPieChart transactions={transactions} categories={categories} date={selectedDateObject} />;
       case 'expenses-histogram':
@@ -248,7 +252,7 @@ export const Dashboard: React.FC = () => {
       
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={dashboardComponents.map(item => item.id)} strategy={verticalListSortingStrategy}>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-4 gap-6">
             {dashboardComponents.map(config => (
               <SortableDashboardItem key={config.id} id={config.id} title={config.title} span={config.span}>
                 {getComponentById(config.id)}
@@ -265,7 +269,7 @@ export const Dashboard: React.FC = () => {
           setInitialDateForModal(undefined);
         }}
         onSubmit={handleExpenseSubmit}
-        initialData={{ date: initialDateForModal }}
+        initialDate={initialDateForModal}
       />
       <IncomeModal 
         isOpen={isIncomeModalOpen} 

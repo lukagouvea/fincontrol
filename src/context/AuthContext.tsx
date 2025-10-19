@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext, useMemo } from 'react';
 type User = {
   id: string;
   name: string;
@@ -75,12 +75,15 @@ export const AuthProvider: React.FC<{
     setIsAuthenticated(false);
     localStorage.removeItem('user');
   };
-  const value = {
-    currentUser,
-    isAuthenticated,
-    login,
-    signup,
-    logout
-  };
+  const value = useMemo(
+    () => ({
+      currentUser,
+      isAuthenticated,
+      login,
+      signup,
+      logout
+    }),
+    [currentUser, isAuthenticated, login, signup, logout]
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

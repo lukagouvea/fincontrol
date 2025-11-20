@@ -18,9 +18,10 @@ type IncomeModalProps = {
   onClose: () => void;
   onSubmit: (data: IncomeFormData) => void;
   initialData?: any;
+  initalDate?: string;
 };
 
-export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSubmit, initialData, initialDate }) => {
   const { categories } = useFinance();
 
   const [description, setDescription] = useState('');
@@ -48,7 +49,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSub
         setDescription('');
         setAmount(undefined);
         setNumericAmount(null);
-        setDate(getCurrentDateAsYYYYMMDD());
+        setDate(initialDate || getCurrentDateAsYYYYMMDD());
         setCategoryId(incomeCategories.length > 0 ? incomeCategories[0].id : '');
       }
     }

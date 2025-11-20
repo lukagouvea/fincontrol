@@ -1,6 +1,7 @@
 import React from 'react';
 import { BellIcon, UserIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { ThemeToggle } from './ThemeToggle.tsx'
 export const Header: React.FC = () => {
   const {
     currentUser
@@ -21,7 +22,7 @@ export const Header: React.FC = () => {
       </div>
       <div className="flex items-center space-x-4">
         <button className="p-2 text-gray-500 rounded-full hover:bg-gray-100">
-          <BellIcon className="w-6 h-6" />
+          <ThemeToggle/>
         </button>
         <div className="flex items-center space-x-2">
           <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">

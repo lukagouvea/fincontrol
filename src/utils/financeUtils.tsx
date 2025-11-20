@@ -32,7 +32,7 @@ export const generateParcelas = (valorTotal: number, numeroParcelas: number, des
         parcelas.push({
         description: description,
         amount: valorDaParcela/100,
-        date: installmentDate.toISOString().split('T')[0],
+        date: installmentDate.toISOString(),
         categoryId: categoryId,
         isInstallment: true,
         installmentInfo: {

@@ -20,9 +20,10 @@ type ExpenseModalProps = {
   onClose: () => void;
   onSubmit: (data: ExpenseFormData) => void;
   initialData?: any; 
+  initialDate?: string;
 };
 
-export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
+export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onSubmit, initialData, initialDate }) => {
   const { categories } = useFinance();
 
   const [description, setDescription] = useState('');
@@ -51,7 +52,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
         setDescription('');
         setAmount(undefined);
         setNumericAmount(null);
-        setDate(getCurrentDateAsYYYYMMDD());
+        setDate(initialDate || getCurrentDateAsYYYYMMDD());
         setCategoryId(expenseCategories.length > 0 ? expenseCategories[0].id : '');
         setIsInstallment(false);
         setInstallmentCount('2');

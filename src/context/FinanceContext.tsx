@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useMemo } from 'react';
 // Tipos
 export type Category = {
   id: string;
@@ -12,9 +12,9 @@ export type FixedIncome = {
   description: string;
   amount: number;
   day: number;
+  categoryId: string;
   startDate: string;
   endDate?: string;
-  categoryId: string;
 };
 export type VariableIncome = {
   id: string;
@@ -556,7 +556,7 @@ export const FinanceProvider: React.FC<{
     return variation ? variation.amount : defaultAmount;
   };
 
-  const value = {
+  const value = useMemo(() => ({
     categories,
     fixedIncomes,
     fixedExpenses,
@@ -580,6 +580,30 @@ export const FinanceProvider: React.FC<{
     deleteMonthlyVariation,
     getActualFixedItemAmount,
     addCompraParcelada
-  };
+  }), [
+    categories,
+    fixedIncomes,
+    fixedExpenses,
+    comprasParceladas,
+    transactions,
+    monthlyVariations,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addFixedIncome,
+    updateFixedIncome,
+    deleteFixedIncome,
+    addFixedExpense,
+    updateFixedExpense,
+    deleteFixedExpense,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    addMonthlyVariation,
+    updateMonthlyVariation,
+    deleteMonthlyVariation,
+    getActualFixedItemAmount,
+    addCompraParcelada
+  ]);
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 };

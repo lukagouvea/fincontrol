@@ -36,6 +36,7 @@ export const SignupPage: React.FC = () => {
       await signup(name, email, password);
       navigate('/');
     } catch (err) {
+      console.log(`Exception while doing something: ${err}`);
       setError('Erro ao criar conta. Tente novamente.');
     } finally {
       setLoading(false);

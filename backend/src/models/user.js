@@ -6,6 +6,12 @@ const findByEmail = async (email) => {
   return result.rows[0];
 };
 
+// Função adicionada para buscar usuário pelo ID
+const findById = async (id) => {
+  const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+  return result.rows[0];
+};
+
 const createUser = async (name, email, password) => {
   const password_hash = await bcrypt.hash(password, 8);
   const result = await db.query(
@@ -21,6 +27,7 @@ const comparePasswords = async (password, hashedPassword) => {
 
 module.exports = {
   findByEmail,
+  findById, // Exportando a nova função
   createUser,
   comparePasswords,
 };

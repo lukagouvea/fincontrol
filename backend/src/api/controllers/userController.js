@@ -20,7 +20,14 @@ exports.signup = async (req, res) => {
       expiresIn: '7d',
     });
 
-    res.status(201).json({ user, token });
+    // Criar um objeto de resposta limpo, sem o hash da senha e outros campos internos
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    };
+
+    res.status(201).json({ user: userResponse, token });
 
   } catch (error) {
     console.error('Erro no cadastro:', error);
@@ -50,10 +57,14 @@ exports.login = async (req, res) => {
       expiresIn: '7d',
     });
 
-    // Remove o hash da senha da resposta
-    delete user.password_hash;
+    // Criar um objeto de resposta limpo para o login também
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    };
 
-    res.status(200).json({ user, token });
+    res.status(200).json({ user: userResponse, token });
 
   } catch (error) {
     console.error('Erro no login:', error);

@@ -8,11 +8,11 @@ const VariableIncome = {
         id, 
         description, 
         amount, 
-        income_date as date, -- Renomeando para 'date' para corresponder ao frontend
+        date, -- A coluna já se chama 'date'
         category_id 
       FROM variable_incomes 
       WHERE user_id = $1 
-      ORDER BY income_date DESC; -- Ordenando pela coluna real
+      ORDER BY date DESC; -- Ordenando pela coluna real
     `;
     const { rows } = await db.query(query, [userId]);
     return rows;

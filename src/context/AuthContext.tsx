@@ -8,9 +8,12 @@ type User = {
   email: string;
 };
 
+// 1. Atualizar o tipo para incluir os novos valores
 type AuthContextType = {
   user: User | null;
   token: string | null;
+  isAuthenticated: boolean; 
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -29,6 +32,8 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  // 2. Adicionar estado de loading para evitar redirecionamentos prematuros
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -40,11 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(JSON.parse(storedUser));
       } catch (error) {
         console.error("Failed to parse user from localStorage", error);
-        setUser(null); // Clear invalid user data
+        // Limpa estado inválido
+        setUser(null);
         setToken(null);
         localStorage.clear();
       }
     }
+    // 3. Informa que a verificação inicial terminou
+    setLoading(false); 
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -80,15 +88,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
   }, []);
 
+  // 4. Derivar isAuthenticated a partir do token
+  const isAuthenticated = !!token;
+
   const value = useMemo(
     () => ({
       user,
       token,
+      isAuthenticated, // 5. Expor os novos valores
+      loading,
       login,
       signup,
       logout,
     }),
-    [user, token, login, signup, logout]
+    [user, token, isAuthenticated, loading, login, signup, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

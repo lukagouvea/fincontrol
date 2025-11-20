@@ -1,4 +1,13 @@
-import React, { useState, createContext, useContext, useMemo } from 'react';
+
+import React, { useState, createContext, useContext, useMemo, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+
+import * as categoryService from '../services/categoryService';
+import * as transactionService from '../services/transactionService';
+import * as fixedIncomeService from '../services/fixedIncomeService';
+import * as fixedExpenseService from '../services/fixedExpenseService';
+import * as monthlyVariationService from '../services/monthlyVariationService';
+
 // Tipos
 export type Category = {
   id: string;
@@ -22,6 +31,7 @@ export type VariableIncome = {
   amount: number;
   date: string;
   categoryId: string;
+  type: 'income';
 };
 export type FixedExpense = {
   id: string;
@@ -39,6 +49,7 @@ export type VariableExpense = {
   date: string;
   categoryId: string;
   isInstallment: boolean;
+  type: 'expense';
 };
 
 export type Parcela = {
@@ -49,6 +60,7 @@ export type Parcela = {
   date: string;
   categoryId: string;
   isInstallment: boolean;
+  type: 'expense';
   installmentInfo: {
     total: number;
     current: number;
@@ -76,278 +88,7 @@ export type MonthlyVariation = {
 };
 
 export type Transaction = VariableIncome | VariableExpense | Parcela;
-// Mock data inicial
-const initialCategories: Category[] = [{
-  id: '1',
-  name: 'Salário',
-  type: 'income',
-  color: '#4CAF50'
-}, {
-  id: '2',
-  name: 'Freelance',
-  type: 'income',
-  color: '#8BC34A'
-}, {
-  id: '3',
-  name: 'Moradia',
-  type: 'expense',
-  color: '#F44336'
-}, {
-  id: '4',
-  name: 'Alimentação',
-  type: 'expense',
-  color: '#FF9800'
-}, {
-  id: '5',
-  name: 'Transporte',
-  type: 'expense',
-  color: '#2196F3'
-}, {
-  id: '6',
-  name: 'Lazer',
-  type: 'expense',
-  color: '#9C27B0'
-}, {
-  id: '7',
-  name: 'Saúde',
-  type: 'expense',
-  color: '#E91E63'
-}, {
-  id: '8',
-  name: 'Educação',
-  type: 'expense',
-  color: '#009688'
-}];
-const initialFixedIncomes: FixedIncome[] = [{
-  id: '1',
-  description: 'Salário Empresa',
-  amount: 5000,
-  day: 5,
-  startDate: '2023-01-05T03:00:00.000Z',
-  categoryId: '1'
-}];
 
-const initialMonthlyVariations: MonthlyVariation[] = [];
-
-const initialCompraParcelada: CompraParcelada[] = [{
-  id: '1',
-  description: 'Celular',
-  amount: 3500,
-  date: '2025-10-05T03:00:00.000Z',
-  categoryId: '6',
-  numParcelas: 12,
-  parcelas: [
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.63,
-      date: '2025-10-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 1
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2025-11-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 2
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2025-12-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 3
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-01-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 4
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-02-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 5
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-03-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 6
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-04-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 7
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-05-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 8
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-06-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 9
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-07-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 10
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-08-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 11
-      }
-    },
-    {
-      idCompraParcelada: '1',
-      description: 'Celular',
-      amount: 291.67,
-      date: '2026-09-05T03:00:00.000Z',
-      categoryId: '6',
-      isInstallment: true,
-      installmentInfo: {
-        total: 12,
-        current: 12
-      }
-    },
-  ]
-}];
-
-const initialFixedExpenses: FixedExpense[] = [{
-  id: '1',
-  description: 'Aluguel',
-  amount: 1200,
-  day: 10,
-  categoryId: '3',
-  startDate: '2023-01-10T03:00:00.000Z'
-}, {
-  id: '2',
-  description: 'Internet',
-  amount: 100,
-  day: 15,
-  categoryId: '3',
-  startDate: '2023-01-15T03:00:00.000Z'
-}];
-
-const today = new Date();
-
-const generateRecentTransactions = () => {
-  const transactions: Transaction[] = [];
-  // Últimas 2 semanas de transações
-  for (let i = 13; i >= 0; i--) {
-    const date = new Date("2025-10-03T02:08:59.956Z");
-    date.setDate(today.getDate() - i);
-    // Gera a string UTC diretamente a partir do objeto Date local
-    const utcDateStr = date.toISOString();
-    
-    // Adicionar algumas despesas variáveis
-    if (i % 2 === 0) {
-      transactions.push({
-        id: `exp-${i}`,
-        description: i % 4 === 0 ? 'Supermercado' : i % 3 === 0 ? 'Combustível' : 'Restaurante',
-        amount: Math.floor(Math.random() * 200) + 50,
-        date: utcDateStr,
-        categoryId: i % 4 === 0 ? '4' : i % 3 === 0 ? '5' : '6',
-        isInstallment: false
-      });
-    }
-    // Adicionar uma renda variável
-    if (i === 7) {
-      transactions.push({
-        id: `inc-${i}`,
-        description: 'Projeto freelance',
-        amount: 1200,
-        date: utcDateStr,
-        categoryId: '2'
-      });
-    }
-  }
-
-  // Adicionar as parcelas da compra parcelada ao array de transações
-  initialCompraParcelada[0].parcelas.forEach(parcela =>
-    transactions.push(
-      {
-        ...parcela,
-        id: `${Date.now()}-${Math.random()}`,
-      }
-    )
-  );
-
-  return transactions;
-};
-const initialTransactions = generateRecentTransactions();
-// Contexto
 type FinanceContextType = {
   categories: Category[];
   fixedIncomes: FixedIncome[];
@@ -355,26 +96,29 @@ type FinanceContextType = {
   comprasParceladas: CompraParcelada[];
   transactions: Transaction[];
   monthlyVariations: MonthlyVariation[];
-  addCategory: (category: Omit<Category, 'id'>) => void;
-  updateCategory: (id: string, category: Partial<Omit<Category, 'id'>>) => void;
-  deleteCategory: (id: string) => void;
-  addFixedIncome: (income: Omit<FixedIncome, 'id'>) => void;
-  updateFixedIncome: (id: string, income: Partial<Omit<FixedIncome, 'id'>>) => void;
-  deleteFixedIncome: (id: string) => void;
-  addFixedExpense: (expense: Omit<FixedExpense, 'id'>) => void;
-  updateFixedExpense: (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => void;
-  deleteFixedExpense: (id: string) => void;
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
-  updateTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => void;
-  deleteTransaction: (id: string) => void;
-  // Novas funções para gerenciar variações mensais
-  addMonthlyVariation: (variation: Omit<MonthlyVariation, 'id'>) => void;
-  updateMonthlyVariation: (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => void;
-  deleteMonthlyVariation: (id: string) => void;
+  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
+  updateCategory: (id: string, category: Partial<Omit<Category, 'id'>>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
+  addFixedIncome: (income: Omit<FixedIncome, 'id'>) => Promise<void>;
+  updateFixedIncome: (id: string, income: Partial<Omit<FixedIncome, 'id'>>) => Promise<void>;
+  deleteFixedIncome: (id: string) => Promise<void>;
+  addFixedExpense: (expense: Omit<FixedExpense, 'id'>) => Promise<void>;
+  updateFixedExpense: (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => Promise<void>;
+  deleteFixedExpense: (id: string) => Promise<void>;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  updateTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  addMonthlyVariation: (variation: Omit<MonthlyVariation, 'id'>) => Promise<void>;
+  updateMonthlyVariation: (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => Promise<void>;
+  deleteMonthlyVariation: (id: string) => Promise<void>;
   getActualFixedItemAmount: (itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number) => number;
-  addCompraParcelada: (compra: Omit<CompraParcelada, 'id'>) => void;
+  addCompraParcelada: (compra: Omit<CompraParcelada, 'id'>) => Promise<void>;
+  loading: boolean;
+  error: string | null;
 };
+
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
+
 export const useFinance = () => {
   const context = useContext(FinanceContext);
   if (!context) {
@@ -382,228 +126,247 @@ export const useFinance = () => {
   }
   return context;
 };
-export const FinanceProvider: React.FC<{
-  children: React.ReactNode;
-}> = ({
-  children
-}) => {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [comprasParceladas, setComprasParceladas] = useState<CompraParcelada[]>(initialCompraParcelada);
-  const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>(initialFixedIncomes);
-  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>(initialFixedExpenses);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-    const [monthlyVariations, setMonthlyVariations] = useState<MonthlyVariation[]>(initialMonthlyVariations);
 
+export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token } = useAuth();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
+  const [comprasParceladas, setComprasParceladas] = useState<CompraParcelada[]>([]);
+  const [monthlyVariations, setMonthlyVariations] = useState<MonthlyVariation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [categoriesData, transactionsData, fixedIncomesData, fixedExpensesData, monthlyVariationsData] = await Promise.all([
+          categoryService.getCategories(),
+          transactionService.getTransactions(),
+          fixedIncomeService.getFixedIncomes(),
+          fixedExpenseService.getFixedExpenses(),
+          monthlyVariationService.getMonthlyVariations(),
+        ]);
+
+        setCategories(categoriesData);
+        setTransactions(transactionsData);
+        setFixedIncomes(fixedIncomesData);
+        setFixedExpenses(fixedExpensesData);
+        setMonthlyVariations(monthlyVariationsData);
+
+      } catch (err) {
+        setError('Falha ao carregar os dados financeiros.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [token]);
+
+  const addCategory = useCallback(async (category: Omit<Category, 'id'>) => {
+    try {
+      const newCategory = await categoryService.addCategory(category);
+      setCategories(prev => [...prev, newCategory]);
+    } catch (err) {
+      console.error("Erro ao adicionar categoria:", err);
+      throw err;
+    }
+  }, []);
+
+  const updateCategory = useCallback(async (id: string, category: Partial<Omit<Category, 'id'>>) => {
+    try {
+      const updatedCategory = await categoryService.updateCategory(id, category);
+      setCategories(prev => prev.map(cat => cat.id === id ? updatedCategory : cat));
+    } catch (err) {
+      console.error("Erro ao atualizar categoria:", err);
+      throw err;
+    }
+  }, []);
+
+  const deleteCategory = useCallback(async (id: string) => {
+    try {
+      await categoryService.deleteCategory(id);
+      setCategories(prev => prev.filter(cat => cat.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar categoria:", err);
+      throw err;
+    }
+  }, []);
+
+  const addTransaction = useCallback(async (transaction: Omit<Transaction, 'id'>) => {
+    try {
+      const newTransaction = await transactionService.addTransaction(transaction);
+      setTransactions(prev => [...prev, newTransaction]);
+    } catch (err) {
+      console.error("Erro ao adicionar transação:", err);
+      throw err;
+    }
+  }, []);
   
-  // Funções para gerenciar categorias
-  const addCategory = (category: Omit<Category, 'id'>) => {
-    const newCategory = {
-      ...category,
-      id: Date.now().toString()
-    };
-    setCategories([...categories, newCategory]);
-  };
-  const updateCategory = (id: string, category: Partial<Omit<Category, 'id'>>) => {
-    setCategories(categories.map(cat => cat.id === id ? {
-      ...cat,
-      ...category
-    } : cat));
-  };
-  const deleteCategory = (id: string) => {
-    setCategories(categories.filter(cat => cat.id !== id));
-  };
-
-  /**
-   * Pega a data atual na localidade do usuário e a formata para a string "YYYY-MM-DD".
-   * @returns {string} A data formatada.
-   */
-  function getLocalDateString() {
-    const date = new Date();
-
-    const year = date.getFullYear();
-
-    // getMonth() é 0-indexado (0 = Janeiro), então somamos 1.
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  }
-
-
-  // Funções para gerenciar rendas fixas
-  const addFixedIncome = (income: Omit<FixedIncome, 'id'>) => {
-    const newIncome = {
-      ...income,
-      id: Date.now().toString()
-    };
-    setFixedIncomes([...fixedIncomes, newIncome]);
-  };
-  const updateFixedIncome = (id: string, income: Partial<Omit<FixedIncome, 'id'>>) => {
-    setFixedIncomes(fixedIncomes.map(inc => inc.id === id ? {
-      ...inc,
-      ...income
-    } : inc));
-  };
-  const deleteFixedIncome = (id: string) => {
-    // 1. Pega a data de hoje e formata para 'YYYY-MM-DD'
-    const today = new Date().toISOString();
-
-    // 2. Usa 'map' para encontrar e atualizar o item
-    setFixedIncomes(fixedIncomes.map(inc => 
-        inc.id === id 
-        ? { ...inc, endDate: today } // Se encontrar, atualiza o endDate
-        : inc // Senão, mantém o item como está
-    ));
-  };
-  // Funções para gerenciar despesas fixas
-  const addFixedExpense = (expense: Omit<FixedExpense, 'id'>) => {
-    const newExpense = {
-      ...expense,
-      id: Date.now().toString()
-    };
-    setFixedExpenses([...fixedExpenses, newExpense]);
-  };
-  const updateFixedExpense = (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => {
-    setFixedExpenses(fixedExpenses.map(exp => exp.id === id ? {
-      ...exp,
-      ...expense
-    } : exp));
-  };
-  const deleteFixedExpense = (id: string) => {
-    const today = new Date().toISOString();
-
-    setFixedExpenses(fixedExpenses.map(exp => 
-        exp.id === id 
-        ? { ...exp, endDate: today } 
-        : exp
-    ));
-  };
-  // Funções para gerenciar transações
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction = {
-      ...transaction,
-      id: Date.now().toString()
-    };
-    setTransactions([...transactions, newTransaction]);
-  };
-  const updateTransaction = (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => {
-    setTransactions(transactions.map(trans => trans.id === id ? {
-      ...trans,
-      ...transaction
-    } : trans));
-  };
-  const deleteTransaction = (id: string) => {
-    const filteredTransaction = transactions.filter(t => t.id == id)
-    if (filteredTransaction.length > 0 && 'idCompraParcelada' in filteredTransaction[0]) {
-      const idCompraParcelada = filteredTransaction[0].idCompraParcelada;
-      deleteCompraParcelada(idCompraParcelada);
-      return
+  const updateTransaction = useCallback(async (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => {
+    try {
+      const updatedTransaction = await transactionService.updateTransaction(id, transaction);
+      setTransactions(prev => prev.map(trans => trans.id === id ? updatedTransaction : trans));
+    } catch (err) {
+      console.error("Erro ao atualizar transação:", err);
+      throw err;
     }
-    setTransactions(transactions.filter(trans => trans.id !== id));
-  };
+  }, []);
 
-  const addCompraParcelada = (compra: Omit<CompraParcelada, 'id'>) => {
-    const compraId = Date.now().toString();
-    const newCompra = {
-      ...compra,
-      id: compraId
-    };
-    // 1. Crie um array com todas as novas parcelas
-    const novasParcelasParaAdicionar = newCompra.parcelas.map(parcela => ({
-      ...parcela, // Mantém os dados da parcela
-      idCompraParcelada: compraId,
-      id: `${Date.now()}-${Math.random()}` // Gera um ID único para cada
-    }));
-
-    // 2. Chame o setTransactions UMA VEZ com todas as novas parcelas
-    setTransactions(prevTransactions => [...prevTransactions, ...novasParcelasParaAdicionar]);
-
-    setComprasParceladas([...comprasParceladas, newCompra]);
-
-  }
-  // Funções para gerenciar variações mensais
-  const addMonthlyVariation = (variation: Omit<MonthlyVariation, 'id'>) => {
-    // Verificar se já existe uma variação para este item, mês e ano
-    const existingVariation = monthlyVariations.find(v => v.fixedItemId === variation.fixedItemId && v.type === variation.type && v.year === variation.year && v.month === variation.month);
-    if (existingVariation) {
-      // Atualizar a variação existente em vez de criar uma nova
-      updateMonthlyVariation(existingVariation.id, variation);
-      return;
+  const deleteTransaction = useCallback(async (id: string) => {
+    try {
+      await transactionService.deleteTransaction(id);
+      setTransactions(prev => prev.filter(trans => trans.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar transação:", err);
+      throw err;
     }
-    const newVariation = {
-      ...variation,
-      id: Date.now().toString()
-    };
-    setMonthlyVariations([...monthlyVariations, newVariation]);
-  };
-  const updateMonthlyVariation = (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => {
-    setMonthlyVariations(monthlyVariations.map(var_ => var_.id === id ? {
-      ...var_,
-      ...variation
-    } : var_));
-  };
-  const deleteMonthlyVariation = (id: string) => {
-    setMonthlyVariations(monthlyVariations.filter(var_ => var_.id !== id));
-  };
+  }, []);
 
-  const deleteCompraParcelada = (id: string) => {
-    setTransactions(transactions.filter(t => t.idCompraParcelada !== id));
-    setComprasParceladas(comprasParceladas.filter(t => t.id !== id))
-  }
-  const getActualFixedItemAmount = (itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number): number => {
-    const variation = monthlyVariations.find(v => v.fixedItemId === itemId && v.type === type && v.year === year && v.month === month);
-    return variation ? variation.amount : defaultAmount;
-  };
+  const addCompraParcelada = useCallback(async (compra: Omit<CompraParcelada, 'id'>) => {
+    try {
+      const newCompra = await transactionService.addCompraParcelada(compra);
+      setComprasParceladas(prev => [...prev, newCompra]);
+      // Also update transactions with the new installments
+      setTransactions(prev => [...prev, ...newCompra.parcelas]);
+    } catch (err) {
+      console.error("Erro ao adicionar compra parcelada:", err);
+      throw err;
+    }
+  }, []);
+
+  const addFixedIncome = useCallback(async (income: Omit<FixedIncome, 'id'>) => {
+    try {
+      const newFixedIncome = await fixedIncomeService.addFixedIncome(income);
+      setFixedIncomes(prev => [...prev, newFixedIncome]);
+    } catch (err) {
+      console.error("Erro ao adicionar renda fixa:", err);
+      throw err;
+    }
+  }, []);
+
+  const updateFixedIncome = useCallback(async (id: string, income: Partial<Omit<FixedIncome, 'id'>>) => {
+    try {
+      const updatedFixedIncome = await fixedIncomeService.updateFixedIncome(id, income);
+      setFixedIncomes(prev => prev.map(inc => inc.id === id ? updatedFixedIncome : inc));
+    } catch (err) {
+      console.error("Erro ao atualizar renda fixa:", err);
+      throw err;
+    }
+  }, []);
+
+  const deleteFixedIncome = useCallback(async (id: string) => {
+    try {
+      await fixedIncomeService.deleteFixedIncome(id);
+      setFixedIncomes(prev => prev.filter(inc => inc.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar renda fixa:", err);
+      throw err;
+    }
+  }, []);
+
+  const addFixedExpense = useCallback(async (expense: Omit<FixedExpense, 'id'>) => {
+    try {
+      const newFixedExpense = await fixedExpenseService.addFixedExpense(expense);
+      setFixedExpenses(prev => [...prev, newFixedExpense]);
+    } catch (err) {
+      console.error("Erro ao adicionar despesa fixa:", err);
+      throw err;
+    }
+  }, []);
+
+  const updateFixedExpense = useCallback(async (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => {
+    try {
+      const updatedFixedExpense = await fixedExpenseService.updateFixedExpense(id, expense);
+      setFixedExpenses(prev => prev.map(exp => exp.id === id ? updatedFixedExpense : exp));
+    } catch (err) {
+      console.error("Erro ao atualizar despesa fixa:", err);
+      throw err;
+    }
+  }, []);
+
+  const deleteFixedExpense = useCallback(async (id: string) => {
+    try {
+      await fixedExpenseService.deleteFixedExpense(id);
+      setFixedExpenses(prev => prev.filter(exp => exp.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar despesa fixa:", err);
+      throw err;
+    }
+  }, []);
+
+  const addMonthlyVariation = useCallback(async (variation: Omit<MonthlyVariation, 'id'>) => {
+    try {
+      const newVariation = await monthlyVariationService.addMonthlyVariation(variation);
+      setMonthlyVariations(prev => [...prev, newVariation]);
+    } catch (err) {
+      console.error("Erro ao adicionar variação mensal:", err);
+      throw err;
+    }
+  }, []);
+
+  const updateMonthlyVariation = useCallback(async (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => {
+    try {
+      const updatedVariation = await monthlyVariationService.updateMonthlyVariation(id, variation);
+      setMonthlyVariations(prev => prev.map(var_ => var_.id === id ? updatedVariation : var_));
+    } catch (err) {
+      console.error("Erro ao atualizar variação mensal:", err);
+      throw err;
+    }
+  }, []);
+
+  const deleteMonthlyVariation = useCallback(async (id: string) => {
+    try {
+      await monthlyVariationService.deleteMonthlyVariation(id);
+      setMonthlyVariations(prev => prev.filter(var_ => var_.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar variação mensal:", err);
+      throw err;
+    }
+  }, []);
+
+  const getActualFixedItemAmount = useCallback((itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number): number => {
+      const variation = monthlyVariations.find(v => v.fixedItemId === itemId && v.type === type && v.year === year && v.month === month);
+      return variation ? variation.amount : defaultAmount;
+  }, [monthlyVariations]);
 
   const value = useMemo(() => ({
     categories,
+    transactions,
     fixedIncomes,
     fixedExpenses,
     comprasParceladas,
-    transactions,
     monthlyVariations,
     addCategory,
     updateCategory,
     deleteCategory,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    addCompraParcelada,
     addFixedIncome,
     updateFixedIncome,
     deleteFixedIncome,
     addFixedExpense,
     updateFixedExpense,
     deleteFixedExpense,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
     addMonthlyVariation,
     updateMonthlyVariation,
     deleteMonthlyVariation,
     getActualFixedItemAmount,
-    addCompraParcelada
-  }), [
-    categories,
-    fixedIncomes,
-    fixedExpenses,
-    comprasParceladas,
-    transactions,
-    monthlyVariations,
-    addCategory,
-    updateCategory,
-    deleteCategory,
-    addFixedIncome,
-    updateFixedIncome,
-    deleteFixedIncome,
-    addFixedExpense,
-    updateFixedExpense,
-    deleteFixedExpense,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addMonthlyVariation,
-    updateMonthlyVariation,
-    deleteMonthlyVariation,
-    getActualFixedItemAmount,
-    addCompraParcelada
-  ]);
+    loading,
+    error,
+  }), [categories, transactions, fixedIncomes, fixedExpenses, comprasParceladas, monthlyVariations, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addCompraParcelada, addFixedIncome, updateFixedIncome, deleteFixedIncome, addFixedExpense, updateFixedExpense, deleteFixedExpense, addMonthlyVariation, updateMonthlyVariation, deleteMonthlyVariation, getActualFixedItemAmount, loading, error]);
+
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 };

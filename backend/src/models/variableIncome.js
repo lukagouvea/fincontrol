@@ -8,11 +8,11 @@ const VariableIncome = {
         id, 
         description, 
         amount, 
-        transaction_date as date, -- Correção: Busca "transaction_date" e renomeia para "date"
+        reception_date as date, -- Correção: Usa a coluna correta "reception_date"
         category_id
       FROM variable_incomes
       WHERE user_id = $1
-      ORDER BY transaction_date DESC; -- Correção: Ordena pela coluna real
+      ORDER BY reception_date DESC; -- Correção: Ordena pela coluna correta
     `;
     const { rows } = await db.query(query, [userId]);
     return rows;

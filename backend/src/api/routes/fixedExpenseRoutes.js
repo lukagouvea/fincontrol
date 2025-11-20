@@ -7,9 +7,11 @@ const routes = new Router();
 // Todas as rotas de despesas fixas exigem autenticação
 routes.use(authMiddleware);
 
-// Define a rota GET /api/fixed-expenses
+// Rota para buscar todas as despesas fixas (GET)
 routes.get('/', fixedExpenseController.getAllFixedExpenses);
 
-// Outras rotas como POST, PUT, DELETE serão adicionadas aqui
+// Rota para criar uma nova despesa fixa (POST)
+routes.post('/', fixedExpenseController.createFixedExpense);
+
 
 module.exports = routes;

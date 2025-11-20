@@ -1,39 +1,59 @@
 const db = require('../config/db');
 
 const FixedIncome = {
-  // Busca todas as rendas fixas de um usuário
+  // Busca todas as rendas fixas e retorna em camelCase.
   getAllByUserId: async (userId) => {
     const query = `
       SELECT 
-        id, 
-        description, 
-        amount, 
-        recurrence_day as day, -- Correção: Busca "recurrence_day" e renomeia para "day"
-        category_id, 
-        start_date, 
-        end_date
+        id,
+        description,
+        amount,
+        category_id AS \"categoryId\",
+        is_active AS \"isActive\",
+        start_date AS \"startDate\",
+        end_date AS \"endDate\",
+        recurrence_day AS day
       FROM fixed_incomes
       WHERE user_id = $1
-      ORDER BY recurrence_day; -- Correção: Ordena pela coluna real
+      ORDER BY day;
     `;
     const { rows } = await db.query(query, [userId]);
     return rows;
   },
 
-  // Cria uma nova renda fixa
+  // Recebe dados em camelCase, traduz para snake_case para o DB.
   create: async (userId, incomeData) => {
-    const { description, amount, day, category_id, start_date, end_date } = incomeData;
+    // Pega os dados em camelCase do corpo da requisição
+    const {
+      description, 
+      amount, 
+      categoryId, 
+      isActive = true, 
+      startDate, 
+      endDate, 
+      day 
+    } = incomeData;
+
     const query = `
-      INSERT INTO fixed_incomes (user_id, description, amount, recurrence_day, category_id, start_date, end_date)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, description, amount, recurrence_day as day, category_id, start_date, end_date; -- Correção: Insere em "recurrence_day"
+      INSERT INTO fixed_incomes (user_id, description, amount, category_id, is_active, start_date, end_date, recurrence_day)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING 
+        id,
+        description,
+        amount,
+        category_id AS \"categoryId\",
+        is_active AS \"isActive\",
+        start_date AS \"startDate\",
+        end_date AS \"endDate\",
+        recurrence_day AS day;
     `;
-    const values = [userId, description, amount, day, category_id, start_date, end_date];
+    
+    // Usa as variáveis camelCase para montar a query com colunas snake_case
+    const values = [userId, description, amount, categoryId, isActive, startDate, endDate, day];
     const { rows } = await db.query(query, values);
     return rows[0];
   },
 
-  // Adicionar outras funções de CRUD (update, delete) aqui no futuro
 };
 
 module.exports = FixedIncome;

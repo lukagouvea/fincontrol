@@ -6,7 +6,10 @@ const routes = new Router();
 
 routes.use(authMiddleware);
 
-// Define a rota GET /api/variable-incomes
+// Rota para buscar todas as rendas variáveis (GET)
 routes.get('/', variableIncomeController.getAllVariableIncomes);
+
+// Rota para criar uma nova renda variável (POST)
+routes.post('/', variableIncomeController.createVariableIncome);
 
 module.exports = routes;

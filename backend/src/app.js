@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const camelToSnakeMiddleware = require('./api/middlewares/camelToSnake');
 const userRoutes = require('./api/routes/userRoutes');
 const categoryRoutes = require('./api/routes/categoryRoutes');
 const fixedIncomeRoutes = require('./api/routes/fixedIncomeRoutes');
@@ -20,6 +21,7 @@ class App {
   middlewares() {
     this.server.use(express.json());
     this.server.use(cors());
+    this.server.use(camelToSnakeMiddleware); // Converte camelCase para snake_case
   }
 
   routes() {

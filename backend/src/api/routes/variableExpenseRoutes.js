@@ -6,7 +6,10 @@ const routes = new Router();
 
 routes.use(authMiddleware);
 
-// Define a rota GET /api/variable-expenses
+// Rota para buscar todas as despesas variáveis (GET)
 routes.get('/', variableExpenseController.getAllVariableExpenses);
+
+// Rota para criar uma nova despesa variável (POST)
+routes.post('/', variableExpenseController.createVariableExpense);
 
 module.exports = routes;

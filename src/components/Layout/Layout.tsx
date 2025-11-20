@@ -10,7 +10,7 @@ export const Layout: React.FC = () => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  return <div className="flex h-screen bg-gray-100">
+  return <div className="flex h-screen bg-gray-100 dark:bg-gray-800">
       <Sidebar />
       <div className="flex flex-col flex-1">
         <Header />

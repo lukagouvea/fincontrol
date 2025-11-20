@@ -25,12 +25,12 @@ type DashboardComponentConfig = {
 };
 
 const defaultDashboardLayout: DashboardComponentConfig[] = [
-  { id: 'weekly-calendar', title: 'Calendário Financeiro Semanal', span: 3 },
-  { id: 'upcoming-bills', title: 'Contas a Pagar no Mês', span: 1 },
-  { id: 'category-pie', title: 'Gastos por Categoria', span: 2 },
+  { id: 'weekly-calendar', title: 'Calendário Financeiro Semanal', span: 4 },
+  { id: 'upcoming-bills', title: 'Contas do Mês', span: 1 },
+  { id: 'category-pie', title: 'Gastos por Categoria', span: 1 },
   { id: 'expenses-histogram', title: 'Distribuição de Gastos por Valor', span: 2 },
-  { id: 'weekly-spending', title: 'Gastos Semanais', span: 4 },
-  { id: 'monthly-histogram', title: 'Histórico de Saldo Mensal', span: 4 },
+  { id: 'weekly-spending', title: 'Gastos nos Últimos 7 dias', span: 2 },
+  { id: 'monthly-histogram', title: 'Histórico de Saldo Mensal', span: 2 },
   { id: 'recent-transactions', title: 'Transações Recentes', span: 4 },
 ];
 

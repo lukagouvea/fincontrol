@@ -88,7 +88,7 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   };
 
   // Agrupar despesas por faixa de valor
-  const data = generateHistogramData(expenses, 20);
+  const data = generateHistogramData(expenses, 8);
   return <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{

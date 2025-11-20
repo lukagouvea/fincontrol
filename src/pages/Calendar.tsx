@@ -442,7 +442,7 @@ export const Calendar: React.FC = () => {
           </div>
         </div>}
       {/* Modals */}
-      <ExpenseModal isOpen={isExpenseModalOpen} onClose={() => setIsExpenseModalOpen(false)} onSubmit={handleExpenseSubmit} initialData={selectedDay ? {date : formatDateToYYYYMMDD(selectedDay)} : undefined} />
-      <IncomeModal isOpen={isIncomeModalOpen} onClose={() => setIsIncomeModalOpen(false)} onSubmit={handleIncomeSubmit} initialData={selectedDay ? {date : formatDateToYYYYMMDD(selectedDay)} : undefined} />
+      <ExpenseModal isOpen={isExpenseModalOpen} onClose={() => setIsExpenseModalOpen(false)} onSubmit={handleExpenseSubmit} initialDate={selectedDay ? formatDateToYYYYMMDD(selectedDay) : undefined} />
+      <IncomeModal isOpen={isIncomeModalOpen} onClose={() => setIsIncomeModalOpen(false)} onSubmit={handleIncomeSubmit} initialDate={selectedDay ? formatDateToYYYYMMDD(selectedDay) : undefined} />
     </div>;
 };

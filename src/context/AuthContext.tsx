@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, createContext, useContext, useMemo } from 'react';
+import React, { useEffect, useState, createContext, useContext, useMemo, useCallback } from 'react';
 import { login as loginService, signup as signupService } from '../services/authService';
 
 type User = {
@@ -36,11 +36,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        setUser(null); // Clear invalid user data
+        setToken(null);
+        localStorage.clear();
+      }
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const { user, token } = await loginService({ email, password });
       setUser(user);
@@ -48,11 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
     } catch (error) {
+      console.error('Falha no login', error);
       throw new Error('Falha no login');
     }
-  };
+  }, []);
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = useCallback(async (name: string, email: string, password: string) => {
     try {
       const { user, token } = await signupService({ name, email, password });
       setUser(user);
@@ -60,16 +68,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
     } catch (error) {
+      console.error('Falha no cadastro', error);
       throw new Error('Falha no cadastro');
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -79,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signup,
       logout,
     }),
-    [user, token]
+    [user, token, login, signup, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

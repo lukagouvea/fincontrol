@@ -8,13 +8,13 @@ const FixedIncome = {
         id, 
         description, 
         amount, 
-        day, 
+        recurrence_day as day, -- Correção: Busca "recurrence_day" e renomeia para "day"
         category_id, 
         start_date, 
-        end_date 
+        end_date
       FROM fixed_incomes
       WHERE user_id = $1
-      ORDER BY day;
+      ORDER BY recurrence_day; -- Correção: Ordena pela coluna real
     `;
     const { rows } = await db.query(query, [userId]);
     return rows;
@@ -24,9 +24,9 @@ const FixedIncome = {
   create: async (userId, incomeData) => {
     const { description, amount, day, category_id, start_date, end_date } = incomeData;
     const query = `
-      INSERT INTO fixed_incomes (user_id, description, amount, day, category_id, start_date, end_date)
+      INSERT INTO fixed_incomes (user_id, description, amount, recurrence_day, category_id, start_date, end_date)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *; -- Retorna a linha recém-criada
+      RETURNING id, description, amount, recurrence_day as day, category_id, start_date, end_date; -- Correção: Insere em "recurrence_day"
     `;
     const values = [userId, description, amount, day, category_id, start_date, end_date];
     const { rows } = await db.query(query, values);

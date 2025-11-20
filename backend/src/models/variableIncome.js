@@ -8,17 +8,17 @@ const VariableIncome = {
         id, 
         description, 
         amount, 
-        date, -- A coluna já se chama 'date'
-        category_id 
-      FROM variable_incomes 
-      WHERE user_id = $1 
-      ORDER BY date DESC; -- Ordenando pela coluna real
+        transaction_date as date, -- Correção: Busca "transaction_date" e renomeia para "date"
+        category_id
+      FROM variable_incomes
+      WHERE user_id = $1
+      ORDER BY transaction_date DESC; -- Correção: Ordena pela coluna real
     `;
     const { rows } = await db.query(query, [userId]);
     return rows;
   },
 
-  // Outras funções de CRUD podem ser adicionadas aqui
+  // Adicionar outras funções de CRUD (create, update, delete) aqui no futuro
 };
 
 module.exports = VariableIncome;

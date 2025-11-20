@@ -5,30 +5,30 @@ const MonthlyVariation = {
     // Busca variações de renda
     const incomeQuery = `
       SELECT 
-        id, 
-        fixed_income_id as fixed_item_id, 
+        iv.id, 
+        iv.fixed_income_id as fixed_item_id, 
         'income' as type, 
-        year, 
-        month, 
-        amount,
-        user_id
-      FROM income_variations
-      WHERE user_id = $1;
+        iv.year, 
+        iv.month, 
+        iv.amount
+      FROM income_variations iv
+      JOIN fixed_incomes fi ON iv.fixed_income_id = fi.id
+      WHERE fi.user_id = $1;
     `;
     const incomePromise = db.query(incomeQuery, [userId]);
 
     // Busca variações de despesa
     const expenseQuery = `
       SELECT 
-        id, 
-        fixed_expense_id as fixed_item_id, 
+        ev.id, 
+        ev.fixed_expense_id as fixed_item_id, 
         'expense' as type, 
-        year, 
-        month, 
-        amount,
-        user_id
-      FROM expense_variations
-      WHERE user_id = $1;
+        ev.year, 
+        ev.month, 
+        ev.amount
+      FROM expense_variations ev
+      JOIN fixed_expenses fe ON ev.fixed_expense_id = fe.id
+      WHERE fe.user_id = $1;
     `;
     const expensePromise = db.query(expenseQuery, [userId]);
 

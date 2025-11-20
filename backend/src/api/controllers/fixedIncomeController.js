@@ -4,7 +4,7 @@ const fixedIncomeController = {
   // Handler para buscar todas as rendas fixas
   getAllFixedIncomes: async (req, res) => {
     try {
-      const userId = req.user.id; // O ID do usuário vem do middleware de autenticação
+      const userId = req.user.id;
       const fixedIncomes = await FixedIncome.getAllByUserId(userId);
       res.status(200).json(fixedIncomes);
     } catch (error) {
@@ -13,7 +13,20 @@ const fixedIncomeController = {
     }
   },
 
-  // Outros handlers (create, update, delete) podem ser adicionados aqui
+  // Handler para criar uma nova renda fixa
+  createFixedIncome: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const incomeData = req.body;
+      const newFixedIncome = await FixedIncome.create(userId, incomeData);
+      res.status(201).json(newFixedIncome);
+    } catch (error) {
+      console.error('Erro ao criar renda fixa:', error);
+      res.status(500).json({ error: 'Ocorreu um erro interno ao criar a renda fixa.' });
+    }
+  },
+
+  // Outros handlers (update, delete) podem ser adicionados aqui
 };
 
 module.exports = fixedIncomeController;

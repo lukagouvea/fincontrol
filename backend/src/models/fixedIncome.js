@@ -8,20 +8,32 @@ const FixedIncome = {
         id, 
         description, 
         amount, 
-        recurrence_day as day, -- Renomeando para 'day' para corresponder ao frontend
+        day, 
         category_id, 
         start_date, 
-        end_date, 
-        is_active
+        end_date 
       FROM fixed_incomes
       WHERE user_id = $1
-      ORDER BY recurrence_day; -- Ordenando pela coluna real
+      ORDER BY day;
     `;
     const { rows } = await db.query(query, [userId]);
     return rows;
   },
 
-  // Adicionar outras funções de CRUD (create, update, delete) aqui no futuro
+  // Cria uma nova renda fixa
+  create: async (userId, incomeData) => {
+    const { description, amount, day, category_id, start_date, end_date } = incomeData;
+    const query = `
+      INSERT INTO fixed_incomes (user_id, description, amount, day, category_id, start_date, end_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *; -- Retorna a linha recém-criada
+    `;
+    const values = [userId, description, amount, day, category_id, start_date, end_date];
+    const { rows } = await db.query(query, values);
+    return rows[0];
+  },
+
+  // Adicionar outras funções de CRUD (update, delete) aqui no futuro
 };
 
 module.exports = FixedIncome;

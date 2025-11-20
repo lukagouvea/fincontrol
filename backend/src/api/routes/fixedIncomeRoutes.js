@@ -7,9 +7,12 @@ const routes = new Router();
 // Todas as rotas de rendas fixas exigem autenticação
 routes.use(authMiddleware);
 
-// Define a rota GET /api/fixed-incomes
+// Rota para buscar todas as rendas fixas (GET)
 routes.get('/', fixedIncomeController.getAllFixedIncomes);
 
-// Outras rotas como POST, PUT, DELETE serão adicionadas aqui
+// Rota para criar uma nova renda fixa (POST)
+routes.post('/', fixedIncomeController.createFixedIncome);
+
+// Outras rotas como PUT, DELETE serão adicionadas aqui
 
 module.exports = routes;

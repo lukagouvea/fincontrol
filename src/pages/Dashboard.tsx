@@ -13,7 +13,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableDashboardItem } from '../components/Dashboard/SortableDashboardItem';
 import { formatDateToYYYYMMDD, parseDateInputToLocal, convertDateToUTCISOString } from '../utils/dateUtils';
-import { generateParcelas, isItemActiveInMonth } from '../utils/financeUtils';
+import { isItemActiveInMonth } from '../utils/financeUtils';
 import { UpcomingBills } from '../components/Dashboard/UpcomingBills';
 
 const LOCAL_STORAGE_KEY = 'dashboardLayout';
@@ -40,9 +40,11 @@ export const Dashboard: React.FC = () => {
     categories,
     fixedIncomes,
     fixedExpenses,
+    variableIncomes,
+    variableExpenses,
     getActualFixedItemAmount,
-    addTransaction,
-    addCompraParcelada,
+    // addTransaction, // Removido
+    // addCompraParcelada, // Removido
   } = useFinance();
 
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -82,19 +84,15 @@ export const Dashboard: React.FC = () => {
     const anoAtual = selectedDateObject.getFullYear();
     const mesAtual = selectedDateObject.getMonth(); // 0-11
 
-    const getVariableTransactions = (type: 'income' | 'expense') => {
-        return transactions.filter(t => {
-            const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
-            const isCorrectType = type === 'income' ? !('isInstallment' in t) : 'isInstallment' in t;
-            return isCorrectType && transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
-        });
-    };
+    const monthlyVariableIncome = variableIncomes.filter(t => {
+        const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
+        return transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
+    }).reduce((sum, t) => sum + t.amount, 0);
 
-    const variableIncomes = getVariableTransactions('income');
-    const variableExpenses = getVariableTransactions('expense');
-
-    const monthlyVariableIncome = variableIncomes.reduce((sum, t) => sum + t.amount, 0);
-    const monthlyVariableExpense = variableExpenses.reduce((sum, t) => sum + t.amount, 0);
+    const monthlyVariableExpense = variableExpenses.filter(t => {
+        const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
+        return transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
+    }).reduce((sum, t) => sum + t.amount, 0);
 
     const monthlyFixedIncome = fixedIncomes
       .filter(income => isItemActiveInMonth(income, selectedDateObject))
@@ -109,7 +107,7 @@ export const Dashboard: React.FC = () => {
     const balance = totalIncome - totalExpense;
 
     return { monthlyIncome: totalIncome, monthlyFixedIncome, monthlyVariableIncome, monthlyExpense: totalExpense, monthlyFixedExpense, monthlyVariableExpense, balance };
-  }, [selectedDateObject, transactions, fixedIncomes, fixedExpenses, getActualFixedItemAmount]);
+  }, [selectedDateObject, variableIncomes, variableExpenses, fixedIncomes, fixedExpenses, getActualFixedItemAmount]);
 
 
   const handleAddExpenseForDate = (date: Date) => {
@@ -129,41 +127,14 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleExpenseSubmit = (formData: ExpenseFormData) => {
-    const localDateObject = parseDateInputToLocal(formData.date);
-    const utcTimestamp = convertDateToUTCISOString(localDateObject);
-
-    if (formData.isInstallment && formData.installmentCount > 1) {
-      const compraParcelada = {
-        description: formData.description,
-        amount: formData.amount,
-        date: utcTimestamp,
-        categoryId: formData.categoryId,
-        numParcelas: formData.installmentCount,
-        parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
-      };
-      addCompraParcelada(compraParcelada);
-    } else {
-      addTransaction({
-        description: formData.description,
-        amount: formData.amount,
-        date: utcTimestamp,
-        categoryId: formData.categoryId,
-        isInstallment: false,
-      });
-    }
+    console.log("Formulário de despesa submetido", formData); // Lógica a ser implementada
+    // Lógica para adicionar despesa variável ou compra parcelada aqui
     setIsExpenseModalOpen(false);
   };
 
   const handleIncomeSubmit = (formData: IncomeFormData) => {
-    const localDateObject = parseDateInputToLocal(formData.date);
-    const utcTimestamp = convertDateToUTCISOString(localDateObject);
-
-    addTransaction({
-      description: formData.description,
-      amount: formData.amount,
-      date: utcTimestamp,
-      categoryId: formData.categoryId,
-    });
+    console.log("Formulário de renda submetido", formData); // Lógica a ser implementada
+     // Lógica para adicionar renda variável aqui
     setIsIncomeModalOpen(false);
   };
 
@@ -183,7 +154,7 @@ export const Dashboard: React.FC = () => {
       case 'monthly-histogram':
         return <MonthlyHistogram transactions={transactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} />;
       case 'recent-transactions':
-        return <RecentTransactions transactions={transactions} categories={categories} date={selectedDateObject} />;
+        return <RecentTransactions date={selectedDateObject} />;
       default:
         return null;
     }

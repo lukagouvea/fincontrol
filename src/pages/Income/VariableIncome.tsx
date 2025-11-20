@@ -1,33 +1,26 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { Transaction, useFinance, VariableIncome as VariableIncomeType } from '../../context/FinanceContext';
+import { useFinance, VariableIncome as VariableIncomeType } from '../../context/FinanceContext';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
-import { IncomeModal, IncomeFormData } from '../../components/Income/IncomeModal'; // Importa o novo modal e seu tipo
-import { parseDateInputToLocal, convertDateToUTCISOString, formatUTCToDDMMAAAA } from '../../utils/dateUtils';
+import { IncomeModal, IncomeFormData } from '../../components/Income/IncomeModal';
+import { formatUTCToDDMMAAAA, parseDateInputToLocal } from '../../utils/dateUtils';
 
 export const VariableIncome: React.FC = () => {
   const {
-    transactions,
+    variableIncomes,
     categories,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction
   } = useFinance();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState<VariableIncomeType | null>(null);
-  const [incomeToDelete, setIncomeToDelete] = useState<Transaction | null>(null);
+  const [incomeToDelete, setIncomeToDelete] = useState<VariableIncomeType | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     
-  const variableIncomes = useMemo(() => 
-    transactions.filter((t): t is VariableIncomeType => !('isInstallment' in t)), 
-    [transactions]
-  );
-
   const filteredIncomes = useMemo(() => {
     return variableIncomes.filter(income => {
-      const incomeDate = new Date(income.date);
+      // Corrige o bug de fuso horário, tratando a data como local
+      const incomeDate = parseDateInputToLocal(income.date.split('T')[0]);
       return incomeDate.getMonth() === selectedMonth && incomeDate.getFullYear() === selectedYear;
     });
   }, [variableIncomes, selectedMonth, selectedYear]);
@@ -36,7 +29,7 @@ export const VariableIncome: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  const handleRequestDelete = (income: Transaction) => {
+  const handleRequestDelete = (income: VariableIncomeType) => {
     setIncomeToDelete(income);
   };
 
@@ -46,7 +39,7 @@ export const VariableIncome: React.FC = () => {
 
   const handleConfirmDelete = () => {
     if (incomeToDelete) {
-      deleteTransaction(incomeToDelete.id);
+      console.log("Deletando renda:", incomeToDelete.id); // Lógica a ser implementada
       setIncomeToDelete(null);
     }
   };
@@ -64,21 +57,7 @@ export const VariableIncome: React.FC = () => {
   };
   
   const handleModalSubmit = (formData: IncomeFormData) => {
-    const localDateObject = parseDateInputToLocal(formData.date);
-    const utcTimestamp = convertDateToUTCISOString(localDateObject);
-
-    const transactionData = {
-      description: formData.description,
-      amount: formData.amount,
-      date: utcTimestamp,
-      categoryId: formData.categoryId,
-    };
-
-    if (editingIncome) {
-      updateTransaction(editingIncome.id, transactionData);
-    } else {
-      addTransaction(transactionData);
-    }
+    console.log("Submetendo dados da renda", formData); // Lógica a ser implementada
     setIsModalOpen(false);
   };
 
@@ -123,7 +102,7 @@ export const VariableIncome: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredIncomes.map(income => {
-                const category = getCategory('categoryId' in income ? income.categoryId : undefined);
+                const category = getCategory(income.categoryId);
                 return (
                   <tr key={income.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatUTCToDDMMAAAA(income.date)}</td>

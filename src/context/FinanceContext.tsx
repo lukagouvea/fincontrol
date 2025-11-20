@@ -3,10 +3,11 @@ import React, { useState, createContext, useContext, useMemo, useEffect, useCall
 import { useAuth } from './AuthContext';
 
 import * as categoryService from '../services/categoryService';
-import * as transactionService from '../services/transactionService';
 import * as fixedIncomeService from '../services/fixedIncomeService';
 import * as fixedExpenseService from '../services/fixedExpenseService';
 import * as monthlyVariationService from '../services/monthlyVariationService';
+import * as variableIncomeService from '../services/variableIncomeService';
+import * as variableExpenseService from '../services/variableExpenseService';
 
 // Tipos
 export type Category = {
@@ -31,7 +32,6 @@ export type VariableIncome = {
   amount: number;
   date: string;
   categoryId: string;
-  type: 'income';
 };
 export type FixedExpense = {
   id: string;
@@ -49,7 +49,6 @@ export type VariableExpense = {
   date: string;
   categoryId: string;
   isInstallment: boolean;
-  type: 'expense';
 };
 
 export type Parcela = {
@@ -60,7 +59,6 @@ export type Parcela = {
   date: string;
   categoryId: string;
   isInstallment: boolean;
-  type: 'expense';
   installmentInfo: {
     total: number;
     current: number;
@@ -87,14 +85,16 @@ export type MonthlyVariation = {
   amount: number; // Valor específico para este mês
 };
 
-export type Transaction = VariableIncome | VariableExpense | Parcela;
+// Tipo unificado para exibição
+export type Transaction = (VariableIncome & { type: 'income' }) | (VariableExpense & { type: 'expense' });
 
 type FinanceContextType = {
   categories: Category[];
   fixedIncomes: FixedIncome[];
   fixedExpenses: FixedExpense[];
-  comprasParceladas: CompraParcelada[];
-  transactions: Transaction[];
+  variableIncomes: VariableIncome[];
+  variableExpenses: VariableExpense[];
+  transactions: Transaction[]; // Este será um array derivado
   monthlyVariations: MonthlyVariation[];
   addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
   updateCategory: (id: string, category: Partial<Omit<Category, 'id'>>) => Promise<void>;
@@ -105,14 +105,10 @@ type FinanceContextType = {
   addFixedExpense: (expense: Omit<FixedExpense, 'id'>) => Promise<void>;
   updateFixedExpense: (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => Promise<void>;
   deleteFixedExpense: (id: string) => Promise<void>;
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
-  updateTransaction: (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => Promise<void>;
-  deleteTransaction: (id: string) => Promise<void>;
   addMonthlyVariation: (variation: Omit<MonthlyVariation, 'id'>) => Promise<void>;
   updateMonthlyVariation: (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => Promise<void>;
   deleteMonthlyVariation: (id: string) => Promise<void>;
   getActualFixedItemAmount: (itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number) => number;
-  addCompraParcelada: (compra: Omit<CompraParcelada, 'id'>) => Promise<void>;
   loading: boolean;
   error: string | null;
 };
@@ -130,10 +126,10 @@ export const useFinance = () => {
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fixedIncomes, setFixedIncomes] = useState<FixedIncome[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
-  const [comprasParceladas, setComprasParceladas] = useState<CompraParcelada[]>([]);
+  const [variableIncomes, setVariableIncomes] = useState<VariableIncome[]>([]);
+  const [variableExpenses, setVariableExpenses] = useState<VariableExpense[]>([]);
   const [monthlyVariations, setMonthlyVariations] = useState<MonthlyVariation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,19 +144,21 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLoading(true);
         setError(null);
         
-        const [categoriesData, transactionsData, fixedIncomesData, fixedExpensesData, monthlyVariationsData] = await Promise.all([
+        const [categoriesData, fixedIncomesData, fixedExpensesData, monthlyVariationsData, variableIncomesData, variableExpensesData] = await Promise.all([
           categoryService.getCategories(),
-          transactionService.getTransactions(),
           fixedIncomeService.getFixedIncomes(),
           fixedExpenseService.getFixedExpenses(),
           monthlyVariationService.getMonthlyVariations(),
+          variableIncomeService.getVariableIncomes(),
+          variableExpenseService.getVariableExpenses(),
         ]);
 
         setCategories(categoriesData);
-        setTransactions(transactionsData);
         setFixedIncomes(fixedIncomesData);
         setFixedExpenses(fixedExpensesData);
         setMonthlyVariations(monthlyVariationsData);
+        setVariableIncomes(variableIncomesData);
+        setVariableExpenses(variableExpensesData);
 
       } catch (err) {
         setError('Falha ao carregar os dados financeiros.');
@@ -172,6 +170,14 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     loadData();
   }, [token]);
+  
+  // Deriva a lista de transações unificadas a partir de rendas e despesas variáveis
+  const transactions = useMemo(() => {
+    const incomes: Transaction[] = variableIncomes.map(item => ({ ...item, type: 'income' }));
+    const expenses: Transaction[] = variableExpenses.map(item => ({ ...item, type: 'expense' }));
+
+    return [...incomes, ...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [variableIncomes, variableExpenses]);
 
   const addCategory = useCallback(async (category: Omit<Category, 'id'>) => {
     try {
@@ -199,48 +205,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCategories(prev => prev.filter(cat => cat.id !== id));
     } catch (err) {
       console.error("Erro ao deletar categoria:", err);
-      throw err;
-    }
-  }, []);
-
-  const addTransaction = useCallback(async (transaction: Omit<Transaction, 'id'>) => {
-    try {
-      const newTransaction = await transactionService.addTransaction(transaction);
-      setTransactions(prev => [...prev, newTransaction]);
-    } catch (err) {
-      console.error("Erro ao adicionar transação:", err);
-      throw err;
-    }
-  }, []);
-  
-  const updateTransaction = useCallback(async (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => {
-    try {
-      const updatedTransaction = await transactionService.updateTransaction(id, transaction);
-      setTransactions(prev => prev.map(trans => trans.id === id ? updatedTransaction : trans));
-    } catch (err) {
-      console.error("Erro ao atualizar transação:", err);
-      throw err;
-    }
-  }, []);
-
-  const deleteTransaction = useCallback(async (id: string) => {
-    try {
-      await transactionService.deleteTransaction(id);
-      setTransactions(prev => prev.filter(trans => trans.id !== id));
-    } catch (err) {
-      console.error("Erro ao deletar transação:", err);
-      throw err;
-    }
-  }, []);
-
-  const addCompraParcelada = useCallback(async (compra: Omit<CompraParcelada, 'id'>) => {
-    try {
-      const newCompra = await transactionService.addCompraParcelada(compra);
-      setComprasParceladas(prev => [...prev, newCompra]);
-      // Also update transactions with the new installments
-      setTransactions(prev => [...prev, ...newCompra.parcelas]);
-    } catch (err) {
-      console.error("Erro ao adicionar compra parcelada:", err);
       throw err;
     }
   }, []);
@@ -345,15 +309,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     transactions,
     fixedIncomes,
     fixedExpenses,
-    comprasParceladas,
+    variableIncomes,
+    variableExpenses,
     monthlyVariations,
     addCategory,
     updateCategory,
     deleteCategory,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addCompraParcelada,
     addFixedIncome,
     updateFixedIncome,
     deleteFixedIncome,
@@ -366,7 +327,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     getActualFixedItemAmount,
     loading,
     error,
-  }), [categories, transactions, fixedIncomes, fixedExpenses, comprasParceladas, monthlyVariations, addCategory, updateCategory, deleteCategory, addTransaction, updateTransaction, deleteTransaction, addCompraParcelada, addFixedIncome, updateFixedIncome, deleteFixedIncome, addFixedExpense, updateFixedExpense, deleteFixedExpense, addMonthlyVariation, updateMonthlyVariation, deleteMonthlyVariation, getActualFixedItemAmount, loading, error]);
+  }), [categories, transactions, fixedIncomes, fixedExpenses, variableIncomes, variableExpenses, monthlyVariations, addCategory, updateCategory, deleteCategory, addFixedIncome, updateFixedIncome, deleteFixedIncome, addFixedExpense, updateFixedExpense, deleteFixedExpense, addMonthlyVariation, updateMonthlyVariation, deleteMonthlyVariation, getActualFixedItemAmount, loading, error]);
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 };

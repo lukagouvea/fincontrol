@@ -1,35 +1,26 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { Transaction, useFinance, VariableExpense as VariableExpenseType } from '../../context/FinanceContext';
+import { useFinance, VariableExpense as VariableExpenseType } from '../../context/FinanceContext';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
 import { ExpenseModal, ExpenseFormData } from '../../components/Expenses/ExpenseModal';
-import { parseDateInputToLocal, convertDateToUTCISOString, formatUTCToDDMMAAAA } from '../../utils/dateUtils';
-import { generateParcelas } from '../../utils/financeUtils';
+import { formatUTCToDDMMAAAA, parseDateInputToLocal } from '../../utils/dateUtils';
 
 export const VariableExpenses: React.FC = () => {
   const {
-    transactions,
+    variableExpenses,
     categories,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addCompraParcelada
   } = useFinance();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<VariableExpenseType | null>(null);
-  const [expenseToDelete, setExpenseToDelete] = useState<Transaction | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<VariableExpenseType | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     
-  const variableExpenses = useMemo(() => 
-    transactions.filter((t): t is VariableExpenseType => 'isInstallment' in t), 
-    [transactions]
-  );
-
   const filteredExpenses = useMemo(() => {
     return variableExpenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
+      // Corrige o bug de fuso horário, tratando a data como local
+      const expenseDate = parseDateInputToLocal(expense.date.split('T')[0]);
       return expenseDate.getMonth() === selectedMonth && expenseDate.getFullYear() === selectedYear;
     });
   }, [variableExpenses, selectedMonth, selectedYear]);
@@ -38,7 +29,7 @@ export const VariableExpenses: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear + 2 - i);
 
-  const handleRequestDelete = (expense: Transaction) => {
+  const handleRequestDelete = (expense: VariableExpenseType) => {
     setExpenseToDelete(expense);
   };
 
@@ -48,15 +39,12 @@ export const VariableExpenses: React.FC = () => {
 
   const handleConfirmDelete = () => {
     if (expenseToDelete) {
-      deleteTransaction(expenseToDelete.id);
+      console.log("Deletando despesa:", expenseToDelete.id); // Lógica a ser implementada
       setExpenseToDelete(null);
     }
   };
 
   let confirmationMessage = "Você tem certeza que deseja excluir esta despesa? Esta ação não pode ser desfeita.";
-  if (expenseToDelete?.isInstallment) {
-    confirmationMessage = "Ao excluir esta parcela, todas as outras parcelas da mesma compra também serão removidas. Deseja continuar?";
-  }
   
   const handleOpenCreateModal = () => {
     setEditingExpense(null);
@@ -68,41 +56,8 @@ export const VariableExpenses: React.FC = () => {
     setIsModalOpen(true);
   };
   
-  // 2. A lógica de negócio agora vive aqui
   const handleModalSubmit = (formData: ExpenseFormData) => {
-    const localDateObject = parseDateInputToLocal(formData.date);
-    const utcTimestamp = convertDateToUTCISOString(localDateObject);
-
-    if (editingExpense) {
-      updateTransaction(editingExpense.id, {
-        description: formData.description,
-        amount: formData.amount,
-        date: utcTimestamp,
-        categoryId: formData.categoryId,
-        isInstallment: editingExpense.isInstallment, // Não permite alterar o tipo de despesa
-        installmentInfo: editingExpense.installmentInfo,
-      });
-    } else {
-      if (formData.isInstallment && formData.installmentCount > 1) {
-        const compraParcelada = {
-          description: formData.description,
-          amount: formData.amount,
-          date: utcTimestamp,
-          categoryId: formData.categoryId,
-          numParcelas: formData.installmentCount,
-          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
-        };
-        addCompraParcelada(compraParcelada);
-      } else {
-        addTransaction({
-          description: formData.description,
-          amount: formData.amount,
-          date: utcTimestamp,
-          categoryId: formData.categoryId,
-          isInstallment: false,
-        });
-      }
-    }
+    console.log("Submetendo dados da despesa", formData); // Lógica a ser implementada
     setIsModalOpen(false);
   };
 
@@ -152,7 +107,6 @@ export const VariableExpenses: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatUTCToDDMMAAAA(expense.date)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {expense.description}
-                      {expense.isInstallment && expense.installmentInfo && <span className="ml-2 text-xs text-gray-500">({expense.installmentInfo.current}/{expense.installmentInfo.total})</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: `${category.color}20`, color: category.color }}>{category.name}</span> : '-'}
@@ -176,7 +130,6 @@ export const VariableExpenses: React.FC = () => {
         )}
       </div>
       
-      {/* 3. Renderiza o componente ExpenseModal, passando as props necessárias */}
       <ExpenseModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

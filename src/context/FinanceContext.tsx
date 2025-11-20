@@ -1,4 +1,3 @@
-
 import React, { useState, createContext, useContext, useMemo, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
@@ -327,7 +326,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     getActualFixedItemAmount,
     loading,
     error,
-  }), [categories, transactions, fixedIncomes, fixedExpenses, variableIncomes, variableExpenses, monthlyVariations, addCategory, updateCategory, deleteCategory, addFixedIncome, updateFixedIncome, deleteFixedIncome, addFixedExpense, updateFixedExpense, deleteFixedExpense, addMonthlyVariation, updateMonthlyVariation, deleteMonthlyVariation, getActualFixedItemAmount, loading, error]);
+  }), [categories, fixedIncomes, fixedExpenses, variableIncomes, variableExpenses, monthlyVariations, addCategory, updateCategory, deleteCategory, addFixedIncome, updateFixedIncome, deleteFixedIncome, addFixedExpense, updateFixedExpense, deleteFixedExpense, addMonthlyVariation, updateMonthlyVariation, deleteMonthlyVariation, getActualFixedItemAmount, loading, error]);
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 };

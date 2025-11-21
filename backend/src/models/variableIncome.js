@@ -1,4 +1,3 @@
-
 const db = require('../config/db');
 
 const VariableIncome = {
@@ -49,20 +48,16 @@ const VariableIncome = {
 
     if (fields.length === 0) {
         const { rows } = await db.query('SELECT * FROM variable_incomes WHERE id = $1 AND user_id = $2', [id, userId]);
-        return rows[0];
+        return rows.length > 0 ? rows[0] : null;
     }
 
     values.push(id, userId);
 
-    const query = `
-      UPDATE variable_incomes 
-      SET ${fields.join(', ')} 
-      WHERE id = $${fieldIndex++} AND user_id = $${fieldIndex}
-      RETURNING id, description, amount, category_id as \"categoryId\", income_date as \"date\";
-    `;
+    const setClause = fields.join(', ');
+    const query = `UPDATE variable_incomes SET ${setClause} WHERE id = $${fields.length + 1} AND user_id = $${fields.length + 2} RETURNING id, description, amount, category_id as \"categoryId\", income_date as \"date\"`;
 
     const { rows } = await db.query(query, values);
-    return rows[0];
+    return rows.length > 0 ? rows[0] : null;
   },
 
   remove: async (id, userId) => {

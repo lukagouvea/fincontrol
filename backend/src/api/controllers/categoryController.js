@@ -1,9 +1,7 @@
 const Category = require('../../models/category');
 
-// Altera getAllCategories para buscar por usuário
 exports.getAllCategories = async (req, res) => {
   try {
-    // O ID do usuário vem do middleware de autenticação
     const userId = req.user.id;
     const categories = await Category.getAllByUserId(userId);
     res.status(200).json(categories);
@@ -15,9 +13,9 @@ exports.getAllCategories = async (req, res) => {
 
 exports.getCategoryById = async (req, res) => {
   const { id } = req.params;
-  const userId = req.user.id; // Garante que a categoria pertence ao usuário
+  const userId = req.user.id;
   try {
-    const category = await Category.getByIdAndUserId(id, userId);
+    const category = await Category.getById(id, userId);
     if (!category) {
       return res.status(404).json({ error: 'Categoria não encontrada.' });
     }
@@ -28,29 +26,26 @@ exports.getCategoryById = async (req, res) => {
   }
 };
 
-// Corrige a criação de categoria para incluir o ID do usuário
 exports.createCategory = async (req, res) => {
   try {
-    const userId = req.user.id; // Pega o ID do usuário do token
-    const categoryData = { ...req.body }; // Pega todos os dados do formulário
+    const userId = req.user.id;
+    const categoryData = req.body;
 
-    if (!categoryData.name || !categoryData.type) {
-      return res.status(400).json({ error: 'Nome e tipo da categoria são obrigatórios.' });
+    if (!categoryData.name) {
+      return res.status(400).json({ error: 'O nome da categoria é obrigatório.' });
     }
 
-    const newCategory = await Category.create(userId, categoryData);
+    const newCategory = await Category.create(categoryData, userId);
     res.status(201).json(newCategory);
   } catch (error) {
     console.error('Erro ao criar categoria:', error);
-    // Verifica erro de unicidade
     if (error.code === '23505') {
-        return res.status(409).json({ error: 'Você já possui uma categoria com este nome e tipo.' });
+        return res.status(409).json({ error: 'Você já possui uma categoria com este nome.' });
     }
     res.status(500).json({ error: 'Ocorreu um erro interno.' });
   }
 };
 
-// Corrige a atualização para garantir que o usuário seja o dono
 exports.updateCategory = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
@@ -65,13 +60,12 @@ exports.updateCategory = async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar categoria:', error);
     if (error.code === '23505') {
-        return res.status(409).json({ error: 'Você já possui uma categoria com este nome e tipo.' });
+        return res.status(409).json({ error: 'Você já possui uma categoria com este nome.' });
     }
     res.status(500).json({ error: 'Ocorreu um erro interno.' });
   }
 };
 
-// Corrige o delete para garantir que o usuário seja o dono
 exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;

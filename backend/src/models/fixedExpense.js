@@ -1,4 +1,3 @@
-
 const db = require('../config/db');
 
 const FixedExpense = {
@@ -52,20 +51,16 @@ const FixedExpense = {
 
     if (fields.length === 0) {
         const { rows } = await db.query('SELECT * FROM fixed_expenses WHERE id = $1 AND user_id = $2', [id, userId]);
-        return rows[0];
+        return rows.length > 0 ? rows[0] : null;
     }
 
     values.push(id, userId);
 
-    const query = `
-      UPDATE fixed_expenses 
-      SET ${fields.join(', ')} 
-      WHERE id = $${fieldIndex++} AND user_id = $${fieldIndex}
-      RETURNING id, description, amount, day, category_id AS \"categoryId\", start_date AS \"startDate\", end_date AS \"endDate\";
-    `;
+    const setClause = fields.join(', ');
+    const query = `UPDATE fixed_expenses SET ${setClause} WHERE id = $${fields.length + 1} AND user_id = $${fields.length + 2} RETURNING id, description, amount, day, category_id AS \"categoryId\", start_date AS \"startDate\", end_date AS \"endDate\"`;
 
     const { rows } = await db.query(query, values);
-    return rows[0];
+    return rows.length > 0 ? rows[0] : null;
   },
 
   remove: async (id, userId) => {

@@ -14,16 +14,20 @@ import { Layout } from './components/Layout/Layout';
 import { AuthProvider } from './context/AuthContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { ThemeProvider } from './context/ThemeContext';
-
+import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 
 export function App() {
-  return <AuthProvider>
+  return (
+    <AuthProvider>
       <FinanceProvider>
         <ThemeProvider>
-          <Router>
+          {/* Adicionadas as flags 'future' para remover os avisos do console */}
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              
+              <Route element={<ProtectedRoute />}> 
               <Route path="/" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="categorias" element={<Categories />} />
@@ -34,7 +38,9 @@ export function App() {
                 <Route path="historico-despesas" element={<ExpenseHistory />} />
                 <Route path="historico-rendas" element={<IncomeHistory />} />
                 <Route path="calendario" element={<Calendar />} />
+                </Route>
               </Route>
+              
             </Routes>
           </Router>
         </ThemeProvider>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Transaction, useFinance } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import { Transaction } from '../../types/FinanceTypes';
 type ExpensesValueHistogramProps = {
   transactions: Transaction[];
   date: Date;

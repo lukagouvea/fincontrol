@@ -1,6 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { Transaction, Category, useFinance } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import { Transaction, Category, } from '../../types/FinanceTypes';
 type CategoryPieChartProps = {
   transactions: Transaction[];
   categories: Category[];

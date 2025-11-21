@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, ArchiveIcon, CalendarIcon } from 'lucide-react';
-import { useFinance, FixedExpense as FixedExpenseType } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import { FixedExpense as FixedExpenseType } from '../../types/FinanceTypes';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
 import { FixedExpenseModal, FixedExpenseFormData } from '../../components/Expenses/FixedExpenseModal';
 import { ArchiveModal } from '../../components/Shared/ArchiveModal';

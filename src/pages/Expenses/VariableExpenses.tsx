@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { Transaction, useFinance, VariableExpense as VariableExpenseType } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import { Transaction, VariableExpense as VariableExpenseType } from '../../types/FinanceTypes';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
 import { ExpenseModal, ExpenseFormData } from '../../components/Expenses/ExpenseModal';
 import { parseDateInputToLocal, convertDateToUTCISOString, formatUTCToDDMMAAAA } from '../../utils/dateUtils';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Transaction } from '../../context/FinanceContext';
+import { Transaction } from '../../types/FinanceTypes';
 import { areSameDay } from '../../utils/dateUtils';
 type WeeklySpendingProps = {
   transactions: Transaction[];

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon, PlusIcon } from 'lucide-react';
-import { Transaction, useFinance } from '../context/FinanceContext';
+import { useFinance } from '../context/FinanceContext';
+import { Transaction } from '../types/FinanceTypes';
 import { ExpenseFormData, ExpenseModal } from '../components/Expenses/ExpenseModal';
 import { IncomeFormData, IncomeModal } from '../components/Income/IncomeModal';
 import { areSameDay, convertDateToUTCISOString, formatDateToYYYYMMDD, parseDateInputToLocal } from '../utils/dateUtils';

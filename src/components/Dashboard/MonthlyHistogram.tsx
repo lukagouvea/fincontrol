@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Transaction, FixedIncome, FixedExpense, Category, useFinance } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import { Transaction, FixedIncome, FixedExpense, Category } from '../../types/FinanceTypes';
 import { isItemActiveInMonth } from '../../utils/financeUtils';
 type MonthlyHistogramProps = {
   transactions: Transaction[];

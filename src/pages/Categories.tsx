@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { useFinance, Category } from '../context/FinanceContext';
+import { useFinance } from '../context/FinanceContext';
+import { Category } from '../types/FinanceTypes'
 export const Categories: React.FC = () => {
   const {
     categories,

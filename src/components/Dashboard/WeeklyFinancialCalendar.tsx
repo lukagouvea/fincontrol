@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react';
-import { useFinance, Transaction, VariableExpense } from '../../context/FinanceContext';
-import { formatDateToYYYYMMDD, areSameDay, getEndOfWeek, getStartOfWeek } from '../../utils/dateUtils';
+import { useFinance } from '../../context/FinanceContext';
+import { Transaction, VariableExpense } from '../../types/FinanceTypes';
+import { areSameDay, getEndOfWeek, getStartOfWeek } from '../../utils/dateUtils';
 type WeeklyFinancialCalendarProps = {
   onAddExpense?: (date: Date) => void;
 };

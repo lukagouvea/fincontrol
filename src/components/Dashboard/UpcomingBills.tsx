@@ -2,8 +2,7 @@ import React, { useMemo } from 'react';
 // 1. Importe os ícones necessários
 import { CreditCard, ArrowDownCircle } from 'lucide-react'; 
 import { isItemActiveInMonth } from '../../utils/financeUtils';
-import { parseDateInputToLocal } from '../../utils/dateUtils';
-import { FixedExpense, Transaction } from '../../context/FinanceContext';
+import { FixedExpense, Transaction } from '../../types/FinanceTypes';
 
 type UpcomingBill = {
   id: string;

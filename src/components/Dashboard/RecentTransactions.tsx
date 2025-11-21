@@ -1,5 +1,5 @@
 import React from 'react';
-import { Transaction, Category } from '../../context/FinanceContext';
+import { Transaction, Category } from '../../types/FinanceTypes';
 import { formatUTCToDDMMAAAA } from '../../utils/dateUtils';
 
 type RecentTransactionsProps = {

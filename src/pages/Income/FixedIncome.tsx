@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, ArchiveIcon, CalendarIcon } from 'lucide-react';
-import { useFinance, FixedIncome as FixedIncomeType } from '../../context/FinanceContext';
+import { useFinance } from '../../context/FinanceContext';
+import {FixedIncome as FixedIncomeType} from '../../types/FinanceTypes'
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
 import { FixedIncomeModal, FixedIncomeFormData } from '../../components/Income/FixedIncomeModal';
 import { ArchiveModal } from '../../components/Shared/ArchiveModal';

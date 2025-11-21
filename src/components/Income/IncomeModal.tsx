@@ -10,7 +10,7 @@ export type IncomeFormData = {
   description: string;
   amount: number;
   date: string; // Formato YYYY-MM-DD
-  categoryId?: string;
+  categoryId: string;
 };
 
 type IncomeModalProps = {
@@ -69,7 +69,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSub
         description,
         amount: numericAmount,
         date,
-        categoryId: categoryId || undefined,
+        categoryId: categoryId,
       });
     } catch (error) {
       alert('Ocorreu um erro ao salvar a renda. Tente novamente.');

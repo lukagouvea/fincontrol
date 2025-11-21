@@ -12,7 +12,7 @@ export type FixedIncomeFormData = {
   description: string;
   amount: number;
   day: number;
-  categoryId?: string; // Categoria é opcional para rendas
+  categoryId: string; // Categoria é opcional para rendas
   startDate: string;
   endDate?: string;
 };
@@ -81,7 +81,7 @@ export const FixedIncomeModal: React.FC<FixedIncomeModalProps> = ({ isOpen, onCl
         description,
         amount: numericAmount,
         day: formattedDay,
-        categoryId: categoryId || undefined,
+        categoryId: categoryId,
         startDate,
         endDate: endDate || undefined,
       });

@@ -1,4 +1,4 @@
-import { Parcela } from "../context/FinanceContext";
+import { Parcela } from "../types/FinanceTypes";
 
 
 export const generateParcelas = (valorTotal: number, numeroParcelas: number, description:string, date:string, categoryId:string) => {

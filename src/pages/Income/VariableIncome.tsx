@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-import { Transaction, useFinance, VariableIncome as VariableIncomeType } from '../../context/FinanceContext';
+import { useFinance,   } from '../../context/FinanceContext';
+import { Transaction, VariableIncome as VariableIncomeType } from '../../types/FinanceTypes';
 import { ConfirmationModal } from '../../components/Shared/ConfirmationModal';
 import { IncomeModal, IncomeFormData } from '../../components/Income/IncomeModal'; // Importa o novo modal e seu tipo
 import { parseDateInputToLocal, convertDateToUTCISOString, formatUTCToDDMMAAAA } from '../../utils/dateUtils';

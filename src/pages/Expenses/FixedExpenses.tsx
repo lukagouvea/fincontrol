@@ -124,8 +124,14 @@ export const FixedExpenses: React.FC = () => {
   const formatMonthYear = (month: number, year: number) => new Date(year, month, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const getVariationsForExpense = (expenseId: string) => monthlyVariations.filter(v => v.fixedItemId === expenseId && v.type === 'expense').sort((a, b) => b.year - a.year || b.month - a.month);
 
-  const archiveColumns = [
-    { key: 'description', label: 'Descrição' }, { key: 'category', label: 'Categoria' }, { key: 'amount', label: 'Valor' }, { key: 'period', label: 'Período' }, { key: 'actions', label: 'Ações' },
+  const archiveColumns: { 
+    key: keyof FixedExpenseType | 'category' | 'period' | 'actions'; 
+    label: string 
+  }[] = [
+    { key: 'description', label: 'Descrição' },
+    { key: 'amount', label: 'Valor' },
+    { key: 'period', label: 'Período' },
+    { key: 'actions', label: 'Ações' },
   ];
 
   const archivedExpensesData = useMemo(() => {

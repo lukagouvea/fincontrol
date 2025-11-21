@@ -30,7 +30,7 @@ export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1 : 0
   };
-  const spanClasses = {
+  const spanClasses : Record<number, string> = {
     1: 'col-span-1',
     2: 'col-span-2',
     3: 'col-span-3',

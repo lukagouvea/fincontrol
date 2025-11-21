@@ -3,7 +3,7 @@ export type Category = {
   name: string;
   type: 'income' | 'expense';
   description?: string;
-  color?: string;
+  color: string;
 };
 
 // Interface Base

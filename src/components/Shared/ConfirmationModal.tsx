@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangleIcon, XIcon } from 'lucide-react';
+import { AlertTriangleIcon } from 'lucide-react';
 
 type ConfirmationModalProps = {
   isOpen: boolean;

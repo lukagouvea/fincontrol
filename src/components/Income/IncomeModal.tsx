@@ -18,7 +18,7 @@ type IncomeModalProps = {
   onClose: () => void;
   onSubmit: (data: IncomeFormData) => void;
   initialData?: any;
-  initalDate?: string;
+  initialDate?: string;
 };
 
 export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSubmit, initialData, initialDate }) => {

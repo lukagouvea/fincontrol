@@ -55,7 +55,7 @@ export const VariableExpenses: React.FC = () => {
   };
 
   let confirmationMessage = "Você tem certeza que deseja excluir esta despesa? Esta ação não pode ser desfeita.";
-  if (expenseToDelete?.isInstallment) {
+  if (expenseToDelete != null && 'isInstallment' in expenseToDelete) {
     confirmationMessage = "Ao excluir esta parcela, todas as outras parcelas da mesma compra também serão removidas. Deseja continuar?";
   }
   
@@ -82,7 +82,7 @@ export const VariableExpenses: React.FC = () => {
         categoryId: formData.categoryId,
         isInstallment: editingExpense.isInstallment, // Não permite alterar o tipo de despesa
         installmentInfo: editingExpense.installmentInfo,
-      });
+      } as VariableExpenseType);
     } else {
       if (formData.isInstallment && formData.installmentCount > 1) {
         const compraParcelada = {
@@ -91,7 +91,7 @@ export const VariableExpenses: React.FC = () => {
           date: utcTimestamp,
           categoryId: formData.categoryId,
           numParcelas: formData.installmentCount,
-          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
+          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, utcTimestamp, formData.categoryId)
         };
         addCompraParcelada(compraParcelada);
       } else {
@@ -101,7 +101,7 @@ export const VariableExpenses: React.FC = () => {
           date: utcTimestamp,
           categoryId: formData.categoryId,
           isInstallment: false,
-        });
+        } as Omit<VariableExpenseType, 'id'>);
       }
     }
     setIsModalOpen(false);

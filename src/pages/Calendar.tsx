@@ -6,6 +6,19 @@ import { ExpenseFormData, ExpenseModal } from '../components/Expenses/ExpenseMod
 import { IncomeFormData, IncomeModal } from '../components/Income/IncomeModal';
 import { areSameDay, convertDateToUTCISOString, formatDateToYYYYMMDD, parseDateInputToLocal } from '../utils/dateUtils';
 import { generateParcelas } from '../utils/financeUtils';
+
+type CalendarEventDisplay = {
+  id: string;
+  description: string;
+  amount: number;
+  // Propriedades opcionais visuais
+  isFixed?: boolean;
+  hasVariation?: boolean;
+  isExpense?: boolean;
+  category?: string;
+  categoryColor?: string;
+};
+
 export const Calendar: React.FC = () => {
   const {
     transactions,
@@ -113,7 +126,7 @@ export const Calendar: React.FC = () => {
           date: utcTimestamp,
           categoryId: formData.categoryId,
           numParcelas: formData.installmentCount,
-          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
+          parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, utcTimestamp, formData.categoryId)
         };
         addCompraParcelada(compraParcelada);
       } else {
@@ -298,7 +311,9 @@ export const Calendar: React.FC = () => {
                     </span>}
                 </div>
                 {events.length > 0 ? <div className="space-y-1 overflow-hidden max-h-[80px]">
-                    {events.slice(0, 2).map(event => <div key={`${event.id}-${event.isFixed ? 'fixed' : 'var'}`} className="bg-gray-50 p-1 rounded text-xs hover:bg-gray-100">
+                    {events.slice(0, 2).map((evt) => {
+                      const event = evt as CalendarEventDisplay;
+                      return (<div key={`${event.id}-${event.isFixed ? 'fixed' : 'var'}`} className="bg-gray-50 p-1 rounded text-xs hover:bg-gray-100">
                         <div className="font-medium text-gray-800 truncate text-xs">
                           {event.description}
                           {'isFixed' in event && event.isFixed && <span className="text-[9px] ml-1 text-gray-500">
@@ -317,7 +332,7 @@ export const Calendar: React.FC = () => {
                             {formatCurrency(event.amount)}
                           </span>
                         </div>
-                      </div>)}
+                      </div>)})}
                     {events.length > 2 && <div className="text-[10px] font-medium text-gray-600 pt-1">
                         +{events.length - 2}{' '}
                         {events.length - 2 === 1 ? 'transação' : 'transações'}

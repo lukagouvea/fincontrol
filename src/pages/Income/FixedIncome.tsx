@@ -123,8 +123,14 @@ export const FixedIncome: React.FC = () => {
   const formatMonthYear = (month: number, year: number) => new Date(year, month, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const getVariationsForIncome = (incomeId: string) => monthlyVariations.filter(v => v.fixedItemId === incomeId && v.type === 'income').sort((a, b) => b.year - a.year || b.month - a.month);
 
-  const archiveColumns = [
-    { key: 'description', label: 'Descrição' }, { key: 'category', label: 'Categoria' }, { key: 'amount', label: 'Valor' }, { key: 'period', label: 'Período' }, { key: 'actions', label: 'Ações' },
+  const archiveColumns: { 
+    key: keyof FixedIncomeType | 'category' | 'period' | 'actions'; 
+    label: string 
+  }[] = [
+    { key: 'description', label: 'Descrição' },
+    { key: 'amount', label: 'Valor' },
+    { key: 'period', label: 'Período' },
+    { key: 'actions', label: 'Ações' },
   ];
 
   const archivedIncomesData = useMemo(() => {

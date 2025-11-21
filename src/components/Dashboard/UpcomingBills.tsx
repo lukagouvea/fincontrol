@@ -37,7 +37,7 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
     // Pega as parcelas que vencem no mês
     const monthlyInstallments: UpcomingBill[] = transactions
       .filter(t => {
-        if (!t.isInstallment) return false;
+        if ('isInstallment' in t && !t.isInstallment) return false;
         const transactionDate = new Date(t.date);
         return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
       })

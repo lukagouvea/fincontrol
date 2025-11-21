@@ -15,6 +15,7 @@ import { SortableDashboardItem } from '../components/Dashboard/SortableDashboard
 import { formatDateToYYYYMMDD, parseDateInputToLocal, convertDateToUTCISOString } from '../utils/dateUtils';
 import { generateParcelas, isItemActiveInMonth } from '../utils/financeUtils';
 import { UpcomingBills } from '../components/Dashboard/UpcomingBills';
+import { VariableExpense } from '../types/FinanceTypes';
 
 const LOCAL_STORAGE_KEY = 'dashboardLayout';
 
@@ -139,7 +140,7 @@ export const Dashboard: React.FC = () => {
         date: utcTimestamp,
         categoryId: formData.categoryId,
         numParcelas: formData.installmentCount,
-        parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, localDateObject, formData.categoryId)
+        parcelas: generateParcelas(formData.amount, formData.installmentCount, formData.description, utcTimestamp, formData.categoryId)
       };
       addCompraParcelada(compraParcelada);
     } else {
@@ -149,7 +150,7 @@ export const Dashboard: React.FC = () => {
         date: utcTimestamp,
         categoryId: formData.categoryId,
         isInstallment: false,
-      });
+      } as Omit<VariableExpense, 'id'>);
     }
     setIsExpenseModalOpen(false);
   };

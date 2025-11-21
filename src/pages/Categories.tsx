@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { Category } from '../types/FinanceTypes'
+import ReactDOM from 'react-dom';
 export const Categories: React.FC = () => {
   const {
     categories,
@@ -61,6 +62,10 @@ export const Categories: React.FC = () => {
     }
     closeModal();
   };
+
+  const modalRoot = document.getElementById('modal-root');
+  if (!modalRoot) return null;
+
   return <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Categorias</h1>
@@ -112,7 +117,7 @@ export const Categories: React.FC = () => {
           </div>}
       </div>
       {/* Modal de categoria */}
-      {isModalOpen && <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+      {isModalOpen && ReactDOM.createPortal(<div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="px-6 py-4 border-b">
               <h3 className="text-lg font-medium text-gray-900">
@@ -173,6 +178,6 @@ export const Categories: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>}
+        </div>, modalRoot)}
     </div>;
 };

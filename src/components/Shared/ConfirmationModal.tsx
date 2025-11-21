@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
+import ReactDOM from 'react-dom';
 
 type ConfirmationModalProps = {
   isOpen: boolean;
@@ -22,7 +23,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     return null;
   }
 
-  return (
+  const modalRoot = document.getElementById('modal-root');
+  if (!modalRoot) return null;
+
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-60 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="p-6">
@@ -60,5 +64,5 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </div>
       </div>
     </div>
-  );
+  , modalRoot);
 };

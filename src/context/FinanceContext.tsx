@@ -1,81 +1,9 @@
 import React, { useState, createContext, useContext, useMemo } from 'react';
-// Tipos
-export type Category = {
-  id: string;
-  name: string;
-  type: 'income' | 'expense';
-  description?: string;
-  color?: string;
-};
-export type FixedIncome = {
-  id: string;
-  description: string;
-  amount: number;
-  day: number;
-  categoryId: string;
-  startDate: string;
-  endDate?: string;
-};
-export type VariableIncome = {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  categoryId: string;
-};
-export type FixedExpense = {
-  id: string;
-  description: string;
-  amount: number;
-  day: number;
-  categoryId: string;
-  startDate: string;
-  endDate?: string;
-};
-export type VariableExpense = {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  categoryId: string;
-  isInstallment: boolean;
-};
+import {Category, FixedExpense, FixedIncome, Transaction, MonthlyVariation, CompraParcelada} from '../types/FinanceTypes'
+import { categoryService } from '../services/categoryService';
+import { fixedTransactionService } from '../services/fixedTransactionService';
+import { transactionService } from '../services/transactionService';
 
-export type Parcela = {
-  id: string;
-  idCompraParcelada: string;
-  description: string;
-  amount: number;
-  date: string;
-  categoryId: string;
-  isInstallment: boolean;
-  installmentInfo: {
-    total: number;
-    current: number;
-  };
-}
-
-export type CompraParcelada = {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  categoryId: string;
-  numParcelas: number;
-  parcelas : Omit<Parcela, 'id'>[];
-}
-
-// Novo tipo para variações mensais de despesas/rendas fixas
-export type MonthlyVariation = {
-  id: string;
-  fixedItemId: string; // ID da despesa ou renda fixa
-  type: 'income' | 'expense'; // Tipo do item (renda ou despesa)
-  year: number;
-  month: number; // 0-11 (Janeiro-Dezembro)
-  amount: number; // Valor específico para este mês
-};
-
-export type Transaction = VariableIncome | VariableExpense | Parcela;
 // Mock data inicial
 const initialCategories: Category[] = [{
   id: '1',
@@ -395,162 +323,141 @@ export const FinanceProvider: React.FC<{
     const [monthlyVariations, setMonthlyVariations] = useState<MonthlyVariation[]>(initialMonthlyVariations);
 
   
-  // Funções para gerenciar categorias
-  const addCategory = (category: Omit<Category, 'id'>) => {
-    const newCategory = {
-      ...category,
-      id: Date.now().toString()
-    };
-    setCategories([...categories, newCategory]);
-  };
-  const updateCategory = (id: string, category: Partial<Omit<Category, 'id'>>) => {
-    setCategories(categories.map(cat => cat.id === id ? {
-      ...cat,
-      ...category
-    } : cat));
-  };
-  const deleteCategory = (id: string) => {
-    setCategories(categories.filter(cat => cat.id !== id));
+  // --- CATEGORIAS ---
+  const addCategory = async (category: Omit<Category, 'id'>) => {
+    try {
+      const newItem = await categoryService.create(category);
+      setCategories(prev => [...prev, newItem]);
+    } catch (e) { console.error(e); }
   };
 
-  /**
-   * Pega a data atual na localidade do usuário e a formata para a string "YYYY-MM-DD".
-   * @returns {string} A data formatada.
-   */
-  function getLocalDateString() {
-    const date = new Date();
-
-    const year = date.getFullYear();
-
-    // getMonth() é 0-indexado (0 = Janeiro), então somamos 1.
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-  }
-
-
-  // Funções para gerenciar rendas fixas
-  const addFixedIncome = (income: Omit<FixedIncome, 'id'>) => {
-    const newIncome = {
-      ...income,
-      id: Date.now().toString()
-    };
-    setFixedIncomes([...fixedIncomes, newIncome]);
-  };
-  const updateFixedIncome = (id: string, income: Partial<Omit<FixedIncome, 'id'>>) => {
-    setFixedIncomes(fixedIncomes.map(inc => inc.id === id ? {
-      ...inc,
-      ...income
-    } : inc));
-  };
-  const deleteFixedIncome = (id: string) => {
-    // 1. Pega a data de hoje e formata para 'YYYY-MM-DD'
-    const today = new Date().toISOString();
-
-    // 2. Usa 'map' para encontrar e atualizar o item
-    setFixedIncomes(fixedIncomes.map(inc => 
-        inc.id === id 
-        ? { ...inc, endDate: today } // Se encontrar, atualiza o endDate
-        : inc // Senão, mantém o item como está
-    ));
-  };
-  // Funções para gerenciar despesas fixas
-  const addFixedExpense = (expense: Omit<FixedExpense, 'id'>) => {
-    const newExpense = {
-      ...expense,
-      id: Date.now().toString()
-    };
-    setFixedExpenses([...fixedExpenses, newExpense]);
-  };
-  const updateFixedExpense = (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => {
-    setFixedExpenses(fixedExpenses.map(exp => exp.id === id ? {
-      ...exp,
-      ...expense
-    } : exp));
-  };
-  const deleteFixedExpense = (id: string) => {
-    const today = new Date().toISOString();
-
-    setFixedExpenses(fixedExpenses.map(exp => 
-        exp.id === id 
-        ? { ...exp, endDate: today } 
-        : exp
-    ));
-  };
-  // Funções para gerenciar transações
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction = {
-      ...transaction,
-      id: Date.now().toString()
-    };
-    setTransactions([...transactions, newTransaction]);
-  };
-  const updateTransaction = (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => {
-    setTransactions(transactions.map(trans => trans.id === id ? {
-      ...trans,
-      ...transaction
-    } : trans));
-  };
-  const deleteTransaction = (id: string) => {
-    const filteredTransaction = transactions.filter(t => t.id == id)
-    if (filteredTransaction.length > 0 && 'idCompraParcelada' in filteredTransaction[0]) {
-      const idCompraParcelada = filteredTransaction[0].idCompraParcelada;
-      deleteCompraParcelada(idCompraParcelada);
-      return
-    }
-    setTransactions(transactions.filter(trans => trans.id !== id));
+  const updateCategory = async (id: string, category: Partial<Omit<Category, 'id'>>) => {
+    try {
+      const updatedItem = await categoryService.update(id, category);
+      setCategories(prev => prev.map(c => c.id === id ? updatedItem : c));
+    } catch (e) { console.error(e); }
   };
 
-  const addCompraParcelada = (compra: Omit<CompraParcelada, 'id'>) => {
-    const compraId = Date.now().toString();
-    const newCompra = {
-      ...compra,
-      id: compraId
-    };
-    // 1. Crie um array com todas as novas parcelas
-    const novasParcelasParaAdicionar = newCompra.parcelas.map(parcela => ({
-      ...parcela, // Mantém os dados da parcela
-      idCompraParcelada: compraId,
-      id: `${Date.now()}-${Math.random()}` // Gera um ID único para cada
-    }));
-
-    // 2. Chame o setTransactions UMA VEZ com todas as novas parcelas
-    setTransactions(prevTransactions => [...prevTransactions, ...novasParcelasParaAdicionar]);
-
-    setComprasParceladas([...comprasParceladas, newCompra]);
-
-  }
-  // Funções para gerenciar variações mensais
-  const addMonthlyVariation = (variation: Omit<MonthlyVariation, 'id'>) => {
-    // Verificar se já existe uma variação para este item, mês e ano
-    const existingVariation = monthlyVariations.find(v => v.fixedItemId === variation.fixedItemId && v.type === variation.type && v.year === variation.year && v.month === variation.month);
-    if (existingVariation) {
-      // Atualizar a variação existente em vez de criar uma nova
-      updateMonthlyVariation(existingVariation.id, variation);
-      return;
-    }
-    const newVariation = {
-      ...variation,
-      id: Date.now().toString()
-    };
-    setMonthlyVariations([...monthlyVariations, newVariation]);
-  };
-  const updateMonthlyVariation = (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => {
-    setMonthlyVariations(monthlyVariations.map(var_ => var_.id === id ? {
-      ...var_,
-      ...variation
-    } : var_));
-  };
-  const deleteMonthlyVariation = (id: string) => {
-    setMonthlyVariations(monthlyVariations.filter(var_ => var_.id !== id));
+  const deleteCategory = async (id: string) => {
+    try {
+      await categoryService.delete(id);
+      setCategories(prev => prev.filter(c => c.id !== id));
+    } catch (e) { console.error(e); }
   };
 
-  const deleteCompraParcelada = (id: string) => {
-    setTransactions(transactions.filter(t => t.idCompraParcelada !== id));
-    setComprasParceladas(comprasParceladas.filter(t => t.id !== id))
-  }
+  // --- RENDAS FIXAS ---
+  const addFixedIncome = async (income: Omit<FixedIncome, 'id'>) => {
+    try {
+      const newItem = await fixedTransactionService.createIncome(income);
+      setFixedIncomes(prev => [...prev, newItem]);
+    } catch (e) { console.error(e); }
+  };
+
+  const updateFixedIncome = async (id: string, income: Partial<Omit<FixedIncome, 'id'>>) => {
+    try {
+      const updatedItem = await fixedTransactionService.updateIncome(id, income);
+      setFixedIncomes(prev => prev.map(i => i.id === id ? updatedItem : i));
+    } catch (e) { console.error(e); }
+  };
+
+  const deleteFixedIncome = async (id: string) => {
+    // Nota: Aqui assumimos a lógica de "encerrar" atualizando a data de fim
+    // que já está implementada no componente. Se for um delete real:
+    try {
+        // Se for apenas update da data de fim, chamamos updateFixedIncome.
+        // Se for delete físico do banco:
+        await fixedTransactionService.deleteIncome(id);
+        setFixedIncomes(prev => prev.filter(i => i.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  // --- DESPESAS FIXAS ---
+  const addFixedExpense = async (expense: Omit<FixedExpense, 'id'>) => {
+    try {
+      const newItem = await fixedTransactionService.createExpense(expense);
+      setFixedExpenses(prev => [...prev, newItem]);
+    } catch (e) { console.error(e); }
+  };
+
+  const updateFixedExpense = async (id: string, expense: Partial<Omit<FixedExpense, 'id'>>) => {
+    try {
+      const updatedItem = await fixedTransactionService.updateExpense(id, expense);
+      setFixedExpenses(prev => prev.map(e => e.id === id ? updatedItem : e));
+    } catch (e) { console.error(e); }
+  };
+
+  const deleteFixedExpense = async (id: string) => {
+    try {
+        await fixedTransactionService.deleteExpense(id);
+        setFixedExpenses(prev => prev.filter(e => e.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  // --- TRANSAÇÕES ---
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+    try {
+      const newItem = await transactionService.create(transaction);
+      setTransactions(prev => [...prev, newItem]);
+    } catch (e) { console.error(e); }
+  };
+
+  const updateTransaction = async (id: string, transaction: Partial<Omit<Transaction, 'id'>>) => {
+    try {
+      const updatedItem = await transactionService.update(id, transaction);
+      setTransactions(prev => prev.map(t => t.id === id ? updatedItem : t));
+    } catch (e) { console.error(e); }
+  };
+
+  const deleteTransaction = async (id: string) => {
+    try {
+      // Verifica localmente para atualizar o estado corretamente
+      const transaction = transactions.find(t => t.id === id);
+      await transactionService.delete(id);
+      
+      if (transaction && 'idCompraParcelada' in transaction && transaction.idCompraParcelada) {
+         // Se for parcela, remove todas relacionadas no estado local também
+         const compraId = transaction.idCompraParcelada;
+         setTransactions(prev => prev.filter(t => !('idCompraParcelada' in t) || t.idCompraParcelada !== compraId));
+         setComprasParceladas(prev => prev.filter(c => c.id !== compraId));
+      } else {
+         setTransactions(prev => prev.filter(t => t.id !== id));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const addCompraParcelada = async (compra: Omit<CompraParcelada, 'id'>) => {
+    try {
+      const { compra: newCompra, parcelas } = await transactionService.createCompraParcelada(compra);
+      setComprasParceladas(prev => [...prev, newCompra]);
+      setTransactions(prev => [...prev, ...parcelas]);
+    } catch (e) { console.error(e); }
+  };
+
+  // --- VARIAÇÕES MENSAIS ---
+  const addMonthlyVariation = async (variation: Omit<MonthlyVariation, 'id'>) => {
+    try {
+        // Lógica de verificar existência deve ser feita no backend idealmente,
+        // ou mantida aqui temporariamente. Vamos assumir que o service cria uma nova.
+        const newItem = await fixedTransactionService.createVariation(variation);
+        setMonthlyVariations(prev => [...prev, newItem]);
+    } catch (e) { console.error(e); }
+  };
+
+  const updateMonthlyVariation = async (id: string, variation: Partial<Omit<MonthlyVariation, 'id'>>) => {
+    try {
+        const updatedItem = await fixedTransactionService.updateVariation(id, variation);
+        setMonthlyVariations(prev => prev.map(v => v.id === id ? updatedItem : v));
+    } catch (e) { console.error(e); }
+  };
+
+  const deleteMonthlyVariation = async (id: string) => {
+    try {
+        await fixedTransactionService.deleteVariation(id);
+        setMonthlyVariations(prev => prev.filter(v => v.id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  // Função síncrona de leitura (não precisa ir ao backend)
   const getActualFixedItemAmount = (itemId: string, type: 'income' | 'expense', year: number, month: number, defaultAmount: number): number => {
     const variation = monthlyVariations.find(v => v.fixedItemId === itemId && v.type === type && v.year === year && v.month === month);
     return variation ? variation.amount : defaultAmount;

@@ -17,14 +17,14 @@ const variableExpenseController = {
   createVariableExpense: async (req, res) => {
     try {
       const userId = req.user.id;
-      const expenseData = req.body; // Espera-se que venha em camelCase
+      const expenseData = { ...req.body, userId }; // Adiciona o userId aos dados
 
       // Validação básica
       if (!expenseData.description || !expenseData.amount || !expenseData.expenseDate) {
         return res.status(400).json({ error: 'Descrição, valor e data são obrigatórios.' });
       }
 
-      const newExpense = await VariableExpense.create(userId, expenseData);
+      const newExpense = await VariableExpense.create(expenseData);
       res.status(201).json(newExpense);
     } catch (error) {
       console.error('Erro ao criar despesa variável:', error);

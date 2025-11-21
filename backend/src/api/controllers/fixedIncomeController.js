@@ -17,8 +17,8 @@ const fixedIncomeController = {
   createFixedIncome: async (req, res) => {
     try {
       const userId = req.user.id;
-      const incomeData = req.body;
-      const newFixedIncome = await FixedIncome.create(userId, incomeData);
+      const incomeData = { ...req.body, userId }; // Adiciona o userId aos dados
+      const newFixedIncome = await FixedIncome.create(incomeData);
       res.status(201).json(newFixedIncome);
     } catch (error) {
       console.error('Erro ao criar renda fixa:', error);

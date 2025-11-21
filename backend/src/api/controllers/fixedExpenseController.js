@@ -17,14 +17,14 @@ const fixedExpenseController = {
   createFixedExpense: async (req, res) => {
     try {
       const userId = req.user.id;
-      const expenseData = req.body; // Espera-se que venha em camelCase
+      const expenseData = { ...req.body, userId }; // Adiciona o userId aos dados
 
       // Validação básica
       if (!expenseData.description || !expenseData.amount || !expenseData.startDate || !expenseData.day) {
         return res.status(400).json({ error: 'Descrição, valor, data de início e dia de recorrência são obrigatórios.' });
       }
 
-      const newExpense = await FixedExpense.create(userId, expenseData);
+      const newExpense = await FixedExpense.create(expenseData);
       res.status(201).json(newExpense);
     } catch (error) {
       console.error('Erro ao criar despesa fixa:', error);

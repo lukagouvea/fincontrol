@@ -17,13 +17,13 @@ const variableIncomeController = {
   createVariableIncome: async (req, res) => {
     try {
       const userId = req.user.id;
-      const incomeData = req.body; // Espera-se que venha em camelCase
+      const incomeData = { ...req.body, userId }; // Adiciona o userId aos dados
 
       if (!incomeData.description || !incomeData.amount || !incomeData.receptionDate) {
           return res.status(400).json({ error: 'Descrição, valor e data são obrigatórios.' });
       }
 
-      const newIncome = await VariableIncome.create(userId, incomeData);
+      const newIncome = await VariableIncome.create(incomeData);
       res.status(201).json(newIncome);
     } catch (error) {
       console.error('Erro ao criar renda variável:', error);

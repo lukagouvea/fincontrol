@@ -15,6 +15,7 @@ import { AuthProvider } from './context/AuthContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
+import { MonthlyReport } from './pages/History/MonthlyReport';
 
 export function App() {
   return (
@@ -28,16 +29,17 @@ export function App() {
               <Route path="/signup" element={<SignupPage />} />
               
               <Route element={<ProtectedRoute />}> 
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="categorias" element={<Categories />} />
-                <Route path="rendas-fixas" element={<FixedIncome />} />
-                <Route path="rendas-variaveis" element={<VariableIncome />} />
-                <Route path="despesas-fixas" element={<FixedExpenses />} />
-                <Route path="despesas-variaveis" element={<VariableExpenses />} />
-                <Route path="historico-despesas" element={<ExpenseHistory />} />
-                <Route path="historico-rendas" element={<IncomeHistory />} />
-                <Route path="calendario" element={<Calendar />} />
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="categorias" element={<Categories />} />
+                  <Route path="rendas-fixas" element={<FixedIncome />} />
+                  <Route path="rendas-variaveis" element={<VariableIncome />} />
+                  <Route path="despesas-fixas" element={<FixedExpenses />} />
+                  <Route path="despesas-variaveis" element={<VariableExpenses />} />
+                  <Route path="historico-despesas" element={<ExpenseHistory />} />
+                  <Route path="historico-rendas" element={<IncomeHistory />} />
+                  <Route path="relatorio-mensal" element={<MonthlyReport/>} />
+                  <Route path="calendario" element={<Calendar />} />
                 </Route>
               </Route>
               
@@ -45,5 +47,6 @@ export function App() {
           </Router>
         </ThemeProvider>
       </FinanceProvider>
-    </AuthProvider>;
+    </AuthProvider>
+  );
 }

@@ -97,6 +97,14 @@ export const Sidebar: React.FC = () => {
                   Histórico de Rendas
                 </NavLink>
               </li>
+              <li>
+                <NavLink to="/relatorio-mensal" className={({
+                isActive
+              }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
+                  <ClockIcon className="w-5 h-5 mr-3" />
+                  Relatório Mensal
+                </NavLink>
+              </li>
             </ul>
           </li>
         </ul>

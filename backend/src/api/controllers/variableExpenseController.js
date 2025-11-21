@@ -1,7 +1,7 @@
+
 const VariableExpense = require('../../models/variableExpense');
 
 const variableExpenseController = {
-  // Handler para buscar todas as despesas variáveis
   getAllVariableExpenses: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -13,18 +13,13 @@ const variableExpenseController = {
     }
   },
 
-  // Handler para criar uma nova despesa variável
   createVariableExpense: async (req, res) => {
     try {
       const userId = req.user.id;
-      const expenseData = { ...req.body, userId }; // Adiciona o userId aos dados
-
-      // Validação básica
-      if (!expenseData.description || !expenseData.amount || !expenseData.expenseDate) {
+      if (!req.body.description || !req.body.amount || !req.body.expense_date) {
         return res.status(400).json({ error: 'Descrição, valor e data são obrigatórios.' });
       }
-
-      const newExpense = await VariableExpense.create(expenseData);
+      const newExpense = await VariableExpense.create(userId, req.body);
       res.status(201).json(newExpense);
     } catch (error) {
       console.error('Erro ao criar despesa variável:', error);
@@ -32,6 +27,35 @@ const variableExpenseController = {
     }
   },
 
+  updateVariableExpense: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const updatedExpense = await VariableExpense.update(id, userId, req.body);
+      if (!updatedExpense) {
+        return res.status(404).json({ error: 'Despesa variável não encontrada ou não pertence ao usuário.' });
+      }
+      res.status(200).json(updatedExpense);
+    } catch (error) {
+      console.error('Erro ao atualizar despesa variável:', error);
+      res.status(500).json({ error: 'Ocorreu um erro interno ao atualizar a despesa variável.' });
+    }
+  },
+
+  deleteVariableExpense: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const success = await VariableExpense.remove(id, userId);
+      if (!success) {
+        return res.status(404).json({ error: 'Despesa variável não encontrada ou não pertence ao usuário.' });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error('Erro ao deletar despesa variável:', error);
+      res.status(500).json({ error: 'Ocorreu um erro interno ao deletar a despesa variável.' });
+    }
+  }
 };
 
 module.exports = variableExpenseController;

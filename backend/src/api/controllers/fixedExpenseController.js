@@ -1,7 +1,7 @@
+
 const FixedExpense = require('../../models/fixedExpense');
 
 const fixedExpenseController = {
-  // Handler para buscar todas as despesas fixas
   getAllFixedExpenses: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -13,18 +13,13 @@ const fixedExpenseController = {
     }
   },
 
-  // Handler para criar uma nova despesa fixa
   createFixedExpense: async (req, res) => {
     try {
       const userId = req.user.id;
-      const expenseData = { ...req.body, userId }; // Adiciona o userId aos dados
-
-      // Validação básica
-      if (!expenseData.description || !expenseData.amount || !expenseData.startDate || !expenseData.day) {
+      if (!req.body.description || !req.body.amount || !req.body.start_date || !req.body.day) {
         return res.status(400).json({ error: 'Descrição, valor, data de início e dia de recorrência são obrigatórios.' });
       }
-
-      const newExpense = await FixedExpense.create(expenseData);
+      const newExpense = await FixedExpense.create(userId, req.body);
       res.status(201).json(newExpense);
     } catch (error) {
       console.error('Erro ao criar despesa fixa:', error);
@@ -32,6 +27,35 @@ const fixedExpenseController = {
     }
   },
 
+  updateFixedExpense: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const updatedExpense = await FixedExpense.update(id, userId, req.body);
+      if (!updatedExpense) {
+        return res.status(404).json({ error: 'Despesa fixa não encontrada ou não pertence ao usuário.' });
+      }
+      res.status(200).json(updatedExpense);
+    } catch (error) {
+      console.error('Erro ao atualizar despesa fixa:', error);
+      res.status(500).json({ error: 'Ocorreu um erro interno ao atualizar a despesa fixa.' });
+    }
+  },
+
+  deleteFixedExpense: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const success = await FixedExpense.remove(id, userId);
+      if (!success) {
+        return res.status(404).json({ error: 'Despesa fixa não encontrada ou não pertence ao usuário.' });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error('Erro ao deletar despesa fixa:', error);
+      res.status(500).json({ error: 'Ocorreu um erro interno ao deletar a despesa fixa.' });
+    }
+  }
 };
 
 module.exports = fixedExpenseController;

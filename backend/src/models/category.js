@@ -1,3 +1,4 @@
+
 const db = require('../config/db');
 
 // Busca todas as categorias de um usuário específico
@@ -29,16 +30,41 @@ const create = async (userId, categoryData) => {
 
 // Atualiza uma categoria, garantindo que ela pertence ao usuário
 const update = async (id, userId, categoryData) => {
-  const { name, description, type, color } = categoryData;
+  const fields = [];
+  const values = [];
+  let fieldIndex = 1;
+
+  // Mapeia as chaves do frontend (camelCase) para as colunas do DB (snake_case)
+  const fieldMapping = {
+    name: 'name',
+    description: 'description',
+    type: 'type',
+    color: 'color'
+  };
+
+  for (const [key, value] of Object.entries(categoryData)) {
+    if (fieldMapping[key] && value !== undefined) {
+      fields.push(`${fieldMapping[key]} = $${fieldIndex++}`);
+      values.push(value);
+    }
+  }
+
+  if (fields.length === 0) {
+    // Se nenhum campo foi enviado, retorna a categoria atual sem fazer update
+    return getByIdAndUserId(id, userId);
+  }
+
+  values.push(id, userId);
+
   const query = `
     UPDATE categories 
-    SET name = $1, description = $2, type = $3, color = $4 
-    WHERE id = $5 AND user_id = $6
+    SET ${fields.join(', '')} 
+    WHERE id = $${fieldIndex++} AND user_id = $${fieldIndex}
     RETURNING *;
   `;
-  const values = [name, description, type, color, id, userId];
+
   const { rows } = await db.query(query, values);
-  return rows[0]; // Retorna undefined se a categoria não for encontrada ou não pertencer ao usuário
+  return rows[0];
 };
 
 // Remove uma categoria, garantindo que ela pertence ao usuário

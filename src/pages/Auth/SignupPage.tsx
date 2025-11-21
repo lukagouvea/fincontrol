@@ -33,7 +33,7 @@ export const SignupPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      await signup(name, email, password);
+      await signup({name, email, password});
       navigate('/');
     } catch (err) {
       console.log(`Exception while doing something: ${err}`);

@@ -23,7 +23,7 @@ export const LoginPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      await login(email, password);
+      await login({email, password});
       navigate('/');
     } catch (err) {
       setError('E-mail ou senha inválidos.');

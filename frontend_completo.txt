@@ -1,4 +1,4 @@
-==> src/App.tsx <==
+==> frontend/src/App.tsx <==
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { SignupPage } from './pages/Auth/SignupPage';
@@ -56,7 +56,7 @@ export function App() {
     </QueryClientProvider>
   );
 }
-==> src/AppRouter.tsx <==
+==> frontend/src/AppRouter.tsx <==
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { App } from "./App";
@@ -67,7 +67,7 @@ export function AppRouter() {
           </Routes>
       </BrowserRouter>;
 }
-==> src/components/Auth/ProtectedRoute.tsx <==
+==> frontend/src/components/Auth/ProtectedRoute.tsx <==
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -81,7 +81,7 @@ export const ProtectedRoute: React.FC = () => {
 
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
 };
-==> src/components/Dashboard/CategoryPieChart.tsx <==
+==> frontend/src/components/Dashboard/CategoryPieChart.tsx <==
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { getActualFixedItemAmount } from '../../utils/financeUtils';
@@ -145,7 +145,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
         </div>}
     </div>;
 };
-==> src/components/Dashboard/ExpensesValueHistogram.tsx <==
+==> frontend/src/components/Dashboard/ExpensesValueHistogram.tsx <==
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getActualFixedItemAmount } from '../../utils/financeUtils';
@@ -253,7 +253,7 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
       </ResponsiveContainer>
     </div>;
 };
-==> src/components/Dashboard/MonthlyHistogram.tsx <==
+==> frontend/src/components/Dashboard/MonthlyHistogram.tsx <==
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getActualFixedItemAmount } from '../../utils/financeUtils';
@@ -355,7 +355,7 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
       </ResponsiveContainer>
     </div>;
 };
-==> src/components/Dashboard/RecentTransactions.tsx <==
+==> frontend/src/components/Dashboard/RecentTransactions.tsx <==
 import React from 'react';
 import { Transaction, Category } from '../../types/FinanceTypes';
 import { formatUTCToDDMMAAAA } from '../../utils/dateUtils';
@@ -469,7 +469,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       </table>
     </div>;
 };
-==> src/components/Dashboard/SortableDashboardItem.tsx <==
+==> frontend/src/components/Dashboard/SortableDashboardItem.tsx <==
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -524,7 +524,7 @@ export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
       <div className="p-6">{children}</div>
     </div>;
 };
-==> src/components/Dashboard/UpcomingBills.tsx <==
+==> frontend/src/components/Dashboard/UpcomingBills.tsx <==
 import React, { useMemo } from 'react';
 // 1. Importe os ícones necessários
 import { CreditCard, ArrowDownCircle } from 'lucide-react'; 
@@ -652,7 +652,7 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
     </div>
   );
 };
-==> src/components/Dashboard/WeeklyFinancialCalendar.tsx <==
+==> frontend/src/components/Dashboard/WeeklyFinancialCalendar.tsx <==
 import React, { useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { Transaction, VariableExpense, Category } from '../../types/FinanceTypes';
@@ -899,7 +899,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
         </div>}
     </div>;
 };
-==> src/components/Dashboard/WeeklySpending.tsx <==
+==> frontend/src/components/Dashboard/WeeklySpending.tsx <==
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Transaction } from '../../types/FinanceTypes';
@@ -958,7 +958,7 @@ export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
       </ResponsiveContainer>
     </div>;
 };
-==> src/components/Expenses/ExpenseModal.tsx <==
+==> frontend/src/components/Expenses/ExpenseModal.tsx <==
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Loader2, XIcon } from 'lucide-react';
@@ -1101,7 +1101,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 };
 
 export default React.memo(ExpenseModal);
-==> src/components/Expenses/FixedExpenseModal.tsx <==
+==> frontend/src/components/Expenses/FixedExpenseModal.tsx <==
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Loader2, XIcon } from 'lucide-react';
@@ -1241,7 +1241,7 @@ export const FixedExpenseModal: React.FC<FixedExpenseModalProps> = ({ isOpen, on
     modalRoot
   );
 };
-==> src/components/Income/FixedIncomeModal.tsx <==
+==> frontend/src/components/Income/FixedIncomeModal.tsx <==
 // src/components/Income/FixedIncomeModal.tsx
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -1389,7 +1389,7 @@ export const FixedIncomeModal: React.FC<FixedIncomeModalProps> = ({ isOpen, onCl
     modalRoot
   );
 };
-==> src/components/Income/IncomeModal.tsx <==
+==> frontend/src/components/Income/IncomeModal.tsx <==
 import React, { useEffect, useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Loader2, XIcon } from 'lucide-react';
@@ -1536,7 +1536,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSub
 
 export default React.memo(IncomeModal);
 
-==> src/components/Layout/Header.tsx <==
+==> frontend/src/components/Layout/Header.tsx <==
 import React from 'react';
 import { UserIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -1579,7 +1579,7 @@ export const Header: React.FC = () => {
       </div>
     </header>;
 };
-==> src/components/Layout/Layout.tsx <==
+==> frontend/src/components/Layout/Layout.tsx <==
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
@@ -1602,7 +1602,7 @@ export const Layout: React.FC = () => {
       </div>
     </div>;
 };
-==> src/components/Layout/Sidebar.tsx <==
+==> frontend/src/components/Layout/Sidebar.tsx <==
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { HomeIcon, TagIcon, DollarSignIcon, CoinsIcon, CreditCardIcon, ShoppingCartIcon, CalendarIcon, ClockIcon, LogOutIcon } from 'lucide-react';
@@ -1722,7 +1722,7 @@ export const Sidebar: React.FC = () => {
       </div>
     </aside>;
 };
-==> src/components/Layout/ThemeToggle.tsx <==
+==> frontend/src/components/Layout/ThemeToggle.tsx <==
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -1739,7 +1739,7 @@ export const ThemeToggle = () => {
     </button>
   );
 };
-==> src/components/Shared/ArchiveModal.tsx <==
+==> frontend/src/components/Shared/ArchiveModal.tsx <==
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { XIcon, PencilIcon } from 'lucide-react';
@@ -1849,7 +1849,7 @@ export const ArchiveModal = <T extends ArchiveItem>({
     modalRoot
   );
 };
-==> src/components/Shared/ConfirmationModal.tsx <==
+==> frontend/src/components/Shared/ConfirmationModal.tsx <==
 import React from 'react';
 import { AlertTriangleIcon } from 'lucide-react';
 import ReactDOM from 'react-dom';
@@ -1918,11 +1918,11 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     </div>
   , modalRoot);
 };
-==> src/components/Shared/Skeleton.tsx <==
+==> frontend/src/components/Shared/Skeleton.tsx <==
 export const Skeleton = ({ className }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
 );
-==> src/components/Shared/VariationModal.tsx <==
+==> frontend/src/components/Shared/VariationModal.tsx <==
 // src/components/Shared/VariationModal.tsx
 
 import React, { useState, useEffect } from 'react';
@@ -2036,7 +2036,7 @@ export const VariationModal: React.FC<VariationModalProps> = ({ isOpen, onClose,
     modalRoot
   );
 };
-==> src/context/AuthContext.tsx <==
+==> frontend/src/context/AuthContext.tsx <==
 import React, { useEffect, useState, createContext, useContext, useMemo } from 'react';
 import { User, LoginCredentials, SignupCredentials } from '../types/AuthTypes';
 import { authService } from '../services/authService';
@@ -2136,7 +2136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-==> src/context/FinanceContext.tsx <==
+==> frontend/src/context/FinanceContext.tsx <==
 import React, { createContext, useContext, useMemo } from 'react';
 
 
@@ -2166,7 +2166,7 @@ export const FinanceProvider: React.FC<{
   ]);
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 };
-==> src/context/ThemeContext.tsx <==
+==> frontend/src/context/ThemeContext.tsx <==
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 
 type Theme = 'light' | 'dark';
@@ -2216,7 +2216,7 @@ export const useTheme = () => {
   }
   return context;
 };
-==> src/hooks/useCategories.ts <==
+==> frontend/src/hooks/useCategories.ts <==
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from '../services/categoryService';
 import { Category } from '../types/FinanceTypes';
@@ -2270,7 +2270,7 @@ export const useDeleteCategory = () => {
     },
   });
 };
-==> src/hooks/useFixedTransactions.ts <==
+==> frontend/src/hooks/useFixedTransactions.ts <==
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fixedTransactionService } from '../services/fixedTransactionService';
 import { FixedExpense, FixedIncome } from '../types/FinanceTypes';
@@ -2363,7 +2363,7 @@ export const useDeleteFixedIncome = () => {
     },
   });
 };
-==> src/hooks/useMonthlyVariations.ts <==
+==> frontend/src/hooks/useMonthlyVariations.ts <==
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fixedTransactionService } from '../services/fixedTransactionService';
 
@@ -2414,7 +2414,7 @@ export const useDeleteMonthlyVariation = () => {
     },
   });
 };
-==> src/hooks/useTransactions.ts <==
+==> frontend/src/hooks/useTransactions.ts <==
 import { useQuery, useMutation, useQueryClient, useQueries, keepPreviousData } from '@tanstack/react-query';
 import { transactionService } from '../services/transactionService';
 import { Transaction } from '../types/FinanceTypes';
@@ -2553,7 +2553,7 @@ export const useAddCompraParcelada = () => {
     },
   });
 };
-==> src/index.tsx <==
+==> frontend/src/index.tsx <==
 import './index.css';
 import React from "react";
 import { createRoot } from "react-dom/client"; // 1. Mude a importação
@@ -2575,7 +2575,7 @@ if (container) {
 } else {
   console.error("Não foi possível encontrar o elemento root.");
 }
-==> src/pages/Auth/LoginPage.tsx <==
+==> frontend/src/pages/Auth/LoginPage.tsx <==
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -2669,7 +2669,7 @@ export const LoginPage: React.FC = () => {
       </div>
     </div>;
 };
-==> src/pages/Auth/SignupPage.tsx <==
+==> frontend/src/pages/Auth/SignupPage.tsx <==
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -2777,7 +2777,7 @@ export const SignupPage: React.FC = () => {
       </div>
     </div>;
 };
-==> src/pages/Calendar.tsx <==
+==> frontend/src/pages/Calendar.tsx <==
 import React, { useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, XIcon, PlusIcon } from 'lucide-react';
 import { Transaction, VariableExpense } from '../types/FinanceTypes';
@@ -3287,7 +3287,7 @@ export const Calendar: React.FC = () => {
     </div>
   );
 };
-==> src/pages/Categories.tsx <==
+==> frontend/src/pages/Categories.tsx <==
 import React, { useState } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, Loader2 } from 'lucide-react';
 import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from '../hooks/useCategories';
@@ -3543,7 +3543,7 @@ export const Categories: React.FC = () => {
     </div>
   );
 };
-==> src/pages/Dashboard.tsx <==
+==> frontend/src/pages/Dashboard.tsx <==
 import React, { useState, useEffect, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { WeeklySpending } from '../components/Dashboard/WeeklySpending';
@@ -3891,7 +3891,7 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
-==> src/pages/Expenses/FixedExpenses.tsx <==
+==> frontend/src/pages/Expenses/FixedExpenses.tsx <==
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, ArchiveIcon, CalendarIcon } from 'lucide-react';
 import { FixedExpense as FixedExpenseType } from '../../types/FinanceTypes';
@@ -4229,7 +4229,7 @@ export const FixedExpenses: React.FC = () => {
     </div>
   );
 };
-==> src/pages/Expenses/VariableExpenses.tsx <==
+==> frontend/src/pages/Expenses/VariableExpenses.tsx <==
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { useTransactions, useAddTransaction, useUpdateTransaction, useDeleteTransaction, useAddCompraParcelada } from '../../hooks/useTransactions';
@@ -4472,7 +4472,7 @@ export const VariableExpenses: React.FC = () => {
     </div>
   );
 };
-==> src/pages/History/ExpenseHistory.tsx <==
+==> frontend/src/pages/History/ExpenseHistory.tsx <==
 import React, { useMemo, useState } from 'react';
 import { CategoryPieChart } from '../../components/Dashboard/CategoryPieChart';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -4831,7 +4831,7 @@ export const ExpenseHistory: React.FC = () => {
     </div>
   );
 };
-==> src/pages/History/IncomeHistory.tsx <==
+==> frontend/src/pages/History/IncomeHistory.tsx <==
 import React, { useMemo, useState } from 'react';
 import { formatUTCToDDMMAAAA, parseDateInputToLocal } from '../../utils/dateUtils';
 import { isItemActiveInMonth, getActualFixedItemAmount } from '../../utils/financeUtils';
@@ -5101,7 +5101,7 @@ export const IncomeHistory: React.FC = () => {
     </div>
   );
 };
-==> src/pages/History/MonthlyReport.tsx <==
+==> frontend/src/pages/History/MonthlyReport.tsx <==
 import React, { useMemo, useState } from 'react';
 import { CategoryPieChart } from '../../components/Dashboard/CategoryPieChart';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -5598,7 +5598,7 @@ export const MonthlyReport: React.FC = () => {
     </div>
   );
 };
-==> src/pages/Income/FixedIncome.tsx <==
+==> frontend/src/pages/Income/FixedIncome.tsx <==
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, ArchiveIcon, CalendarIcon } from 'lucide-react';
 import {FixedIncome as FixedIncomeType} from '../../types/FinanceTypes'
@@ -5924,7 +5924,7 @@ export const FixedIncome: React.FC = () => {
     </div>
   );
 };
-==> src/pages/Income/VariableIncome.tsx <==
+==> frontend/src/pages/Income/VariableIncome.tsx <==
 import React, { useState, useMemo } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import { Transaction, VariableIncome as VariableIncomeType } from '../../types/FinanceTypes';
@@ -6148,7 +6148,7 @@ export const VariableIncome: React.FC = () => {
     </div>
   );
 };
-==> src/services/api.ts <==
+==> frontend/src/services/api.ts <==
 import axios from 'axios';
 
 
@@ -6180,7 +6180,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-==> src/services/authService.ts <==
+==> frontend/src/services/authService.ts <==
 import { api } from './api';
 import { LoginCredentials, SignupCredentials, User, AuthResponse } from '../types/AuthTypes';
 
@@ -6221,7 +6221,7 @@ export const authService = {
     }
   }
 };
-==> src/services/categoryService.ts <==
+==> frontend/src/services/categoryService.ts <==
 import { api } from './api';
 import { Category } from '../types/FinanceTypes';
 
@@ -6249,7 +6249,7 @@ export const categoryService = {
     await api.delete(`/categories/${id}`);
   }
 };
-==> src/services/fixedTransactionService.ts <==
+==> frontend/src/services/fixedTransactionService.ts <==
 import { api } from './api';
 import { FixedExpense, FixedIncome, MonthlyVariation } from '../types/FinanceTypes';
 
@@ -6322,7 +6322,7 @@ export const fixedTransactionService = {
     await api.delete(`/recurring/${id}`);
   },
 };
-==> src/services/transactionService.ts <==
+==> frontend/src/services/transactionService.ts <==
 import { api } from './api';
 import { Transaction, CompraParcelada } from '../types/FinanceTypes';
 
@@ -6379,7 +6379,7 @@ export const transactionService = {
     await api.delete(`/transactions/${id}`);
   }
 };
-==> src/types/AuthTypes.ts <==
+==> frontend/src/types/AuthTypes.ts <==
 export type User = {
   id: string;
   name: string;
@@ -6402,7 +6402,7 @@ export type AuthResponse = {
   user: User;
   token: string;
 };
-==> src/types/FinanceTypes.ts <==
+==> frontend/src/types/FinanceTypes.ts <==
 export type Category = {
   id: string;
   name: string;
@@ -6474,7 +6474,7 @@ export type MonthlyVariation = {
 };
 
 export type Transaction = VariableIncome | VariableExpense | Parcela;
-==> src/utils/dateUtils.tsx <==
+==> frontend/src/utils/dateUtils.tsx <==
 /**
  * Pega uma string de data (ex: '2025-10-15' de um <input type="date">) e a converte
  * para um objeto Date que representa o início daquele dia no FUSO HORÁRIO LOCAL do usuário.
@@ -6671,7 +6671,7 @@ export function getEndOfWeek(date: Date): Date {
   
   return end;
 }
-==> src/utils/financeUtils.tsx <==
+==> frontend/src/utils/financeUtils.tsx <==
 import { MonthlyVariation, Parcela } from "../types/FinanceTypes";
 
 
@@ -6754,7 +6754,7 @@ export const isItemActiveInMonth = (
 
   return isAfterStart && isBeforeEnd;
 };
-==> src/utils/typeGuards.ts <==
+==> frontend/src/utils/typeGuards.ts <==
 import { 
   FixedTransaction, 
   VariableTransaction, 

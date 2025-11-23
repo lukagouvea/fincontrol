@@ -1,4 +1,4 @@
-==> src/index.ts <==
+==> backend/src/index.ts <==
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
@@ -35,12 +35,12 @@ serve({
 });
 
 console.log('🔥 Servidor rodando em http://localhost:' + process.env.PORT);
-==> src/lib/prisma.ts <==
+==> backend/src/lib/prisma.ts <==
 import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient();
 
-==> src/middleware/auth.ts <==
+==> backend/src/middleware/auth.ts <==
 import { createMiddleware } from 'hono/factory';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'hono/jwt';
@@ -72,7 +72,7 @@ export const authMiddleware = createMiddleware<Env>(async (c, next) => {
     return c.json({ error: 'Não autorizado: Token inválido ou expirado' }, 401);
   }
 });
-==> src/routes/auth.ts <==
+==> backend/src/routes/auth.ts <==
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
@@ -221,7 +221,7 @@ app.get('/me', async (c) => {
 });
 
 export default app;
-==> src/routes/categories.ts <==
+==> backend/src/routes/categories.ts <==
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
@@ -370,7 +370,7 @@ app.delete('/:id', async (c) => {
 });
 
 export default app;
-==> src/routes/dashboard.ts <==
+==> backend/src/routes/dashboard.ts <==
 import { Hono } from 'hono';
 import { prisma } from '../lib/prisma.ts'; // Sua instância do Prisma Client
 import { authMiddleware } from '../middleware/auth.ts';
@@ -501,7 +501,7 @@ app.get('/summary', async (c) => {
 });
 
 export default app;
-==> src/routes/recurring.ts <==
+==> backend/src/routes/recurring.ts <==
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
@@ -765,7 +765,7 @@ app.delete('/:id', async (c) => {
 });
 
 export default app;
-==> src/routes/transactions.ts <==
+==> backend/src/routes/transactions.ts <==
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';

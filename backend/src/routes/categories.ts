@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
-import { prisma } from '../lib/prisma.ts';
-import { authMiddleware } from '../middleware/auth.ts';
+import { prisma } from '../lib/prisma.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 // Definindo o tipo das variáveis do contexto (para o TypeScript não reclamar do userId)
 type Variables = {

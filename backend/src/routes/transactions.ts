@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
-import { prisma } from '../lib/prisma.ts';
-import { authMiddleware } from '../middleware/auth.ts';
+import { prisma } from '../lib/prisma.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const app = new Hono<{ Variables: { userId: string } }>();
 

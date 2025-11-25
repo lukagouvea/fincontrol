@@ -4,7 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { hash, compare } from 'bcryptjs';
 import { sign, verify } from 'hono/jwt';
 import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
-import { prisma } from '../lib/prisma.ts'; // Certifique-se que o caminho está certo
+import { prisma } from '../lib/prisma.js'; // Certifique-se que o caminho está certo
 
 const app = new Hono();
 
@@ -64,7 +64,7 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
   // 5. Define o Cookie HttpOnly (Segurança Máxima)
   setCookie(c, 'auth_token', token, {
     httpOnly: true, // JS do front não acessa (protege contra XSS)
-    secure: process.env.NODE_ENV === 'production', // Só HTTPS em produção
+    secure: false, //process.env.NODE_ENV === 'production', // Só HTTPS em produção
     sameSite: 'Lax', // Protege contra CSRF básico
     path: '/', // Válido para todo o site
     maxAge: 60 * 60 * 24 * 7, // 7 dias
@@ -99,7 +99,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
   // 4. Cookie
   setCookie(c, 'auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, //process.env.NODE_ENV === 'production',
     sameSite: 'Lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 7,

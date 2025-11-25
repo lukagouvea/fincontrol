@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { prisma } from '../lib/prisma.ts'; // Sua instância do Prisma Client
-import { authMiddleware } from '../middleware/auth.ts';
+import { prisma } from '../lib/prisma'; // Sua instância do Prisma Client
+import { authMiddleware } from '../middleware/auth.js';
 
 const app = new Hono<{ Variables: { userId: string } }>();
 

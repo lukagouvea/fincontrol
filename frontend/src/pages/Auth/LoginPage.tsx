@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,8 +26,24 @@ export const LoginPage: React.FC = () => {
       setError('');
       await login({email, password});
       navigate('/');
-    } catch (err) {
-      setError('E-mail ou senha inválidos.');
+    } catch (err:any) {
+      // Lógica de Mensagem Inteligente
+      if (!err.response) {
+         // Erro de rede (Backend off / Nginx off)
+         setError("Não foi possível conectar ao servidor. Verifique sua conexão.");
+      } else if (err.response.status >= 500) {
+         // Erro interno (Backend crashou / Nginx 502)
+         setError("Serviço temporariamente indisponível. Tente novamente mais tarde.");
+      } else if (err.response.status === 429) {
+         // Rate Limit (Sua proteção do Nginx)
+         setError("Muitas tentativas seguidas. Aguarde um momento.");
+      } else if (err.response.status === 401) {
+         // Erro real de login
+         setError("E-mail ou senha incorretos.");
+      } else {
+         // Outros erros
+         setError("Ocorreu um erro inesperado. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }

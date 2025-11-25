@@ -27,6 +27,7 @@ RUN npm run build
 FROM nginx:alpine AS runner
 # Copia o build do React para a pasta do Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY 50x.html /usr/share/nginx/html/50x.html
 # Configuração customizada do Nginx (opcional, mas recomendada para React Router)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

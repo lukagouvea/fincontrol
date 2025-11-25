@@ -35,9 +35,17 @@ export const SignupPage: React.FC = () => {
       setError('');
       await signup({name, email, password});
       navigate('/');
-    } catch (err) {
-      console.log(`Exception while doing something: ${err}`);
-      setError('Erro ao criar conta. Tente novamente.');
+    } catch (err:any) {
+      if (!err.response) {
+         setError("Sem conexão com o servidor. Verifique sua internet.");
+      } else if (err.response.status === 409) {
+         // Erro específico de cadastro
+         setError("Este e-mail já está cadastrado.");
+      } else if (err.response.status >= 500) {
+         setError("O sistema está instável no momento. Tente novamente mais tarde.");
+      } else {
+         setError("Erro ao criar conta. Verifique seus dados.");
+      }
     } finally {
       setLoading(false);
     }

@@ -16,6 +16,19 @@ export const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (!error.response) {
+        console.error("Erro de Rede:", error);
+        // Opcional: Disparar um Toast Global aqui se tiver biblioteca de toast
+        return Promise.reject(new Error("Sem conexão com o servidor. Verifique sua internet."));
+    }
+
+    const status = error.response.status;
+
+    if (status >= 500) {
+        console.error(`Erro do Servidor (${status}):`, error.response.data);
+        return Promise.reject(new Error("O servidor está enfrentando problemas temporários."));
+    }
+
     if (error.response?.status === 401) {
         const requestUrl = error.config.url;
 

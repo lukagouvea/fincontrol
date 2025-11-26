@@ -35,20 +35,20 @@ app.get('/', async (c) => {
   const type = c.req.query('type'); // 'income' ou 'expense'
 
   try {
-    const rules = await prisma.recurring_rules.findMany({
+    const rules = await prisma.recurringRule.findMany({
       where: {
-        user_id: userId,
+        userId: userId,
         active: true, // Só traz as ativas
         ...(type && { type: type as 'income' | 'expense' })
       },
       include: {
-        // Se o DB Pull chamou de 'categories', usamos esse nome. Se for 'Category', ajuste.
-        categories: {
+        // Se o DB Pull chamou de 'category', usamos esse nome. Se for 'Category', ajuste.
+        category: {
           select: { id: true, name: true, color: true }
         }
       },
       orderBy: {
-        day_of_month: 'asc'
+        dayOfMonth: 'asc'
       }
     });
 
@@ -58,11 +58,11 @@ app.get('/', async (c) => {
       description: rule.description,
       amount: Number(rule.amount),
       type: rule.type,
-      day: rule.day_of_month, // Banco (day_of_month) -> Front (day)
-      startDate: rule.start_date.toISOString(),
-      endDate: rule.end_date?.toISOString(),
-      categoryId: rule.category_id,
-      category: rule.categories, // Objeto categoria completo para exibir cor/nome
+      day: rule.dayOfMonth, // Banco (day_of_month) -> Front (day)
+      startDate: rule.startDate.toISOString(),
+      endDate: rule.endDate?.toISOString(),
+      categoryId: rule.categoryId,
+      category: rule.category, // Objeto categoria completo para exibir cor/nome
     }));
 
     return c.json(formattedRules);
@@ -79,11 +79,11 @@ app.get('/variations', async (c) => {
   const userId = c.var.userId;
 
   try {
-    const variationTransactions = await prisma.transactions.findMany({
+    const variationTransactions = await prisma.transaction.findMany({
       where: {
-        user_id: userId,
+        userId: userId,
         // Filtra transações que têm recurring_rule_id (ou seja, vieram de regras fixas)
-        recurring_rule_id: { not: null } 
+        recurringRuleId: { not: null } 
       }
     });
 
@@ -91,7 +91,7 @@ app.get('/variations', async (c) => {
       const date = new Date(t.date);
       return {
         id: t.id, // ID da transação
-        fixedItemId: t.recurring_rule_id, // ID da regra pai
+        fixedItemId: t.recurringRuleId, // ID da regra pai
         type: t.type,
         amount: Number(t.amount),
         year: date.getFullYear(),
@@ -114,10 +114,10 @@ app.post('/:id/variation', zValidator('json', variationSchema), async (c) => {
 
   try {
     // 1. Buscar a regra original para pegar descrição e categoria
-    const rule = await prisma.recurring_rules.findFirst({
+    const rule = await prisma.recurringRule.findFirst({
       where: {
         id: ruleId,
-        user_id: userId
+        userId: userId
       }
     });
 
@@ -125,43 +125,43 @@ app.post('/:id/variation', zValidator('json', variationSchema), async (c) => {
 
     // 2. Calcular a data exata da transação (Ano/Mês/Dia da Regra)
     // Cuidado com fusos: Criamos a data como string YYYY-MM-DD para o banco
-    const targetDate = new Date(body.year, body.month, rule.day_of_month);
+    const targetDate = new Date(body.year, body.month, rule.dayOfMonth);
     
     // IMPORTANTE: Prisma com tipo DateTime pode exigir objeto Date
     // Mas se o campo no banco for DATE puro, ele ignora a hora. 
     // Vamos passar o objeto Date configurado.
 
     // 3. Verificar se já existe transação para esta regra neste mês
-    const existingTransaction = await prisma.transactions.findFirst({
+    const existingTransaction = await prisma.transaction.findFirst({
       where: {
-        recurring_rule_id: ruleId,
+        recurringRuleId: ruleId,
         // A comparação de data exata no Prisma pode ser chata. 
         // Vamos buscar pelo intervalo do dia para garantir.
         date: {
-            gte: new Date(body.year, body.month, rule.day_of_month, 0, 0, 0),
-            lt: new Date(body.year, body.month, rule.day_of_month + 1, 0, 0, 0)
+            gte: new Date(body.year, body.month, rule.dayOfMonth, 0, 0, 0),
+            lt: new Date(body.year, body.month, rule.dayOfMonth + 1, 0, 0, 0)
         }
       }
     });
 
     if (existingTransaction) {
       // ATUALIZAR: Se já existe, atualiza o valor
-      await prisma.transactions.update({
+      await prisma.transaction.update({
         where: { id: existingTransaction.id },
         data: { amount: body.amount }
       });
       return c.json({ message: 'Variação atualizada' });
     } else {
       // CRIAR: Cria uma nova transação vinculada à regra
-      await prisma.transactions.create({
+      await prisma.transaction.create({
         data: {
-          user_id: userId,
+          userId: userId,
           description: rule.description,
           amount: body.amount,
           type: body.type,
           date: targetDate,
-          category_id: rule.category_id,
-          recurring_rule_id: rule.id,
+          categoryId: rule.categoryId,
+          recurringRuleId: rule.id,
         }
       });
       return c.json({ message: 'Variação criada' });
@@ -178,17 +178,17 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
   const body = c.req.valid('json');
 
   try {
-    const rule = await prisma.recurring_rules.create({
+    const rule = await prisma.recurringRule.create({
       data: {
-        user_id: userId,
+        userId: userId,
         description: body.description,
         amount: body.amount,
         type: body.type,
-        day_of_month: body.day, // Front (day) -> Banco (day_of_month)
-        start_date: new Date(body.startDate),
-        end_date: body.endDate ? new Date(body.endDate) : null,
+        dayOfMonth: body.day, // Front (day) -> Banco (day_of_month)
+        startDate: new Date(body.startDate),
+        endDate: body.endDate ? new Date(body.endDate) : null,
         // Se categoryId vier vazio ou string vazia, manda null pro banco
-        category_id: body.categoryId || null,
+        categoryId: body.categoryId || null,
       }
     });
 
@@ -207,22 +207,22 @@ app.put('/:id', zValidator('json', recurringSchema.partial()), async (c) => {
   const body = c.req.valid('json');
 
   // Verifica propriedade
-  const existing = await prisma.recurring_rules.findFirst({
-    where: { id, user_id: userId }
+  const existing = await prisma.recurringRule.findFirst({
+    where: { id, userId: userId }
   });
 
   if (!existing) return c.json({ error: 'Regra não encontrada' }, 404);
 
   try {
-    const updated = await prisma.recurring_rules.update({
+    const updated = await prisma.recurringRule.update({
       where: { id },
       data: {
         description: body.description,
         amount: body.amount,
-        day_of_month: body.day,
-        start_date: body.startDate ? new Date(body.startDate) : undefined,
-        end_date: body.endDate ? new Date(body.endDate) : (body.endDate === null || body.endDate === '' ? null : undefined), // Aceita undefined para não mudar, ou null para limpar
-        category_id: body.categoryId === '' ? null : body.categoryId,
+        dayOfMonth: body.day,
+        startDate: body.startDate ? new Date(body.startDate) : undefined,
+        endDate: body.endDate ? new Date(body.endDate) : (body.endDate === null || body.endDate === '' ? null : undefined), // Aceita undefined para não mudar, ou null para limpar
+        categoryId: body.categoryId === '' ? null : body.categoryId,
       }
     });
 
@@ -239,17 +239,17 @@ app.delete('/:id', async (c) => {
   const userId = c.var.userId;
   const id = c.req.param('id');
 
-  const existing = await prisma.recurring_rules.findFirst({
-    where: { id, user_id: userId }
+  const existing = await prisma.recurringRule.findFirst({
+    where: { id, userId: userId }
   });
 
   if (!existing) return c.json({ error: 'Regra não encontrada' }, 404);
 
   try {
-    await prisma.recurring_rules.update({
+    await prisma.recurringRule.update({
       where: { id },
       data: {
-        end_date: new Date() // Encerra a vigência hoje
+        endDate: new Date() // Encerra a vigência hoje
       }
     });
 

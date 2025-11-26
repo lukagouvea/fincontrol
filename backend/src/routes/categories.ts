@@ -27,9 +27,9 @@ app.get('/', async (c) => {
   const userId = c.var.userId; // Pegamos do middleware!
   const type = c.req.query('type'); // Opcional: ?type=income
 
-  const categories = await prisma.categories.findMany({
+  const categories = await prisma.category.findMany({
     where: {
-      user_id: userId,
+      userId: userId,
       active: true, // Só traz as ativas
       ...(type && { type: type as 'income' | 'expense' })
     },
@@ -45,9 +45,9 @@ app.post('/', zValidator('json', categorySchema), async (c) => {
   const body = c.req.valid('json');
 
   // 1. Primeiro, verificamos se essa categoria já existe no banco (ativa ou inativa)
-  const existingCategory = await prisma.categories.findFirst({
+  const existingCategory = await prisma.category.findFirst({
     where: {
-      user_id: userId,
+      userId: userId,
       name: body.name,
       type: body.type,
     }
@@ -62,7 +62,7 @@ app.post('/', zValidator('json', categorySchema), async (c) => {
 
     // 2b. Se estiver inativa (excluída), nós a "Ressuscitamos"
     // Atualizamos também a cor e descrição para o que o usuário mandou agora
-    const reactivatedCategory = await prisma.categories.update({
+    const reactivatedCategory = await prisma.category.update({
       where: { id: existingCategory.id },
       data: {
         active: true,
@@ -76,9 +76,9 @@ app.post('/', zValidator('json', categorySchema), async (c) => {
 
   // 3. Se não existir, criamos do zero (Caminho feliz normal)
   try {
-    const newCategory = await prisma.categories.create({
+    const newCategory = await prisma.category.create({
       data: {
-        user_id: userId,
+        userId: userId,
         name: body.name,
         description: body.description,
         type: body.type,
@@ -101,15 +101,15 @@ app.put('/:id', zValidator('json', categorySchema.partial()), async (c) => {
   const body = c.req.valid('json');
 
   // Garante que a categoria pertence ao usuário antes de editar
-  const existing = await prisma.categories.findFirst({
-    where: { id, user_id: userId }
+  const existing = await prisma.category.findFirst({
+    where: { id, userId: userId }
   });
 
   if (!existing) {
     return c.json({ error: 'Categoria não encontrada' }, 404);
   }
 
-  const updated = await prisma.categories.update({
+  const updated = await prisma.category.update({
     where: { id },
     data: {
       name: body.name,
@@ -128,8 +128,8 @@ app.delete('/:id', async (c) => {
   const id = c.req.param('id');
 
   // Verifica propriedade
-  const existing = await prisma.categories.findFirst({
-    where: { id, user_id: userId }
+  const existing = await prisma.category.findFirst({
+    where: { id, userId: userId }
   });
 
   if (!existing) {
@@ -137,7 +137,7 @@ app.delete('/:id', async (c) => {
   }
 
   // Soft Delete: Apenas marca como inativa para não sumir do histórico
-  await prisma.categories.update({
+  await prisma.category.update({
     where: { id },
     data: { active: false }
   });

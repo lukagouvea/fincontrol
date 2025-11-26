@@ -48,20 +48,20 @@ app.get('/', async (c) => {
   const endDate = new Date(year, month, 0, 23, 59, 59, 999); // Último momento do mês
 
   try {
-    const transactions = await prisma.transactions.findMany({
+    const transactions = await prisma.transaction.findMany({
       where: {
-        user_id: userId,
+        userId: userId,
         date: {
           gte: startDate,
           lte: endDate,
         },
       },
       include: {
-        categories: {
+        category: {
           select: { id: true, name: true, color: true, type: true }
         },
-        installment_groups: {
-          select: { total_installments: true } // Para saber se é "1/10"
+        installmentGroup: {
+          select: { totalInstallments: true } // Para saber se é "1/10"
         },
       },
       orderBy: {
@@ -73,13 +73,9 @@ app.get('/', async (c) => {
     const formatted = transactions.map(t => ({
       ...t,
       amount: Number(t.amount),
-      // Mapeia o campo snake_case do banco para camelCase do JS
-      // Se o seu prisma gerou como 'recurring_rule_id', use assim:
-      recurringRuleId: t.recurring_rule_id, 
-      categoryId: t.category_id,
-      installmentInfo: t.installment_group_id ? {
-        current: t.installment_number,
-        total: t.installment_groups?.total_installments,
+      installmentInfo: t.installmentGroupId ? {
+        current: t.installmentNumber,
+        total: t.installmentGroup?.totalInstallments,
       } : null
     }));
 
@@ -97,15 +93,14 @@ app.post('/', zValidator('json', transactionSchema), async (c) => {
   const body = c.req.valid('json');
 
   try {
-    const transaction = await prisma.transactions.create({
+    const transaction = await prisma.transaction.create({
       data: {
-        user_id: userId,
+        userId: userId,
         description: body.description,
         amount: body.amount,
         date: new Date(body.date),
         type: body.type,
-        category_id: body.categoryId,
-        // is_paid: body.isPaid, (Se seu banco tiver esse campo)
+        categoryId: body.categoryId
       }
     });
 
@@ -128,12 +123,12 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
     const result = await prisma.$transaction(async (tx) => {
       
       // A. Cria o Cabeçalho (O Grupo)
-      const group = await tx.installment_groups.create({
+      const group = await tx.installmentGroup.create({
         data: {
-          user_id: userId,
+          userId: userId,
           description: body.description,
-          total_amount: body.totalAmount,
-          total_installments: body.totalInstallments,
+          totalAmount: body.totalAmount,
+          totalInstallments: body.totalInstallments,
         }
       });
 
@@ -155,19 +150,19 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
         installmentDate.setMonth(baseDate.getMonth() + i);
 
         transactionsPayload.push({
-          user_id: userId,
-          category_id: body.categoryId,
+          userId: userId,
+          categoryId: body.categoryId,
           description: body.description, // O front pode adicionar "(1/10)" na exibição
           amount: amount,
           date: installmentDate,
           type: 'expense', // Parcelamento geralmente é despesa
-          installment_group_id: group.id,
-          installment_number: i + 1,
+          installmentGroupId: group.id,
+          installmentNumber: i + 1,
         });
       }
 
       // C. Insere todas de uma vez
-      await tx.transactions.createMany({
+      await tx.transaction.createMany({
         data: transactionsPayload
       });
 
@@ -189,19 +184,19 @@ app.put('/:id', zValidator('json', transactionSchema.partial()), async (c) => {
   const body = c.req.valid('json');
 
   // Verifica se pertence ao usuário
-  const existing = await prisma.transactions.findFirst({ where: { id, user_id: userId } });
+  const existing = await prisma.transaction.findFirst({ where: { id, userId: userId } });
   if (!existing) return c.json({ error: 'Transação não encontrada' }, 404);
 
   // Se for parcela, bloqueia edição de valor/data (por enquanto, para simplificar)
   // Ou permite editar apenas aquela parcela específica
   
-  const updated = await prisma.transactions.update({
+  const updated = await prisma.transaction.update({
     where: { id },
     data: {
       description: body.description,
       amount: body.amount,
       date: body.date ? new Date(body.date) : undefined,
-      category_id: body.categoryId,
+      categoryId: body.categoryId,
       type: body.type,
     }
   });
@@ -215,23 +210,23 @@ app.delete('/:id', async (c) => {
   const userId = c.var.userId;
   const id = c.req.param('id');
 
-  const transaction = await prisma.transactions.findFirst({
-    where: { id, user_id: userId }
+  const transaction = await prisma.transaction.findFirst({
+    where: { id, userId: userId }
   });
 
   if (!transaction) return c.json({ error: 'Transação não encontrada' }, 404);
 
   try {
-    if (transaction.installment_group_id) {
+    if (transaction.installmentGroupId) {
       // É uma parcela! Deletamos o GRUPO MÃE.
       // O "ON DELETE CASCADE" do banco vai apagar todas as parcelas automaticamente.
-      await prisma.installment_groups.delete({
-        where: { id: transaction.installment_group_id }
+      await prisma.installmentGroup.delete({
+        where: { id: transaction.installmentGroupId }
       });
       return c.json({ message: 'Compra parcelada inteira removida' });
     } else {
       // Transação simples
-      await prisma.transactions.delete({
+      await prisma.transaction.delete({
         where: { id }
       });
       return c.json({ message: 'Transação removida' });

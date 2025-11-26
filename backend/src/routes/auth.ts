@@ -40,7 +40,7 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
   const { name, email, password } = c.req.valid('json');
 
   // 1. Verifica duplicidade
-  const existingUser = await prisma.users.findUnique({ where: { email } });
+  const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return c.json({ error: 'E-mail já cadastrado' }, 409);
   }
@@ -49,11 +49,11 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
   const passwordHash = await hash(password, 10);
 
   // 3. Cria no banco
-  const user = await prisma.users.create({
+  const user = await prisma.user.create({
     data: {
       name,
       email,
-      password_hash: passwordHash,
+      passwordHash: passwordHash,
     },
   });
 
@@ -71,7 +71,7 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
   });
 
   // 6. Retorna o usuário limpo (sem senha)
-  return c.json({ user: excludePassword(user, ['password_hash']) }, 201);
+  return c.json({ user: excludePassword(user, ['passwordHash']) }, 201);
 });
 
 // ==========================================
@@ -81,13 +81,13 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
   const { email, password } = c.req.valid('json');
 
   // 1. Busca usuário
-  const user = await prisma.users.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     return c.json({ error: 'Credenciais inválidas' }, 401);
   }
 
   // 2. Compara senha (Hash)
-  const isValid = await compare(password, user.password_hash);
+  const isValid = await compare(password, user.passwordHash);
   if (!isValid) {
     return c.json({ error: 'Credenciais inválidas' }, 401);
   }
@@ -105,7 +105,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
     maxAge: 60 * 60 * 24 * 7,
   });
 
-  return c.json({ user: excludePassword(user, ['password_hash']) });
+  return c.json({ user: excludePassword(user, ['passwordHash']) });
 });
 
 // ==========================================
@@ -131,7 +131,7 @@ app.get('/me', async (c) => {
     const secret = process.env.JWT_SECRET || 'segredo_padrao';
     const payload = await verify(token, secret);
     
-    const user = await prisma.users.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: payload.id as string },
     });
 
@@ -139,7 +139,7 @@ app.get('/me', async (c) => {
       return c.json({ user: null }, 401);
     }
 
-    return c.json({ user: excludePassword(user, ['password_hash']) });
+    return c.json({ user: excludePassword(user, ['passwordHash']) });
   } catch (err) {
     return c.json({ user: null }, 401);
   }

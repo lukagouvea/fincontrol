@@ -23,7 +23,7 @@ app.get('/summary', async (c) => {
 
   // Filtro comum para reutilizar
   const dateFilter = {
-    user_id: userId,
+    userId: userId,
     date: {
       gte: startDate,
       lte: endDate,
@@ -33,7 +33,7 @@ app.get('/summary', async (c) => {
   try {
     // 1. Agregação de Totais (Receita vs Despesa)
     // O Prisma faz isso com uma query só
-    const totalsAgg = await prisma.transactions.groupBy({
+    const totalsAgg = await prisma.transaction.groupBy({
       by: ['type'],
       where: dateFilter,
       _sum: {
@@ -47,8 +47,8 @@ app.get('/summary', async (c) => {
 
     // 2. Dados para o Gráfico de Categorias (Pie Chart)
     // Agrupamos transações de DESPESA por categoria
-    const categoryAgg = await prisma.transactions.groupBy({
-      by: ['category_id'],
+    const categoryAgg = await prisma.transaction.groupBy({
+      by: ['categoryId'],
       where: {
         ...dateFilter,
         type: 'expense',
@@ -66,17 +66,17 @@ app.get('/summary', async (c) => {
     // O groupBy do Prisma não suporta 'include' (JOIN) direto.
     // Precisamos buscar os nomes das categorias separadamente.
     const categoryIds = categoryAgg
-      .map((item) => item.category_id)
+      .map((item) => item.categoryId)
       .filter((id): id is string => id !== null);
 
-    const categories = await prisma.categories.findMany({
+    const categories = await prisma.category.findMany({
       where: { id: { in: categoryIds } },
       select: { id: true, name: true, color: true },
     });
 
     // Mesclamos a soma com o nome/cor da categoria
     const expensesByCategory = categoryAgg.map((item) => {
-      const catInfo = categories.find((c) => c.id === item.category_id);
+      const catInfo = categories.find((c) => c.id === item.categoryId);
       return {
         name: catInfo?.name || 'Sem Categoria',
         color: catInfo?.color || '#888888',
@@ -85,14 +85,14 @@ app.get('/summary', async (c) => {
     });
 
     // 3. Transações Recentes (Top 5)
-    const recent = await prisma.transactions.findMany({
+    const recent = await prisma.transaction.findMany({
       where: dateFilter,
       take: 5,
       orderBy: {
         date: 'desc',
       },
       include: {
-        categories: {
+        category: {
           select: { name: true, color: true },
         },
       },
@@ -105,8 +105,8 @@ app.get('/summary', async (c) => {
       amount: Number(t.amount),
       date: t.date.toISOString(),
       type: t.type,
-      category: t.categories?.name || 'Geral',
-      categoryColor: t.categories?.color,
+      category: t.category?.name || 'Geral',
+      categoryColor: t.category?.color,
     }));
 
     return c.json({

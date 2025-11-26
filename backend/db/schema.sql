@@ -57,8 +57,8 @@ CREATE TABLE recurring_rules (
     type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
     
     day_of_month INT NOT NULL CHECK (day_of_month BETWEEN 1 AND 31),
-    start_date DATE NOT NULL,
-    end_date DATE, -- NULL = Infinito
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP, -- NULL = Infinito
     
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -75,7 +75,7 @@ CREATE TABLE transactions (
     
     description VARCHAR(255) NOT NULL,
     amount DECIMAL(12, 2) NOT NULL CHECK (amount >= 0),
-    date DATE NOT NULL, -- Data da ocorrência
+    date TIMESTAMP NOT NULL, -- Data da ocorrência
     type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
     
     -- Vínculos Opcionais (Parcelas ou Recorrência)

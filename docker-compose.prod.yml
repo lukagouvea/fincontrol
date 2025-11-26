@@ -25,7 +25,6 @@ services:
       - 3001
     env_file:
       - backend/.env
-    # SEM VOLUMES DE CÓDIGO AQUI! 
     # O container usa o que foi 'buildado' dentro dele (a pasta dist).
     depends_on:
       db:
@@ -37,14 +36,13 @@ services:
       context: ./frontend
       target: runner # Usa o estágio final com Nginx
       args:
-        - VITE_API_URL=${VITE_API_URL}
+        - VITE_API_URL=/api
     container_name: fincontrol-frontend-prod
     restart: always
     ports:
-      - '8080:80' # Acessa em localhost:8080 (Nginx roda na 80 interna)
+      - '80:80' # Acessa em localhost:8080 (Nginx roda na 80 interna)
     env_file:
       - frontend/.env # Apenas para o docker ler a variável VITE_API_URL acima
-    # SEM VOLUMES DE CÓDIGO AQUI!
     depends_on:
       - backend
 

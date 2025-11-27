@@ -2,6 +2,9 @@ services:
   # --- BANCO DE DADOS ---
   db:
     image: postgres:14-alpine
+    # Adicione este comando para limitar buffers
+    # A VPS só tem 1GB de RAM
+    command: postgres -c shared_buffers=128MB -c effective_cache_size=256MB -c maintenance_work_mem=32MB -c work_mem=2MB
     container_name: fincontrol-db-prod
     restart: always
     env_file:
@@ -16,9 +19,8 @@ services:
 
   # --- BACKEND (Modo PROD - Código Compilado) ---
   backend:
-    build:
-      context: ./backend
-      target: runner # Usa o estágio final otimizado
+    image: lukagouvea/fincontrol-backend:latest
+    pull_policy: always
     container_name: fincontrol-backend-prod
     restart: always
     expose:
@@ -32,11 +34,8 @@ services:
 
   # --- FRONTEND (Modo PROD - Nginx) ---
   frontend:
-    build:
-      context: ./frontend
-      target: runner # Usa o estágio final com Nginx
-      args:
-        - VITE_API_URL=/api
+    image: lukagouvea/fincontrol-frontend:latest
+    pull_policy: always
     container_name: fincontrol-frontend-prod
     restart: always
     ports:

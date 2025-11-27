@@ -1,0 +1,49 @@
+services:
+  # --- BANCO DE DADOS ---
+  db:
+    image: postgres:14-alpine
+    # Adicione este comando para limitar buffers
+    # A VPS só tem 1GB de RAM
+    command: postgres -c shared_buffers=128MB -c effective_cache_size=256MB -c maintenance_work_mem=32MB -c work_mem=2MB
+    container_name: fincontrol-db-prod
+    restart: always
+    env_file:
+      - backend/.env
+    volumes:
+      - fincontrol-data-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- BACKEND (Modo PROD - Código Compilado) ---
+  backend:
+    image: lukagouvea/fincontrol-backend:latest
+    pull_policy: always
+    container_name: fincontrol-backend-prod
+    restart: always
+    expose:
+      - 3001
+    env_file:
+      - backend/.env
+    # O container usa o que foi 'buildado' dentro dele (a pasta dist).
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # --- FRONTEND (Modo PROD - Nginx) ---
+  frontend:
+    image: lukagouvea/fincontrol-frontend:latest
+    pull_policy: always
+    container_name: fincontrol-frontend-prod
+    restart: always
+    ports:
+      - '80:80' # Acessa em localhost:8080 (Nginx roda na 80 interna)
+    env_file:
+      - frontend/.env # Apenas para o docker ler a variável VITE_API_URL acima
+    depends_on:
+      - backend
+
+volumes:
+  fincontrol-data-prod:

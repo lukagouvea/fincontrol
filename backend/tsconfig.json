@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "outDir": "./dist",
+    "strict": true,
+    "noEmit": false,
+    "noEmitOnError": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+  },
+  "ts-node": {
+    "esm": true
+  }
+}

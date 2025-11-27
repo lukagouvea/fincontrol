@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Adicione sua url aqui ou via env, ex: url = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String             @db.VarChar(255)
+  email             String             @unique @db.VarChar(255)
+  passwordHash      String             @map("password_hash") @db.VarChar(255)
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relações (CamelCase e Plural/Singular corretos)
+  categories        Category[]
+  installmentGroups InstallmentGroup[]
+  recurringRules    RecurringRule[]
+  transactions      Transaction[]
+
+  @@map("users")
+}
+
+model Category {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  name           String          @db.VarChar(100)
+  description    String?         @db.VarChar(255)
+  type           String          @db.VarChar(20)
+  color          String?         @default("#888888") @db.VarChar(20)
+  active         Boolean?        @default(true)
+  createdAt      DateTime?       @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relações
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recurringRules RecurringRule[]
+  transactions   Transaction[]
+
+  @@unique([userId, name, type], map: "unique_category_per_user")
+  @@map("categories")
+}
+
+model InstallmentGroup {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String        @map("user_id") @db.Uuid
+  description       String?       @db.VarChar(255)
+  totalAmount       Decimal       @map("total_amount") @db.Decimal(12, 2)
+  totalInstallments Int           @map("total_installments")
+  createdAt         DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relações
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transactions      Transaction[]
+
+  @@map("installment_groups")
+}
+
+model RecurringRule {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  categoryId   String?       @map("category_id") @db.Uuid
+  description  String        @db.VarChar(255)
+  amount       Decimal       @db.Decimal(12, 2)
+  type         String        @db.VarChar(20)
+  dayOfMonth   Int           @map("day_of_month")
+  startDate    DateTime      @map("start_date")
+  endDate      DateTime?     @map("end_date")
+  active       Boolean?      @default(true)
+  createdAt    DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relações
+  category     Category?     @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transactions Transaction[]
+
+  @@index([userId, active], map: "idx_recurring_user_active")
+  @@map("recurring_rules")
+}
+
+model Transaction {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String            @map("user_id") @db.Uuid
+  categoryId         String?           @map("category_id") @db.Uuid
+  description        String            @db.VarChar(255)
+  amount             Decimal           @db.Decimal(12, 2)
+  date               DateTime          @default(now())
+  type               String            @db.VarChar(20)
+  
+  installmentGroupId String?           @map("installment_group_id") @db.Uuid
+  installmentNumber  Int?              @map("installment_number")
+  
+  recurringRuleId    String?           @map("recurring_rule_id") @db.Uuid
+  
+  createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relações
+  category           Category?         @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
+  installmentGroup   InstallmentGroup? @relation(fields: [installmentGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recurringRule      RecurringRule?    @relation(fields: [recurringRuleId], references: [id], onUpdate: NoAction)
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, categoryId], map: "idx_transactions_user_category")
+  @@index([userId, date], map: "idx_transactions_user_date")
+  @@map("transactions")
+}

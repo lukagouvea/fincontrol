@@ -1,0 +1,56 @@
+services:
+  # --- BANCO DE DADOS ---
+  db:
+    image: postgres:14-alpine
+    container_name: fincontrol-db-dev
+    restart: always
+    env_file:
+      - backend/.env # Usa o env do backend para credenciais
+    ports:
+      - '5432:5432'
+    volumes:
+      - fincontrol-data-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fincontrol"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- BACKEND (Modo DEV com Hot Reload) ---
+  backend:
+    build:
+      context: ./backend
+      target: dev # Usa o estágio de desenvolvimento
+    container_name: fincontrol-backend-dev
+    restart: always
+    ports:
+      - '3001:3001'
+    env_file:
+      - backend/.env
+    # AQUI ESTÁ O SEGREDO DO DEV:
+    volumes:
+      - ./backend:/app        # Espelha sua pasta local (Hot Reload funciona!)
+      - /app/node_modules     # Protege as dependências internas
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # --- FRONTEND (Modo DEV com Vite Server) ---
+  frontend:
+    build:
+      context: ./frontend
+      target: dev # Usa o estágio de desenvolvimento
+    container_name: fincontrol-frontend-dev
+    restart: always
+    ports:
+      - '5173:5173' # Porta do Vite
+    env_file:
+      - frontend/.env
+    volumes:
+      - ./frontend:/app # Espelha sua pasta local
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  fincontrol-data-dev:

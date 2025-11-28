@@ -25,3 +25,5 @@ generated
 *.sw?
 
 .env
+.env.dev
+.env.prod

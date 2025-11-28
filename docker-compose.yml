@@ -4,16 +4,16 @@ services:
     image: postgres:18-alpine
     container_name: fincontrol-db-dev
     restart: always
-    env_file:
-      - backend/.env # Usa o env do backend para credenciais
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
     ports:
       - '5432:5432'
     volumes:
       - fincontrol-data-dev:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d fincontrol"]
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,14 +24,17 @@ services:
       context: ./backend
       target: dev # Usa o estágio de desenvolvimento
     container_name: fincontrol-backend-dev
+    environment:
+      NODE_ENV: development
+      PORT: ${BACKEND_PORT:-3001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fincontrol}?schema=public
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
     restart: always
     ports:
-      - '3001:3001'
-    env_file:
-      - backend/.env
-    # AQUI ESTÁ O SEGREDO DO DEV:
+      - '${BACKEND_PORT:-3001}:${BACKEND_PORT:-3001}'
     volumes:
-      - ./backend:/app        # Espelha sua pasta local (Hot Reload funciona!)
+      - ./backend:/app        # Espelha sua pasta local
       - /app/node_modules     # Protege as dependências internas
     depends_on:
       db:
@@ -43,11 +46,11 @@ services:
       context: ./frontend
       target: dev # Usa o estágio de desenvolvimento
     container_name: fincontrol-frontend-dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-/api}
     restart: always
     ports:
       - '5173:5173' # Porta do Vite
-    env_file:
-      - frontend/.env
     volumes:
       - ./frontend:/app # Espelha sua pasta local
       - /app/node_modules

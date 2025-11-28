@@ -9,8 +9,10 @@ services:
     ports:
       - '5432:5432'
     restart: always
-    env_file:
-      - backend/.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fincontrol}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
     volumes:
       - fincontrol-data-prod:/var/lib/postgresql/data
     healthcheck:
@@ -25,10 +27,14 @@ services:
     pull_policy: always
     container_name: fincontrol-backend-prod
     restart: always
+    environment:
+      NODE_ENV: production
+      PORT: ${BACKEND_PORT:-3001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fincontrol}:${POSTGRES_PASSWORD:-change-me}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fincontrol}?schema=public
+      FRONTEND_URL: ${FRONTEND_URL:-https://app.seudominio.com}
+      JWT_SECRET: ${JWT_SECRET:-changeme}
     expose:
-      - 3001
-    env_file:
-      - backend/.env
+      - '${BACKEND_PORT:-3001}'
 
   # --- FRONTEND (Modo PROD - Nginx) ---
   frontend:
@@ -38,8 +44,8 @@ services:
     restart: always
     ports:
       - '80:80' # Acessa em localhost:80 (Nginx roda na 80 interna)
-    env_file:
-      - frontend/.env # Apenas para o docker ler a variável VITE_API_URL acima
+    depends_on:
+      - backend
 
 
 volumes:

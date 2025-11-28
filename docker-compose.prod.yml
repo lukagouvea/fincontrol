@@ -4,8 +4,10 @@ services:
     image: postgres:14-alpine
     # Adicione este comando para limitar buffers
     # A VPS só tem 1GB de RAM
-    command: postgres -c shared_buffers=128MB -c effective_cache_size=256MB -c maintenance_work_mem=32MB -c work_mem=2MB
+    command: postgres -c shared_buffers=256MB -c effective_cache_size=768MB -c maintenance_work_mem=64MB -c work_mem=4MB -c wal_buffers=16MB    
     container_name: fincontrol-db-prod
+    ports:
+      - '5432:5432'
     restart: always
     env_file:
       - backend/.env

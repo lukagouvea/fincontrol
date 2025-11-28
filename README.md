@@ -37,16 +37,16 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      FRONTEND                           │
-│  React + TypeScript + Vite + Tailwind CSS              │
-│  http://localhost:5173 (dev) | Port 80 (prod)          │
+│  React + TypeScript + Vite + Tailwind CSS               │
+│  http://localhost:5173 (dev) | Port 80 (prod)           │
 └────────────────────┬────────────────────────────────────┘
                      │
                      │ HTTP/REST API
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │                      BACKEND                            │
-│  Node.js + TypeScript + Hono + Prisma                  │
-│  http://localhost:3001 (dev) | Port 3001 (prod)        │
+│  Node.js + TypeScript + Hono + Prisma                   │
+│  http://localhost:3001 (dev) | Port 3001 (prod)         │
 └────────────────────┬────────────────────────────────────┘
                      │
                      │ Prisma ORM

@@ -118,22 +118,26 @@ cd fincontrol
 
 2️⃣ **Configure as variáveis de ambiente**
 ```bash
-# Backend
-cp backend/.env.example backend/.env
-# Edite backend/.env com suas credenciais
+# Crie o arquivo usado pelo docker-compose de desenvolvimento
+cp .env.dev.example .env.dev
 
-# Frontend  
+# (Opcional) Prepare também o arquivo de produção
+cp .env.prod.example .env.prod
+
+# Se precisar rodar backend/frontend fora do Docker, gere os envs locais
+cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
-# Edite frontend/.env se necessário
 ```
 
-> 📝 **Veja os READMEs específicos para detalhes de configuração:**
+> � **Dica rápida:** mantenha `POSTGRES_HOST=db` no `.env.dev` (os containers se enxergam pelo nome do serviço) e configure um host/IP real no `.env.prod` quando o PostgreSQL estiver fora do Docker.
+
+> �📝 **Veja os READMEs específicos para detalhes adicionais:**
 > - [Configuração do Backend](./backend/README.md#variáveis-de-ambiente)
 > - [Configuração do Frontend](./frontend/README.md#variáveis-de-ambiente)
 
 3️⃣ **Execute com Docker**
 ```bash
-docker compose up --build
+docker compose --env-file .env.dev up --build
 ```
 
 ✅ **Pronto!** Acesse:
@@ -153,12 +157,25 @@ O projeto possui dois arquivos Docker Compose para diferentes ambientes:
 | `docker-compose.yml` | **Desenvolvimento** | Hot reload, logs detalhados |
 | `docker-compose.prod.yml` | **Produção** | Build otimizado, Nginx |
 
+### Arquivos de Ambiente
+
+Cada arquivo `docker-compose` utiliza um arquivo `.env` dedicado para centralizar as variáveis compartilhadas entre os serviços:
+
+| Arquivo | Finalidade | Como usar |
+|---------|------------|-----------|
+| `.env.dev` | Valores padrão para desenvolvimento local (credenciais do PostgreSQL, porta da API, URLs) | `docker compose --env-file .env.dev ...` |
+| `.env.prod` | Configurações sensíveis e URLs públicas usadas no deploy | `docker compose --env-file .env.prod -f docker-compose.prod.yml ...` |
+
+> 📁 Os exemplos `.env.dev.example` e `.env.prod.example` servem como base para criar seus arquivos reais (que permanecem ignorados pelo Git).
+>
+> 🔐 **Produção:** defina `POSTGRES_HOST` apontando para o banco externo (IP da VPS, serviço gerenciado, etc). No dev continue usando `db`, que é o hostname interno do container PostgreSQL.
+
 ### Modo Desenvolvimento
 
-Ideal para desenvolvimento local com **hot reload** automático:
+Ideal para desenvolvimento local com **hot reload** automático (carrega as variáveis de `.env.dev`):
 
 ```bash
-docker compose up --build
+docker compose --env-file .env.dev up --build
 ```
 
 **Recursos:**
@@ -175,10 +192,10 @@ docker compose up --build
 
 ### Modo Produção
 
-Ambiente otimizado para deploy em servidores:
+Ambiente otimizado para deploy em servidores (usa os valores definidos em `.env.prod`):
 
 ```bash
-docker compose -f docker-compose.prod.yml up --build -d
+docker compose --env-file .env.prod -f docker-compose.prod.yml up --build -d
 ```
 
 **Otimizações:**

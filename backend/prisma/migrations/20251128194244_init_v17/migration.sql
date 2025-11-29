@@ -1,4 +1,15 @@
 -- CreateTable
+CREATE TABLE "users" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "name" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "password_hash" VARCHAR(255) NOT NULL,
+    "created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "categories" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "user_id" UUID NOT NULL,
@@ -58,16 +69,8 @@ CREATE TABLE "transactions" (
     CONSTRAINT "transactions_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "users" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "name" VARCHAR(255) NOT NULL,
-    "email" VARCHAR(255) NOT NULL,
-    "password_hash" VARCHAR(255) NOT NULL,
-    "created_at" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "unique_category_per_user" ON "categories"("user_id", "name", "type");
@@ -80,9 +83,6 @@ CREATE INDEX "idx_transactions_user_category" ON "transactions"("user_id", "cate
 
 -- CreateIndex
 CREATE INDEX "idx_transactions_user_date" ON "transactions"("user_id", "date");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- AddForeignKey
 ALTER TABLE "categories" ADD CONSTRAINT "categories_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION;

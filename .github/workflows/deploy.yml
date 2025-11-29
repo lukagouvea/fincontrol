@@ -46,6 +46,10 @@ jobs:
     needs: build-and-push # Só roda se o build funcionar
     runs-on: ubuntu-latest
     steps:
+      # Precisamos baixar o código novamente porque este é um novo Job (máquina limpa)
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
       # 1. Copia o arquivo docker-compose.prod.yml do Git para a VPS
       - name: Copiar arquivo de Infra via SCP
         uses: appleboy/scp-action@master

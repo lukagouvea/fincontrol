@@ -40,6 +40,8 @@ jobs:
           target: runner
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/fincontrol-frontend:latest
+          build-args: |
+            VITE_API_URL=/api
 
   # --- JOB 2: ATUALIZAR A VPS ---
   deploy-vps:

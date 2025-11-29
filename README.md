@@ -34,11 +34,12 @@ FinControl é uma aplicação web moderna e completa para gerenciamento financei
 
 O projeto segue uma arquitetura moderna de aplicação web full-stack:
 
+### Desenvolvimento (Local)
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      FRONTEND                           │
 │  React + TypeScript + Vite + Tailwind CSS               │
-│  http://localhost:5173 (dev) | Port 80 (prod)           │
+│  http://localhost:5173                                  │
 └────────────────────┬────────────────────────────────────┘
                      │
                      │ HTTP/REST API
@@ -46,7 +47,7 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
 ┌────────────────────▼────────────────────────────────────┐
 │                      BACKEND                            │
 │  Node.js + TypeScript + Hono + Prisma                   │
-│  http://localhost:3001 (dev) | Port 3001 (prod)         │
+│  http://localhost:3001                                  │
 └────────────────────┬────────────────────────────────────┘
                      │
                      │ Prisma ORM
@@ -57,6 +58,35 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
 │  localhost:5432                                         │
 └─────────────────────────────────────────────────────────┘
 ```
+
+### Produção (2 VPS)
+```
+┌─────────────────────────────────────────────────────────┐
+│                       VPS 1                             │
+│                 PostgreSQL Database                     │
+│                     Port 5432                           │
+└─────────────────────────────────────────────────────────┘
+                           ▲
+                           │ Conexão TCP
+                           │
+┌──────────────────────────┴──────────────────────────────┐
+│                       VPS 2                             │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              Nginx (Port 80/443)                 │   │
+│  │          Proxy Reverso + Frontend                │   │
+│  └────────────────────┬─────────────────────────────┘   │
+│                       │                                 │
+│  ┌────────────────────▼─────────────────────────────┐   │
+│  │              Backend (Port 3001)                 │   │
+│  │        Node.js + Hono + Prisma                   │   │
+│  └──────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Arquitetura de Produção:**
+- **VPS 1:** Banco de dados PostgreSQL dedicado
+- **VPS 2:** Frontend (Nginx) + Backend (Node.js)
+- **Comunicação:** Backend se conecta ao PostgreSQL via IP/hostname da VPS 1
 
 ### 📦 Stack Tecnológico
 
@@ -192,22 +222,62 @@ docker compose --env-file .env.dev up --build
 
 ### Modo Produção
 
-Ambiente otimizado para deploy em servidores (usa os valores definidos em `.env.prod`):
+Ambiente otimizado para deploy em servidores com arquitetura de 2 VPS.
+
+#### 🚀 Deploy Automático (Recomendado)
+
+O projeto inclui um script de deploy automatizado:
 
 ```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml up --build -d
+./deploy.sh
+```
+
+O script executa:
+1. Build das imagens Docker otimizadas
+2. Deploy do banco de dados (VPS 1)
+3. Aguarda o banco estar pronto para aceitar conexões
+4. Deploy do backend e frontend (VPS 2)
+5. Execução das migrações do Prisma
+
+> ⚠️ **Importante:** O backend executa `prisma migrate deploy` durante a inicialização. É **necessário aguardar** que o PostgreSQL esteja completamente inicializado e aceitando conexões antes de subir o backend, caso contrário as migrações falharão.
+
+#### 🔧 Deploy Manual
+
+Se preferir executar manualmente:
+
+**Na VPS 1 (Banco de Dados):**
+```bash
+# Subir apenas o PostgreSQL
+docker compose -f docker-compose.db.prod.yml up -d
+
+# Verificar se está rodando e aceitando conexões
+docker compose -f docker-compose.db.prod.yml logs -f
+```
+
+**Na VPS 2 (Frontend + Backend):**
+```bash
+# Configure as variáveis de ambiente apontando para a VPS 1
+# Edite .env.prod com o IP/hostname da VPS 1
+
+# Aguarde o banco estar pronto (importante!)
+# Você pode testar a conexão com:
+# psql -h <IP_VPS1> -U postgres -d fincontrol
+
+# Suba os serviços
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 **Otimizações:**
 - ✅ Build minificado e otimizado
 - ✅ Nginx como servidor web de alta performance
-- ✅ PostgreSQL configurado para recursos limitados (1GB RAM)
+- ✅ Banco de dados isolado em VPS dedicada
 - ✅ Containers em modo detached
-- ✅ Imagens publicadas no Docker Hub
+- ✅ Healthchecks para garantir disponibilidade
 
 **Portas:**
 - Aplicação completa: http://localhost (porta 80)
 - API acessível em: http://localhost/api
+- PostgreSQL (VPS 1): Port 5432
 
 ### Comandos Docker Úteis
 

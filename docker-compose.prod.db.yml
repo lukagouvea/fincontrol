@@ -1,0 +1,26 @@
+services:
+  # --- BANCO DE DADOS ---
+  db:
+    image: postgres:18-alpine
+    # Adicione este comando para limitar buffers
+    # A VPS só tem 1GB de RAM
+    command: postgres -c shared_buffers=256MB -c effective_cache_size=768MB -c maintenance_work_mem=64MB -c work_mem=4MB -c wal_buffers=16MB    
+    container_name: fincontrol-db-prod
+    ports:
+      - '5432:5432'
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fincontrol}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
+    volumes:
+      - fincontrol-data-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  fincontrol-data-prod:

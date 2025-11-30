@@ -2,7 +2,9 @@ name: Deploy FinControl
 
 on:
   push:
-    branches: [ "main" ] # Dispara ao dar push na main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   # --- JOB 1: CONSTRUIR E PUBLICAR IMAGENS ---
@@ -27,8 +29,9 @@ jobs:
         with:
           context: ./backend
           file: ./backend/Dockerfile
-          target: runner # Usa o estágio leve de produção
-          push: true
+          target: runner
+          # ### Se for PR é false, se for Push na main é true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ secrets.DOCKER_USERNAME }}/fincontrol-backend:latest
 
       # Build do Frontend
@@ -37,22 +40,23 @@ jobs:
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
-          target: runner
-          push: true
+            target: runner
+
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ secrets.DOCKER_USERNAME }}/fincontrol-frontend:latest
           build-args: |
             VITE_API_URL=/api
 
   # --- JOB 2: ATUALIZAR A VPS ---
   deploy-vps:
-    needs: build-and-push # Só roda se o build funcionar
+    needs: build-and-push
+    # ### Esse job NUNCA roda em PR, só na main
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      # Precisamos baixar o código novamente porque este é um novo Job (máquina limpa)
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # 1. Copia o arquivo docker-compose.prod.yml do Git para a VPS
       - name: Copiar arquivo de Infra via SCP
         uses: appleboy/scp-action@master
         with:
@@ -60,9 +64,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           source: "docker-compose.prod.yml"
-          target: "/home/${{ secrets.VPS_USER }}/fincontrol" # <--- Pasta na VPS
+          target: "/home/${{ secrets.VPS_USER }}/fincontrol"
 
-      # 2. Conecta via SSH e reinicia os containers
       - name: Executar Deploy Remoto
         uses: appleboy/ssh-action@master
         with:
@@ -70,18 +73,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
-            # Entra na pasta
             cd /home/${{ secrets.VPS_USER }}/fincontrol
-            
-            # Renomeia para o padrão do docker (facilita comandos)
             mv docker-compose.prod.yml docker-compose.yml
-            
-            # Baixa as imagens novas que acabamos de subir pro Hub
             docker compose pull
-            
-            # Recria os containers (Back e Front)
-            # O backend vai rodar o 'migrate deploy' automaticamente ao iniciar
             docker compose up -d
-            
-            # Limpa imagens antigas para economizar espaço
             docker image prune -f

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// src/pages/Dashboard.tsx
+import React, { useState, useEffect } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { WeeklySpending } from '../components/Dashboard/WeeklySpending';
 import { CategoryPieChart } from '../components/Dashboard/CategoryPieChart';
@@ -12,15 +13,13 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableDashboardItem } from '../components/Dashboard/SortableDashboardItem';
 import { formatDateToYYYYMMDD, parseDateInputToLocal, convertDateToUTCISOString } from '../utils/dateUtils';
-import { isItemActiveInMonth } from '../utils/financeUtils';
 import { UpcomingBills } from '../components/Dashboard/UpcomingBills';
 import { VariableExpense } from '../types/FinanceTypes';
-import { getActualFixedItemAmount } from '../utils/financeUtils';
-import { useCategories } from '../hooks/useCategories';
-import { useTransactions, useAddTransaction, useAddCompraParcelada } from '../hooks/useTransactions';
-import { useFixedExpenses, useFixedIncomes } from '../hooks/useFixedTransactions';
-import { useMonthlyVariations } from '../hooks/useMonthlyVariations';
+import { useAddTransaction, useAddCompraParcelada } from '../hooks/useTransactions';
 import { Skeleton } from '../components/Shared/Skeleton';
+
+// IMPORTANTE: Importamos nosso novo hook aqui
+import { useDashboardFinance } from '../hooks/useDashboardFinance';
 
 const LOCAL_STORAGE_KEY = 'dashboardLayout';
 
@@ -41,35 +40,27 @@ const defaultDashboardLayout: DashboardComponentConfig[] = [
 ];
 
 export const Dashboard: React.FC = () => {
-  const { data : transactions = [], isLoading : isLoadingTransactions } = useTransactions();
-  const { data : fixedExpenses = [], isLoading : isLoadingFixedExpenses } = useFixedExpenses();
-  const { data : fixedIncomes = [], isLoading : isLoadingFixedIncomes } = useFixedIncomes();
-  const { data : monthlyVariations = [], isLoading : isLoadingMonthlyVariations } = useMonthlyVariations();
-  const { data : categories = [], isLoading : isLoadingCategories } = useCategories();
+  // 1. Chamada do Hook Mágico (Toda a lógica vem daqui)
+  const { 
+    transactions, fixedExpenses, fixedIncomes, monthlyVariations, 
+    categories, isLoading, selectedDateObject, summary 
+  } = useDashboardFinance();
 
-  const isLoading = isLoadingCategories || isLoadingFixedExpenses || isLoadingTransactions || isLoadingFixedExpenses || isLoadingFixedIncomes || isLoadingMonthlyVariations
-
-
+  // 2. Lógica de UI e Mutações (Botões e Modais continuam aqui pois interagem com o usuário)
   const addTransactionMutation = useAddTransaction();
   const addCompraParceladaMutation = useAddCompraParcelada();
-
   const isSaving = addTransactionMutation.isPending || addCompraParceladaMutation.isPending;
 
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [initialDateForModal, setInitialDateForModal] = useState<string | undefined>(undefined);
 
-  const selectedMonth = new Date().getMonth();
-  const selectedYear = new Date().getFullYear();
-
-  const selectedDateObject = useMemo(() => new Date(selectedYear, selectedMonth, 1), [selectedMonth, selectedYear]);
-
+  // Lógica do Drag and Drop (Layout)
   const [dashboardComponents, setDashboardComponents] = useState<DashboardComponentConfig[]>(() => {
     try {
       const savedLayout = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       return savedLayout ? JSON.parse(savedLayout) : defaultDashboardLayout;
     } catch (error) {
-      console.error("Erro ao ler o layout do dashboard do localStorage", error);
       return defaultDashboardLayout;
     }
   });
@@ -78,57 +69,13 @@ export const Dashboard: React.FC = () => {
     try {
       window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dashboardComponents));
     } catch (error) {
-      console.error("Erro ao salvar o layout do dashboard no localStorage", error);
+      console.error("Erro ao salvar layout", error);
     }
   }, [dashboardComponents]);
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, {
     coordinateGetter: sortableKeyboardCoordinates
   }));
-
-  
-
-  const { monthlyIncome, monthlyFixedIncome, monthlyVariableIncome, monthlyExpense, monthlyFixedExpense, monthlyVariableExpense, balance } = useMemo(() => {
-    const anoAtual = selectedDateObject.getFullYear();
-    const mesAtual = selectedDateObject.getMonth(); // 0-11
-
-    const getVariableTransactions = (type: 'income' | 'expense') => {
-        return transactions.filter(t => {
-            const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
-            const isCorrectType = t.type === type;
-            const isSameMonth = transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
-            const isNotFixedVariation = !t.recurringRuleId;
-
-            return isCorrectType && isSameMonth && isNotFixedVariation;
-        });
-    };
-
-    const variableIncomes = getVariableTransactions('income');
-    const variableExpenses = getVariableTransactions('expense');
-
-    const monthlyVariableIncome = variableIncomes.reduce((sum, t) => sum + t.amount, 0);
-    const monthlyVariableExpense = variableExpenses.reduce((sum, t) => sum + t.amount, 0);
-
-    const monthlyFixedIncome = fixedIncomes
-      .filter(income => isItemActiveInMonth(income, selectedDateObject))
-      .reduce((sum, income) => sum + getActualFixedItemAmount(income.id, 'income', anoAtual, mesAtual, income.amount, monthlyVariations), 0);
-
-    const monthlyFixedExpense = fixedExpenses
-      .filter(expense => isItemActiveInMonth(expense, selectedDateObject))
-      .reduce((sum, expense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual, expense.amount, monthlyVariations), 0);
-
-    const totalIncome = monthlyVariableIncome + monthlyFixedIncome;
-    const totalExpense = monthlyVariableExpense + monthlyFixedExpense;
-    const balance = totalIncome - totalExpense;
-
-    return { monthlyIncome: totalIncome, monthlyFixedIncome, monthlyVariableIncome, monthlyExpense: totalExpense, monthlyFixedExpense, monthlyVariableExpense, balance };
-  }, [selectedDateObject, transactions, fixedIncomes, fixedExpenses, getActualFixedItemAmount]);
-
-
-  const handleAddExpenseForDate = (date: Date) => {
-    setInitialDateForModal(formatDateToYYYYMMDD(date));
-    setIsExpenseModalOpen(true);
-  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -141,25 +88,25 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Handlers de formulário
+  const handleAddExpenseForDate = (date: Date) => {
+    setInitialDateForModal(formatDateToYYYYMMDD(date));
+    setIsExpenseModalOpen(true);
+  };
+
   const handleExpenseSubmit = (formData: ExpenseFormData) => {
     const localDateObject = parseDateInputToLocal(formData.date);
     const utcTimestamp = convertDateToUTCISOString(localDateObject);
-
-    const mutationOptions = {
-      onSuccess: () => {
-        setIsExpenseModalOpen(false);
-      }
-    };
+    const mutationOptions = { onSuccess: () => setIsExpenseModalOpen(false) };
 
     if (formData.isInstallment && formData.installmentCount > 1) {
-      const compraParcelada = {
+      addCompraParceladaMutation.mutate({
         description: formData.description,
         amount: formData.amount,
         date: utcTimestamp,
         categoryId: formData.categoryId,
         numParcelas: formData.installmentCount,
-      };
-      addCompraParceladaMutation.mutate(compraParcelada, mutationOptions);
+      }, mutationOptions);
     } else {
       addTransactionMutation.mutate({
         description: formData.description,
@@ -175,23 +122,16 @@ export const Dashboard: React.FC = () => {
   const handleIncomeSubmit = (formData: IncomeFormData) => {
     const localDateObject = parseDateInputToLocal(formData.date);
     const utcTimestamp = convertDateToUTCISOString(localDateObject);
-
-    const mutationOptions = {
-      onSuccess: () => {
-        setIsIncomeModalOpen(false);
-      }
-    };
-
     addTransactionMutation.mutate({
       description: formData.description,
       amount: formData.amount,
       date: utcTimestamp,
       categoryId: formData.categoryId,
       type: 'income'
-    }, mutationOptions);
+    }, { onSuccess: () => setIsIncomeModalOpen(false) });
   };
 
-
+  // Renderização dos Widgets
   const getComponentById = (id: string) => {
     switch (id) {
       case 'weekly-calendar':
@@ -215,15 +155,12 @@ export const Dashboard: React.FC = () => {
 
   const renderWidgetContent = (config: DashboardComponentConfig) => {
     if (isLoading) {
-        // Retorna um Skeleton genérico que preenche o espaço do widget
         return (
             <div className="w-full h-full min-h-[200px] p-4 flex flex-col gap-4">
-                {/* Simula um cabeçalho de gráfico */}
                 <div className="flex justify-between">
                     <Skeleton className="h-6 w-1/3" />
                     <Skeleton className="h-6 w-16" />
                 </div>
-                {/* Simula o corpo do gráfico/tabela */}
                 <Skeleton className="flex-1 w-full rounded-lg" />
             </div>
         );
@@ -231,13 +168,12 @@ export const Dashboard: React.FC = () => {
     return getComponentById(config.id);
   };
 
+  // Renderização Principal (Agora usa o objeto 'summary' do hook)
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        {/* Botões mantidos */}
         <div className="flex space-x-2">
-             {/* ... botões ... */}
              <button onClick={() => setIsExpenseModalOpen(true)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center text-sm">
                 <PlusIcon className="w-4 h-4 mr-2" /> Nova Despesa
              </button>
@@ -247,25 +183,20 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
       
-      {/* 3. CARDS DE RESUMO COM SKELETON */}
+      {/* Cards de Resumo - Usando dados limpos do summary */}
       <div id="cards" className="grid grid-cols-1 md:grid-rows-1 md:grid-cols-3 gap-6">
         {/* Card Renda */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-medium text-gray-500">Renda Total do Mês</h3>
-          {isLoading ? (
-             <Skeleton className="h-8 w-40 my-1" />
-          ) : (
-             <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyIncome)}</p>
-          )}
-          
+          {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
               <span>Rendas Fixas:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyFixedIncome)}</span>}
+              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyFixedIncome)}</span>}
             </div>
             <div className="flex justify-between items-center">
               <span>Rendas Variáveis:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyVariableIncome)}</span>}
+              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyVariableIncome)}</span>}
             </div>
           </div>
         </div>
@@ -273,19 +204,15 @@ export const Dashboard: React.FC = () => {
         {/* Card Gastos */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
           <h3 className="text-sm font-medium text-gray-500">Gasto Total do Mês</h3>
-          {isLoading ? (
-             <Skeleton className="h-8 w-40 my-1" />
-          ) : (
-             <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyExpense)}</p>
-          )}
+          {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
               <span>Despesas Fixas:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyFixedExpense)}</span>}
+              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyFixedExpense)}</span>}
             </div>
             <div className="flex justify-between items-center">
               <span>Despesas Variáveis:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyVariableExpense)}</span>}
+              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyVariableExpense)}</span>}
             </div>
           </div>
         </div>
@@ -293,31 +220,26 @@ export const Dashboard: React.FC = () => {
         {/* Card Saldo */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-500">Saldo do Mês</h3>
-          {isLoading ? (
-             <Skeleton className="h-8 w-40 my-1" />
-          ) : (
-             <p className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)}</p>
-          )}
+          {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.balance)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
               <span>Total de Rendas:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyIncome)}</span>}
+              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</span>}
             </div>
             <div className="flex justify-between items-center">
               <span>Total de Gastos:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyExpense)}</span>}
+              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</span>}
             </div>
           </div>
         </div>
       </div>
       
-      {/* 4. GRID DO DASHBOARD COM SKELETON NOS ITENS */}
+      {/* GRID COM DRAG AND DROP */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={dashboardComponents.map(item => item.id)} strategy={verticalListSortingStrategy}>
           <div className="grid grid-cols-4 gap-6">
             {dashboardComponents.map(config => (
               <SortableDashboardItem key={config.id} id={config.id} title={config.title} span={config.span}>
-                {/* AQUI USAMOS A NOVA FUNÇÃO DE RENDERIZAÇÃO */}
                 {renderWidgetContent(config)}
               </SortableDashboardItem>
             ))}
@@ -325,7 +247,7 @@ export const Dashboard: React.FC = () => {
         </SortableContext>
       </DndContext>
       
-      {/* Modais mantidos igual ao original */}
+      {/* Modais */}
       <ExpenseModal 
         isOpen={isExpenseModalOpen} 
         onClose={() => {

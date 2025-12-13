@@ -216,7 +216,7 @@ export const MonthlyReport: React.FC = () => {
 
   const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const years = Array.from({ length: 7 }, (_, i) => currentYear + 2 - i);
 
   return (
     <div className="space-y-8">

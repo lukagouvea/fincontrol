@@ -6,16 +6,44 @@ type WeeklyFinancialCalendarProps = {
   onAddExpense?: (date: Date) => void;
   transactions: Transaction[];
   categories: Category[];
+  managementDaily?: number;
 };
 export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = ({
   onAddExpense,
   transactions,
-  categories
+  categories,
+  managementDaily
 }) => {
+  // Mês real atual (de hoje) — o usuário não pode navegar para fora dele
+  const currentMonthRef = new Date();
+  const currentMonthStart = new Date(currentMonthRef.getFullYear(), currentMonthRef.getMonth(), 1);
+  currentMonthStart.setHours(0, 0, 0, 0);
+  const currentMonthEnd = new Date(currentMonthRef.getFullYear(), currentMonthRef.getMonth() + 1, 0);
+  currentMonthEnd.setHours(23, 59, 59, 999);
+
   // State for tracking the current week and selected day
-  const [weekStart, setWeekStart] = useState<Date>(getStartOfWeek(new Date()));
+  const [weekStart, setWeekStart] = useState<Date>(() => getStartOfWeek(new Date()));
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+
+  const clampWeekStartToCurrentMonth = (candidateStart: Date): Date => {
+    // Se a semana candidata estiver totalmente antes do mês atual, pula para a 1ª semana do mês
+    const candEnd = getEndOfWeek(candidateStart);
+    if (candEnd < currentMonthStart) {
+      return getStartOfWeek(currentMonthStart);
+    }
+
+    // Se a semana candidata estiver totalmente depois do mês atual, volta para a última semana do mês
+    if (candidateStart > currentMonthEnd) {
+      return getStartOfWeek(currentMonthEnd);
+    }
+
+    return candidateStart;
+  };
+
+  const canGoPrev = getEndOfWeek(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() - 7)) >= currentMonthStart;
+  const canGoNext = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 7) <= currentMonthEnd;
+
   // Generate the days for the current week whenever weekStart changes
   useEffect(() => {
     const days = [];
@@ -26,11 +54,23 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     }
     setWeekDays(days);
   }, [weekStart]);
+
+  // Garante que nunca ficamos fora do mês atual (ex: por qualquer efeito colateral)
+  useEffect(() => {
+    const clamped = clampWeekStartToCurrentMonth(weekStart);
+    if (clamped.getTime() !== weekStart.getTime()) {
+      setWeekStart(clamped);
+      setSelectedDay(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Navigation functions
   const goToPreviousWeek = () => {
+    if (!canGoPrev) return;
     const newStart = new Date(weekStart);
     newStart.setDate(weekStart.getDate() - 7);
-    setWeekStart(newStart);
+    setWeekStart(clampWeekStartToCurrentMonth(newStart));
     setSelectedDay(null);
   };
   const goToCurrentWeek = () => {
@@ -38,9 +78,10 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     setSelectedDay(null);
   };
   const goToNextWeek = () => {
+    if (!canGoNext) return;
     const newStart = new Date(weekStart);
     newStart.setDate(weekStart.getDate() + 7);
-    setWeekStart(newStart);
+    setWeekStart(clampWeekStartToCurrentMonth(newStart));
     setSelectedDay(null);
   };
   
@@ -67,6 +108,13 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   // Handle day click
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
+  };
+
+  const isInCurrentMonth = (date: Date): boolean => {
+    return (
+      date.getFullYear() === currentMonthRef.getFullYear() &&
+      date.getMonth() === currentMonthRef.getMonth()
+    );
   };
   // Get expenses for a specific date
   const getExpensesForDate = (date: Date) => {
@@ -119,6 +167,13 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     return weeklyTotal;
   };
 
+  const weeklySpent = calculateWeeklyExpenses(transactions, weekStart);
+
+  // Orçamento semanal: gerenciamento diário * quantidade de dias desta semana que pertencem ao mês atual
+  const daysInCurrentMonthThisWeek = weekDays.filter((d) => isInCurrentMonth(d)).length;
+  const weeklyBudget = (managementDaily ?? 0) * daysInCurrentMonthThisWeek;
+  const weeklySaldo = weeklyBudget - weeklySpent;
+
   // Format currency values
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('pt-BR', {
@@ -133,13 +188,21 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
           {formatMonthYear(weekStart)}
         </h2>
         <div className="flex items-center space-x-2">
-          <button onClick={goToPreviousWeek} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+          <button
+            onClick={goToPreviousWeek}
+            disabled={!canGoPrev}
+            className={`p-2 rounded-full ${canGoPrev ? 'bg-gray-100 hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`}
+          >
             <ChevronLeftIcon size={16} />
           </button>
           <button onClick={goToCurrentWeek} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
             Hoje
           </button>
-          <button onClick={goToNextWeek} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+          <button
+            onClick={goToNextWeek}
+            disabled={!canGoNext}
+            className={`p-2 rounded-full ${canGoNext ? 'bg-gray-100 hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`}
+          >
             <ChevronRightIcon size={16} />
           </button>
         </div>
@@ -154,10 +217,16 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
         const expenses = getExpensesForDate(day);
         const totalExpenses = getTotalExpensesForDate(day);
         const isSelected = selectedDay && day.getTime() === selectedDay.getTime();
-        return <div key={`day-${index}`} className={`border rounded-lg p-2 h-[150px] overflow-hidden cursor-pointer transition-all
+        const isOutOfMonth = !isInCurrentMonth(day);
+        return <div
+              key={`day-${index}`}
+              className={`border rounded-lg p-2 h-[150px] overflow-hidden ${isOutOfMonth ? '' : 'cursor-pointer'} transition-all
                 ${isToday(day) ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}
                 ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : ''}
-                hover:border-blue-300 hover:shadow-sm`} onClick={() => handleDayClick(day)} role="button">
+                ${isOutOfMonth ? 'bg-gray-200 border-gray-300 opacity-90' : 'hover:border-blue-300 hover:shadow-sm'}`}
+              onClick={isOutOfMonth ? undefined : () => handleDayClick(day)}
+              role={isOutOfMonth ? undefined : 'button'}
+            >
               <div className="text-center mb-2">
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 text-blue-800' : 'text-gray-700'}`}>
                   {formatDayOfMonth(day)}
@@ -191,19 +260,32 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
                       </span>
                     </div>}
                 </div> : <div className="h-full flex items-center justify-center text-xs text-gray-400">
-                  Sem despesas
+                  {isOutOfMonth ? '' : 'Sem despesas'}
                 </div>}
             </div>;
       })}
       </div>
-      <h3 className="text-sm font-medium text-gray-500 text-right">
-        Total gasto na semana
-        <p>
-          <span className="font-medium text-red-600">
-            {formatCurrency(calculateWeeklyExpenses(transactions, weekStart))}
-          </span>
-        </p>
-      </h3>
+      <div className="mt-4 flex items-start justify-end gap-10">
+        <div className="text-right">
+          <h3 className="text-sm font-medium text-gray-500">Total gasto na semana</h3>
+          <p>
+            <span className="font-medium text-red-600">
+              {formatCurrency(weeklySpent)}
+            </span>
+          </p>
+        </div>
+
+        {typeof managementDaily === 'number' && (
+          <div className="text-right">
+            <h3 className="text-sm font-medium text-gray-500">Saldo da semana</h3>
+            <p>
+              <span className={`font-medium ${weeklySaldo < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                {formatCurrency(weeklySaldo)}
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
 
 
       {/* Selected day details */}

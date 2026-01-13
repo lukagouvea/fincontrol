@@ -20,6 +20,7 @@ import { Skeleton } from '../components/Shared/Skeleton';
 
 import { MonthlyManagementCard } from '../components/Dashboard/MonthlyManagementCard';
 import { useInvestmentSettings } from '../hooks/useInvestmentSettings';
+import { getActualFixedItemAmount, isItemActiveInMonth } from '../utils/financeUtils';
 
 // IMPORTANTE: Importamos nosso novo hook aqui
 import { useDashboardFinance } from '../hooks/useDashboardFinance';
@@ -45,7 +46,7 @@ const defaultDashboardLayout: DashboardComponentConfig[] = [
 export const Dashboard: React.FC = () => {
   // 1. Chamada do Hook Mágico (Toda a lógica vem daqui)
   const { 
-    transactions, fixedExpenses, fixedIncomes, monthlyVariations, 
+    transactions, transactionsWithoutInstallments, fixedExpenses, fixedIncomes, monthlyVariations, 
     categories, isLoading, selectedDateObject, summary 
   } = useDashboardFinance();
 
@@ -177,17 +178,24 @@ export const Dashboard: React.FC = () => {
   const getComponentById = (id: string) => {
     switch (id) {
       case 'weekly-calendar':
-        return <WeeklyFinancialCalendar onAddExpense={handleAddExpenseForDate} transactions={transactions} categories={categories} />;
+        return (
+          <WeeklyFinancialCalendar
+            onAddExpense={handleAddExpenseForDate}
+            transactions={transactionsWithoutInstallments}
+            categories={categories}
+            managementDaily={managementDaily}
+          />
+        );
       case 'upcoming-bills':
-        return <UpcomingBills fixedExpenses={fixedExpenses} transactions={transactions} date={selectedDateObject} />;
+        return <UpcomingBills fixedExpenses={fixedExpenses} transactions={transactions} monthlyVariations={monthlyVariations} date={selectedDateObject} />;
       case 'category-pie':
-        return <CategoryPieChart transactions={transactions} categories={categories} date={selectedDateObject} monthlyVariations={monthlyVariations} />;
+        return <CategoryPieChart transactions={transactionsWithoutInstallments} categories={categories} date={selectedDateObject} monthlyVariations={monthlyVariations} />;
       case 'expenses-histogram':
-        return <ExpensesValueHistogram transactions={transactions} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
+        return <ExpensesValueHistogram transactions={transactionsWithoutInstallments} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
       case 'weekly-spending':
-        return <WeeklySpending transactions={transactions} />;
+        return <WeeklySpending transactions={transactionsWithoutInstallments} />;
       case 'monthly-histogram':
-        return <MonthlyHistogram transactions={transactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
+        return <MonthlyHistogram transactions={transactionsWithoutInstallments} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
       case 'recent-transactions':
         return <RecentTransactions transactions={transactions} categories={categories} date={selectedDateObject} />;
       default:
@@ -226,10 +234,11 @@ export const Dashboard: React.FC = () => {
       </div>
       
       {/* Cards de Resumo - Usando dados limpos do summary */}
-      <div id="cards" className="grid grid-cols-1 md:grid-rows-1 md:grid-cols-3 gap-6">
+  <div id="cards" className="grid grid-cols-1 md:grid-rows-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Card Renda */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-medium text-gray-500">Renda Total do Mês</h3>
+          <hr></hr>
           {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
@@ -243,9 +252,30 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Card Gerenciamento do Mês */}
+        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+          <h3 className="text-sm font-medium text-gray-500">Gerenciamento do Mês</h3>
+          {isLoading ? (
+            <div className="mt-3 space-y-2">
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : (
+            <MonthlyManagementCard
+              date={selectedDateObject}
+              monthlyIncome={summary.monthlyIncome}
+              fixedExpenses={fixedExpenses}
+              monthlyVariations={monthlyVariations}
+              transactions={transactions}
+              investmentMonthlyAmount={investmentMonthlyAmount}
+            />
+          )}
+        </div>
+
         {/* Card Gastos */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
           <h3 className="text-sm font-medium text-gray-500">Gasto Total do Mês</h3>
+          <hr></hr>
           {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
@@ -262,6 +292,7 @@ export const Dashboard: React.FC = () => {
         {/* Card Saldo */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-500">Saldo do Mês</h3>
+          <hr></hr>
           {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.balance)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">

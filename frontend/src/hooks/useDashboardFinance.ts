@@ -5,6 +5,7 @@ import { useMonthlyVariations } from './useMonthlyVariations';
 import { useCategories } from './useCategories';
 import { parseDateInputToLocal } from '../utils/dateUtils';
 import { isItemActiveInMonth, getActualFixedItemAmount } from '../utils/financeUtils';
+import { Transaction, FixedExpense, FixedIncome, MonthlyVariation, Category } from '../types/FinanceTypes';
 
 export const useDashboardFinance = () => {
   // 1. Busca de Dados
@@ -28,7 +29,7 @@ export const useDashboardFinance = () => {
     const mesAtual = selectedDateObject.getMonth();
 
     const getVariableTransactions = (type: 'income' | 'expense') => {
-      return transactions.filter(t => {
+      return (transactions as Transaction[]).filter((t: Transaction) => {
         const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
         const isCorrectType = t.type === type;
         const isSameMonth = transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
@@ -40,16 +41,16 @@ export const useDashboardFinance = () => {
     const variableIncomes = getVariableTransactions('income');
     const variableExpenses = getVariableTransactions('expense');
 
-    const monthlyVariableIncome = variableIncomes.reduce((sum, t) => sum + t.amount, 0);
-    const monthlyVariableExpense = variableExpenses.reduce((sum, t) => sum + t.amount, 0);
+  const monthlyVariableIncome = variableIncomes.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+  const monthlyVariableExpense = variableExpenses.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
-    const monthlyFixedIncome = fixedIncomes
-      .filter(income => isItemActiveInMonth(income, selectedDateObject))
-      .reduce((sum, income) => sum + getActualFixedItemAmount(income.id, 'income', anoAtual, mesAtual, income.amount, monthlyVariations), 0);
+    const monthlyFixedIncome = (fixedIncomes as FixedIncome[])
+      .filter((income: FixedIncome) => isItemActiveInMonth(income, selectedDateObject))
+      .reduce((sum: number, income: FixedIncome) => sum + getActualFixedItemAmount(income.id, 'income', anoAtual, mesAtual, income.amount, monthlyVariations as MonthlyVariation[]), 0);
 
-    const monthlyFixedExpense = fixedExpenses
-      .filter(expense => isItemActiveInMonth(expense, selectedDateObject))
-      .reduce((sum, expense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual, expense.amount, monthlyVariations), 0);
+    const monthlyFixedExpense = (fixedExpenses as FixedExpense[])
+      .filter((expense: FixedExpense) => isItemActiveInMonth(expense, selectedDateObject))
+      .reduce((sum: number, expense: FixedExpense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual, expense.amount, monthlyVariations as MonthlyVariation[]), 0);
 
     const totalIncome = monthlyVariableIncome + monthlyFixedIncome;
     const totalExpense = monthlyVariableExpense + monthlyFixedExpense;
@@ -66,13 +67,24 @@ export const useDashboardFinance = () => {
     };
   }, [selectedDateObject, transactions, fixedIncomes, fixedExpenses, monthlyVariations]);
 
+  // --- Regras de exibição na Dashboard ---
+  // Parceladas (installments) não devem aparecer em nenhum widget,
+  // exceto "Contas do Mês" (UpcomingBills) e "Transações Recentes".
+  // Então expomos duas listas:
+  // - transactions: original (com parceladas) -> usado por widgets permitidos
+  // - transactionsWithoutInstallments: filtrado -> usado pelos demais widgets
+  const transactionsWithoutInstallments = useMemo(() => {
+    return (transactions as Transaction[]).filter((t: Transaction) => !('installmentInfo' in t && !!t.installmentInfo));
+  }, [transactions]);
+
   // Retorna tudo o que o componente precisa
   return {
-    transactions,
-    fixedExpenses,
-    fixedIncomes,
-    monthlyVariations,
-    categories,
+    transactions: transactions as Transaction[],
+    transactionsWithoutInstallments,
+    fixedExpenses: fixedExpenses as FixedExpense[],
+    fixedIncomes: fixedIncomes as FixedIncome[],
+    monthlyVariations: monthlyVariations as MonthlyVariation[],
+    categories: categories as Category[],
     isLoading,
     selectedDateObject,
     summary // Contém income, expense, balance, etc.

@@ -18,6 +18,9 @@ import { VariableExpense } from '../types/FinanceTypes';
 import { useAddTransaction, useAddCompraParcelada } from '../hooks/useTransactions';
 import { Skeleton } from '../components/Shared/Skeleton';
 
+import { MonthlyManagementCard } from '../components/Dashboard/MonthlyManagementCard';
+import { useInvestmentSettings } from '../hooks/useInvestmentSettings';
+
 // IMPORTANTE: Importamos nosso novo hook aqui
 import { useDashboardFinance } from '../hooks/useDashboardFinance';
 
@@ -45,6 +48,45 @@ export const Dashboard: React.FC = () => {
     transactions, fixedExpenses, fixedIncomes, monthlyVariations, 
     categories, isLoading, selectedDateObject, summary 
   } = useDashboardFinance();
+
+  const { investmentMonthlyAmount } = useInvestmentSettings();
+
+  // Gerenciamento diário usado pelo calendário semanal
+  // (mesma regra do card: renda do mês - comprometido(fixos+parcelas) - investimento) / dias do mês
+  const managementDaily = React.useMemo(() => {
+    const year = selectedDateObject.getFullYear();
+    const month = selectedDateObject.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const committedFixed = fixedExpenses
+      .filter((expense) => isItemActiveInMonth(expense, selectedDateObject))
+      .reduce(
+        (sum, expense) =>
+          sum +
+          getActualFixedItemAmount(
+            expense.id,
+            'expense',
+            year,
+            month,
+            expense.amount,
+            monthlyVariations,
+          ),
+        0,
+      );
+
+    const committedInstallments = transactions
+      .filter((t) => ('installmentInfo' in t && !!t.installmentInfo))
+      .filter((t) => {
+        const d = new Date(t.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const remainingAfterInvestment = summary.monthlyIncome - (committedFixed + committedInstallments) - investmentMonthlyAmount;
+    const safeRemaining = isFinite(remainingAfterInvestment) ? remainingAfterInvestment : 0;
+
+    return daysInMonth > 0 ? safeRemaining / daysInMonth : 0;
+  }, [selectedDateObject, fixedExpenses, monthlyVariations, transactions, summary.monthlyIncome, investmentMonthlyAmount]);
 
   // 2. Lógica de UI e Mutações (Botões e Modais continuam aqui pois interagem com o usuário)
   const addTransactionMutation = useAddTransaction();

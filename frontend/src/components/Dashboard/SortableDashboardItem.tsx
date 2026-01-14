@@ -38,6 +38,13 @@ export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
     5: 'col-span-5', // Adicione quantos precisar
     6: 'col-span-6',
   };
+
+  // Para widgets pequenos (span=1), limitamos a altura do conteúdo pra não
+  // estourar a linha do grid; o componente interno pode usar scroll.
+  const contentHeightBySpan: Record<number, string> = {
+    1: 'h-80',
+  };
+
   const containerClasses = `
     bg-white shadow rounded-lg
     ${spanClasses[span] || 'col-span-1'}
@@ -49,6 +56,6 @@ export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
           <GripVerticalIcon className="w-5 h-5" />
         </button>
       </div>
-      <div className="p-6">{children}</div>
+      <div className={`p-6 ${contentHeightBySpan[span] || ''} overflow-hidden`}>{children}</div>
     </div>;
 };

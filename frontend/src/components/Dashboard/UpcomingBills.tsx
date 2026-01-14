@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 // 1. Importe os ícones necessários
 import { CreditCard, ArrowDownCircle } from 'lucide-react'; 
-import { isItemActiveInMonth } from '../../utils/financeUtils';
-import { FixedExpense, Transaction } from '../../types/FinanceTypes';
+import { isItemActiveInMonth, getActualFixedItemAmount } from '../../utils/financeUtils';
+import { FixedExpense, Transaction, MonthlyVariation } from '../../types/FinanceTypes';
 
 type UpcomingBill = {
   id: string;
@@ -15,10 +15,11 @@ type UpcomingBill = {
 type UpcomingBillsProps = {
   fixedExpenses: FixedExpense[];
   transactions: Transaction[];
+  monthlyVariations: MonthlyVariation[];
   date: Date; // O objeto Date do mês selecionado
 };
 
-export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, transactions, date }) => {
+export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, transactions, monthlyVariations, date }) => {
   const { upcomingBills, totalAmount } = useMemo(() => {
     const currentMonth = date.getMonth();
     const currentYear = date.getFullYear();
@@ -29,7 +30,8 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
       .map(expense => ({
         id: `fixed-${expense.id}`,
         description: expense.description,
-        amount: expense.amount,
+        // Importante: usar o valor real do mês (pode haver variação mensal)
+        amount: getActualFixedItemAmount(expense.id, 'expense', currentYear, currentMonth, expense.amount, monthlyVariations),
         dueDate: expense.day,
         type: 'fixed', // Adiciona o tipo 'fixed'
       }));
@@ -59,7 +61,7 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
     const total = allBills.reduce((sum, bill) => sum + bill.amount, 0);
 
     return { upcomingBills: allBills, totalAmount: total };
-  }, [fixedExpenses, transactions, date]);
+  }, [fixedExpenses, transactions, date, monthlyVariations]);
 
   const getDueDateText = (dueDate: number) => {
     const today = new Date();
@@ -79,13 +81,13 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {upcomingBills.length === 0 ? (
         <div className="flex items-center justify-center h-full text-gray-500">
           Nenhuma conta a pagar para este mês.
         </div>
       ) : (
-        <div className="flex-grow overflow-y-auto pr-2">
+        <div className="flex-grow min-h-0 overflow-y-auto pr-2">
           <ul className="space-y-2">
             {upcomingBills.map((bill, index) => (
               <li key={bill.id} className={`flex items-center justify-between py-3 ${index < upcomingBills.length - 1 ? 'border-b border-gray-100' : ''}`}>
@@ -113,7 +115,7 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
       )}
       
       {upcomingBills.length > 0 && (
-        <div className="mt-auto pt-4 border-t border-gray-200">
+        <div className="mt-auto pt-4 border-t border-gray-200 bg-white">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-600">Total a Pagar no Mês:</span>
             <span className="text-lg font-bold text-red-600">

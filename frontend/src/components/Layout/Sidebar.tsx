@@ -1,11 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { HomeIcon, TagIcon, DollarSignIcon, CoinsIcon, CreditCardIcon, ShoppingCartIcon, CalendarIcon, ClockIcon, LogOutIcon } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { HomeIcon, TagIcon, DollarSignIcon, CoinsIcon, CreditCardIcon, ShoppingCartIcon, CalendarIcon, ClockIcon } from 'lucide-react';
 export const Sidebar: React.FC = () => {
-  const {
-    logout
-  } = useAuth();
   return <aside className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
         <h1 className="text-xl font-bold text-blue-600">FinControl</h1>
@@ -109,11 +105,5 @@ export const Sidebar: React.FC = () => {
           </li>
         </ul>
       </nav>
-      <div className="p-4 border-t border-gray-200">
-        <button onClick={logout} className="flex items-center w-full px-4 py-2 text-gray-700 rounded-md hover:bg-gray-100">
-          <LogOutIcon className="w-5 h-5 mr-3" />
-          Sair
-        </button>
-      </div>
     </aside>;
 };

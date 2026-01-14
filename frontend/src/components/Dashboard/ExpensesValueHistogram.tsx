@@ -59,17 +59,11 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
     let minRange = Math.max(0, q1 - 1.5 * iqr); 
     const maxRange = q3 + 1.5 * iqr;
 
-    // Filtramos apenas os dados que caem dentro dessa "curva normal" para gerar as barras
-    // (Opcional: você pode querer incluir tudo, mas isso "achata" a curva. Para ver a normal, filtramos).
-    const filteredAmounts = amounts.filter(a => a >= minRange && a <= maxRange);
-
-    if (filteredAmounts.length === 0) return []; // Fallback se o filtro for agressivo demais
-
     // 3. Calcular largura do Bin usando Freedman-Diaconis
     // Formula: Width = 2 * IQR / (n ^ 1/3)
-    const n = filteredAmounts.length;
+    const n = amounts.length;
     // Se o IQR for 0 (todos gastos iguais), força um bin width padrão
-    const iqrFiltered = (getQuantile(filteredAmounts, 0.75) - getQuantile(filteredAmounts, 0.25)) || 10;
+    const iqrFiltered = (getQuantile(amounts, 0.75) - getQuantile(amounts, 0.25)) || 10;
     
     let binWidth = (2 * iqrFiltered) / Math.pow(n, (1/3));
     
@@ -98,16 +92,30 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
     });
 
     const histogramData = ranges.map((range, index) => {
-      const count = filteredAmounts.filter(amount => {
-        // Inclui o limite superior apenas no último bin
-        if (index === numBins - 1) return amount >= range.min && amount <= range.max;
+      const count = amounts.filter(amount => { // <--- Use 'amounts' (todos), não 'filteredAmounts'
+        
+        // 1. Se for a PRIMEIRA barra, pega tudo que é menor ou igual ao max dela
+        if (index === 0) {
+           return amount <= range.max; 
+        }
+        
+        // 2. Se for a ÚLTIMA barra, pega tudo que é maior ou igual ao min dela
+        if (index === numBins - 1) {
+           return amount >= range.min;
+        }
+
+        // 3. Barras do meio (comportamento normal)
         return amount >= range.min && amount < range.max;
       }).length;
 
+      // Ajusta o rótulo da primeira e última barra para indicar que acumulam valores
+      let label = range.label;
+      if (index === 0) label = `<= R$ ${Math.round(range.max)}`;
+      if (index === numBins - 1) label = `>= R$ ${Math.round(range.min)}`;
+
       return {
-        range: range.label,
+        range: label,
         quantidade: count,
-        // Dados extras para tooltip se quiser saber o range exato
         min: range.min, 
         max: range.max
       };

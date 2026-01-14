@@ -30,7 +30,7 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
   const last12Months = Array.from({
     length: 12
   }, (_, i) => {
-    const data = new Date(anoAtual, mesAtual - i, 1);
+    const data = new Date(anoAtual, mesAtual - 1 - i, 1);
     return data;
   }).reverse();
   // Formatar os dados para o gráfico

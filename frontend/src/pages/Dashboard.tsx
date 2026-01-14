@@ -195,7 +195,7 @@ export const Dashboard: React.FC = () => {
       case 'weekly-spending':
         return <WeeklySpending transactions={transactionsWithoutInstallments} />;
       case 'monthly-histogram':
-        return <MonthlyHistogram transactions={transactionsWithoutInstallments} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
+        return <MonthlyHistogram transactions={transactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
       case 'recent-transactions':
         return <RecentTransactions transactions={transactions} categories={categories} date={selectedDateObject} />;
       default:

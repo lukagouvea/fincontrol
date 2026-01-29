@@ -1,15 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CategoryPieChart } from '../../components/Dashboard/CategoryPieChart';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableDashboardItem } from '../../components/Dashboard/SortableDashboardItem';
 import { ExpensesValueHistogram } from '../../components/Dashboard/ExpensesValueHistogram';
+import { MonthlyManagementCard } from '../../components/Dashboard/MonthlyManagementCard';
 import { formatUTCToDDMMAAAA, parseDateInputToLocal } from '../../utils/dateUtils';
 import { isItemActiveInMonth, getActualFixedItemAmount } from '../../utils/financeUtils';
 import { useTransactions, usePrefetchAdjacentMonths } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
 import { useFixedIncomes, useFixedExpenses } from '../../hooks/useFixedTransactions';
 import { useMonthlyVariations } from '../../hooks/useMonthlyVariations';
+import { useMonthlyInvestment } from '../../hooks/useInvestmentSettings';
 import { Skeleton } from '../../components/Shared/Skeleton';
 
 type DashboardComponentInfo = {
@@ -27,8 +29,16 @@ export const MonthlyReport: React.FC = () => {
   const { data: fixedIncomes = [], isLoading: isLoadingFixedIncomes } = useFixedIncomes();
   const { data: fixedExpenses = [], isLoading: isLoadingFixedExpenses } = useFixedExpenses();
   const { data: monthlyVariations = [], isLoading: isLoadingMonthlyVariations } = useMonthlyVariations();
+  const {
+    data: investmentEffective,
+    isLoading: isLoadingInvestment,
+    setMonthlyInvestmentOverride,
+    clearMonthlyInvestmentOverride,
+    isSavingOverride,
+    isClearingOverride,
+  } = useMonthlyInvestment(selectedMonth, selectedYear);
 
-  const isLoading = isLoadingCategories || isLoadingFixedExpenses || isLoadingTransactions || isLoadingFixedExpenses || isLoadingFixedIncomes || isLoadingMonthlyVariations;
+  const isLoading = isLoadingCategories || isLoadingFixedExpenses || isLoadingTransactions || isLoadingFixedExpenses || isLoadingFixedIncomes || isLoadingMonthlyVariations || isLoadingInvestment;
 
   usePrefetchAdjacentMonths(selectedMonth, selectedYear);
 
@@ -42,6 +52,31 @@ export const MonthlyReport: React.FC = () => {
     { id: 'category-pie', title: 'Gastos por Categoria', span: 1 },
     { id: 'expenses-histogram', title: 'Distribuição de Gastos por Valor', span: 1 },
   ]);
+
+  const [investmentInput, setInvestmentInput] = useState<string>('');
+  const investmentMonthlyAmount = investmentEffective?.effectiveMonthlyAmount ?? 0;
+  const investmentDefaultAmount = investmentEffective?.defaultMonthlyAmount ?? 0;
+  const hasOverride = investmentEffective?.overrideMonthlyAmount !== null && investmentEffective?.overrideMonthlyAmount !== undefined;
+
+  useEffect(() => {
+    const overrideValue = investmentEffective?.overrideMonthlyAmount;
+    setInvestmentInput(overrideValue !== null && overrideValue !== undefined ? String(overrideValue) : '');
+  }, [selectedMonth, selectedYear, investmentEffective?.overrideMonthlyAmount]);
+
+  const handleApplyMonthlyInvestment = () => {
+    setMonthlyInvestmentOverride(investmentInput);
+  };
+
+  const handleClearMonthlyInvestment = () => {
+    clearMonthlyInvestmentOverride();
+  };
+
+  const handleInvestmentKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleApplyMonthlyInvestment();
+    }
+  };
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, {
     coordinateGetter: sortableKeyboardCoordinates
@@ -234,7 +269,7 @@ export const MonthlyReport: React.FC = () => {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card Receitas */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-medium text-gray-500">Receitas do Mês</h3>
@@ -254,6 +289,72 @@ export const MonthlyReport: React.FC = () => {
           <h3 className="text-sm font-medium text-gray-500">Saldo Líquido</h3>
           {isLoading ? <Skeleton className="h-8 w-32 mt-1" /> : (
             <p className={`text-2xl font-bold ${totals.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatValue(totals.balance)}</p>
+          )}
+        </div>
+        {/* Card Gerenciamento do Mês */}
+        <div className="bg-white md:col-span-1 lg:col-span-3 rounded-lg shadow p-4 border-l-4 border-blue-500">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">Gerenciamento do Mês</h3>
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : (
+            <>
+              <MonthlyManagementCard
+                date={selectedDateObject}
+                monthlyIncome={totals.income}
+                fixedExpenses={fixedExpenses}
+                monthlyVariations={monthlyVariations}
+                transactions={transactions}
+                investmentMonthlyAmount={investmentMonthlyAmount}
+                compact={true}
+              />
+              <div className="mt-3 border-t border-gray-200 pt-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-gray-600">Investimento do Mês</p>
+                  <p className="text-xs text-gray-500">
+                    {hasOverride ? (
+                      <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
+                        Override ativo
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">Padrão</span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  {/* Layout flex em lg, stack em md */}
+                  <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 w-full">
+                    <input
+                      value={investmentInput}
+                      onChange={(e) => setInvestmentInput(e.target.value)}
+                      onKeyDown={handleInvestmentKeyDown}
+                      placeholder={formatValue(investmentDefaultAmount)}
+                      className="flex-1 lg:flex-auto px-2.5 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-800 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyMonthlyInvestment}
+                      disabled={!investmentInput || isSavingOverride}
+                      className="lg:flex-shrink-0 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {isSavingOverride ? 'Salvando...' : 'Salvar'}
+                    </button>
+                    {hasOverride && (
+                      <button
+                        type="button"
+                        onClick={handleClearMonthlyInvestment}
+                        disabled={isClearingOverride}
+                        className="lg:flex-shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {isClearingOverride ? 'Removendo...' : `Voltar ao padrão (${formatValue(investmentDefaultAmount)})`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

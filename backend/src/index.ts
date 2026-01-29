@@ -8,6 +8,7 @@ import authRoute from './routes/auth.js';
 import categoriesRoute from './routes/categories.js';
 import transactionsRoute from './routes/transactions.js';
 import recurringRoute from './routes/recurring.js';
+import investmentRoute from './routes/investment.js';
 
 const app = new Hono();
 
@@ -28,6 +29,7 @@ app.route('/auth', authRoute);
 app.route('/categories', categoriesRoute);
 app.route('/transactions', transactionsRoute);
 app.route('/recurring', recurringRoute);
+app.route('/investment', investmentRoute);
 
 serve({
   fetch: app.fetch,

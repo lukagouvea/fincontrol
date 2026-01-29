@@ -94,8 +94,32 @@ CREATE TABLE transactions (
 );
 
 -- =============================================
--- 6. ÍNDICES (Performance)
+-- 6. INVESTIMENTO (Configuração padrão e overrides mensais)
+-- =============================================
+CREATE TABLE investment_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    default_monthly_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE investment_overrides (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    year INT NOT NULL,
+    month INT NOT NULL CHECK (month BETWEEN 1 AND 12),
+    amount DECIMAL(12, 2) NOT NULL CHECK (amount >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT unique_investment_override UNIQUE (user_id, year, month)
+);
+
+-- =============================================
+-- 7. ÍNDICES (Performance)
 -- =============================================
 CREATE INDEX idx_transactions_user_date ON transactions(user_id, date);
 CREATE INDEX idx_recurring_user_active ON recurring_rules(user_id, active);
 CREATE INDEX idx_transactions_user_category ON transactions(user_id, category_id);
+CREATE INDEX idx_investment_override_user_month ON investment_overrides(user_id, year, month);

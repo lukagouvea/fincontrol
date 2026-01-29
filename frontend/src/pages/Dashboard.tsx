@@ -19,7 +19,7 @@ import { useAddTransaction, useAddCompraParcelada } from '../hooks/useTransactio
 import { Skeleton } from '../components/Shared/Skeleton';
 
 import { MonthlyManagementCard } from '../components/Dashboard/MonthlyManagementCard';
-import { useInvestmentSettings } from '../hooks/useInvestmentSettings';
+import { useMonthlyInvestment } from '../hooks/useInvestmentSettings';
 import { getActualFixedItemAmount, isItemActiveInMonth } from '../utils/financeUtils';
 
 // IMPORTANTE: Importamos nosso novo hook aqui
@@ -50,7 +50,12 @@ export const Dashboard: React.FC = () => {
     categories, isLoading, selectedDateObject, summary 
   } = useDashboardFinance();
 
-  const { investmentMonthlyAmount } = useInvestmentSettings();
+  const { data: investmentEffective, isLoading: isLoadingInvestment } = useMonthlyInvestment(
+    selectedDateObject.getMonth(),
+    selectedDateObject.getFullYear(),
+  );
+  const investmentMonthlyAmount = investmentEffective?.effectiveMonthlyAmount ?? 0;
+  const isDashboardLoading = isLoading;
 
   // Gerenciamento diário usado pelo calendário semanal
   // (mesma regra do card: renda do mês - comprometido(fixos+parcelas) - investimento) / dias do mês
@@ -204,7 +209,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const renderWidgetContent = (config: DashboardComponentConfig) => {
-    if (isLoading) {
+    if (isDashboardLoading) {
         return (
             <div className="w-full h-full min-h-[200px] p-4 flex flex-col gap-4">
                 <div className="flex justify-between">
@@ -239,15 +244,15 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-medium text-gray-500">Renda Total do Mês</h3>
           <hr></hr>
-          {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</p>}
+          {isDashboardLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
               <span>Rendas Fixas:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyFixedIncome)}</span>}
+              {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyFixedIncome)}</span>}
             </div>
             <div className="flex justify-between items-center">
               <span>Rendas Variáveis:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyVariableIncome)}</span>}
+              {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyVariableIncome)}</span>}
             </div>
           </div>
         </div>
@@ -255,7 +260,7 @@ export const Dashboard: React.FC = () => {
         {/* Card Gerenciamento do Mês */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-500">Gerenciamento do Mês</h3>
-          {isLoading ? (
+          {isDashboardLoading ? (
             <div className="mt-3 space-y-2">
               <Skeleton className="h-8 w-40" />
               <Skeleton className="h-20 w-full" />
@@ -270,21 +275,24 @@ export const Dashboard: React.FC = () => {
               investmentMonthlyAmount={investmentMonthlyAmount}
             />
           )}
+          {!isDashboardLoading && isLoadingInvestment && (
+            <p className="mt-2 text-xs text-gray-500">Atualizando investimento...</p>
+          )}
         </div>
 
         {/* Card Gastos */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
           <h3 className="text-sm font-medium text-gray-500">Gasto Total do Mês</h3>
           <hr></hr>
-          {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</p>}
+          {isDashboardLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
-              <span>Despesas Fixas:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyFixedExpense)}</span>}
+              <span>Despesas Comprometidas:</span>
+              {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyCommittedExpense)}</span>}
             </div>
             <div className="flex justify-between items-center">
-              <span>Despesas Variáveis:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyVariableExpense)}</span>}
+              <span>Despesas do Mês:</span>
+              {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyMonthExpense)}</span>}
             </div>
           </div>
         </div>
@@ -293,15 +301,15 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-500">Saldo do Mês</h3>
           <hr></hr>
-          {isLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.balance)}</p>}
+          {isDashboardLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.balance)}</p>}
           <div className="mt-2 text-xs text-gray-500 space-y-1">
             <div className="flex justify-between items-center">
               <span>Total de Rendas:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</span>}
+              {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</span>}
             </div>
             <div className="flex justify-between items-center">
               <span>Total de Gastos:</span>
-              {isLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</span>}
+              {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</span>}
             </div>
           </div>
         </div>

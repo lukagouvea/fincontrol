@@ -52,9 +52,19 @@ export const useDashboardFinance = () => {
       .filter((expense: FixedExpense) => isItemActiveInMonth(expense, selectedDateObject))
       .reduce((sum: number, expense: FixedExpense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual, expense.amount, monthlyVariations as MonthlyVariation[]), 0);
 
+    const monthlyInstallmentExpense = (transactions as Transaction[])
+      .filter((t: Transaction) => t.type === 'expense' && ('installmentInfo' in t && !!t.installmentInfo))
+      .filter((t: Transaction) => {
+        const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
+        return transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
+      })
+      .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+
     const totalIncome = monthlyVariableIncome + monthlyFixedIncome;
     const totalExpense = monthlyVariableExpense + monthlyFixedExpense;
     const balance = totalIncome - totalExpense;
+    const monthlyCommittedExpense = monthlyFixedExpense + monthlyInstallmentExpense;
+    const monthlyMonthExpense = totalExpense - monthlyCommittedExpense;
 
     return {
       monthlyIncome: totalIncome,
@@ -63,6 +73,9 @@ export const useDashboardFinance = () => {
       monthlyExpense: totalExpense,
       monthlyFixedExpense,
       monthlyVariableExpense,
+      monthlyInstallmentExpense,
+      monthlyCommittedExpense,
+      monthlyMonthExpense,
       balance
     };
   }, [selectedDateObject, transactions, fixedIncomes, fixedExpenses, monthlyVariations]);

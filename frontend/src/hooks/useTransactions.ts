@@ -61,6 +61,37 @@ export const useThreeMonthsTransactions = (centerMonth: number, centerYear: numb
   };
 };
 
+export const useTwelveMonthsTransactions = (endMonth: number, endYear: number) => {
+  const offsets = Array.from({ length: 12 }, (_, i) => -i); // 0, -1, -2 ... -11
+
+  const queriesOptions = offsets.map(offset => {
+    const date = new Date(endYear, endMonth + offset, 1);
+    const m = date.getMonth();
+    const y = date.getFullYear();
+
+    return {
+      queryKey: [...CACHE_KEY_TRANSACTIONS, m, y],
+      queryFn: () => transactionService.getAll(m, y),
+      staleTime: 1000 * 60 * 5, // 5 minutos
+    };
+  });
+
+  const results = useQueries({ queries: queriesOptions });
+  const combinedTransactions = results.flatMap(result => result.data || []);
+  const isLoading = results.some(result => result.isLoading);
+  const isError = results.some(result => result.isError);
+
+  const sortedTransactions = combinedTransactions.sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  return { 
+    data: sortedTransactions, 
+    isLoading, 
+    isError 
+  };
+};
+
 export const usePrefetchAdjacentMonths = (currentMonth: number, currentYear: number) => {
   const queryClient = useQueryClient();
 

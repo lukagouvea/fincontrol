@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getActualFixedItemAmount } from '../../utils/financeUtils';
+import { parseDateInputToLocal } from '../../utils/dateUtils';
 import { Transaction, FixedIncome, FixedExpense, Category, MonthlyVariation } from '../../types/FinanceTypes';
 import { isItemActiveInMonth } from '../../utils/financeUtils';
 type MonthlyHistogramProps = {
@@ -13,12 +14,24 @@ type MonthlyHistogramProps = {
 };
 export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
   transactions,
-  categories,
   fixedIncomes,
   fixedExpenses,
   monthlyVariations,
   date
 }) => {
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 shadow-md rounded">
+                <p className="text-black dark:text-white font-medium mb-1">{label}</p>
+                <p className="text-blue-500">
+                    Saldo : {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(payload[0].value))}
+                </p>
+            </div>
+        );
+    }
+    return null;
+  };
   // 2. Extrair o ano e o mês atual
   // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
    // Ex: Para Outubro, retorna 10
@@ -36,25 +49,41 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
   // Formatar os dados para o gráfico
   const data = last12Months.map(dateObj => {
     const anoObj = dateObj.getFullYear();
-    const mesObj = dateObj.getMonth() + 1; // Janeiro é 0
-    const anoMesAtualString = `${anoObj}-${String(mesObj).padStart(2, '0')}`; // Ex: "2025-10"
+    const mesObj = dateObj.getMonth(); // 0-based, Janeiro é 0
 
-    const monthlyVariableIncome = transactions.filter(t => 'categoryId' in t && categories.find(c => c.id === t.categoryId)?.type === 'income' && t.date.startsWith(anoMesAtualString)).reduce((sum, t) => sum + t.amount, 0);
+    // Filter transactions using local date instead of prefix matching
+    const monthlyVariableIncome = transactions.filter(t => {
+      const tDate = parseDateInputToLocal(t.date.split('T')[0]);
+      return tDate.getMonth() === mesObj && 
+             tDate.getFullYear() === anoObj && 
+             t.type === 'income' && 
+             !t.recurringRuleId;
+    }).reduce((sum, t) => sum + Number(t.amount), 0);
+
     // Rendas fixas do mês atual
     const monthlyFixedIncome = fixedIncomes
       .filter(income => isItemActiveInMonth(income, dateObj))
-      .reduce((sum, income) => sum + getActualFixedItemAmount(income.id, 'income', anoObj, mesObj - 1, income.amount, monthlyVariations), 0);
+      .reduce((sum, income) => sum + Number(getActualFixedItemAmount(income.id, 'income', anoObj, mesObj, income.amount, monthlyVariations)), 0);
     // Total de rendas (fixas + variáveis)
     const monthlyIncome = monthlyVariableIncome + monthlyFixedIncome;
-    // Despesas variáveis do mês atual
-    const monthlyVariableExpense = transactions.filter(t => t.type === 'expense' && t.date.startsWith(anoMesAtualString)).reduce((sum, t) => sum + t.amount, 0);
 
-    // Despesas fixas do mês atual (Igualmente limpo!)
+    // Despesas variáveis do mês atual
+    const monthlyVariableExpense = transactions.filter(t => {
+      const tDate = parseDateInputToLocal(t.date.split('T')[0]);
+      return tDate.getMonth() === mesObj && 
+             tDate.getFullYear() === anoObj && 
+             t.type === 'expense' && 
+             !t.recurringRuleId;
+    }).reduce((sum, t) => sum + Number(t.amount), 0);
+
+    // Despesas fixas do mês atual
     const monthlyFixedExpense = fixedExpenses
       .filter(expense => isItemActiveInMonth(expense, dateObj))
-      .reduce((sum, expense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoObj, mesObj - 1, expense.amount, monthlyVariations), 0);
+      .reduce((sum, expense) => sum + Number(getActualFixedItemAmount(expense.id, 'expense', anoObj, mesObj, expense.amount, monthlyVariations)), 0);
+    
     // Total de despesas (fixas + variáveis)
     const monthlyExpense = monthlyVariableExpense + monthlyFixedExpense;
+
     // Calcular o saldo
     const balance = monthlyIncome - monthlyExpense;
     return {
@@ -80,12 +109,7 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
                     maximumFractionDigits: 0
                 }).format(value as number)}
             />
-            <Tooltip 
-                formatter={(value) => [new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                }).format(Number(value)), 'Saldo']}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.2)' }} />
             {/* 4. Barra única para o saldo com cores condicionais */}
             <Bar dataKey="balance" name="Saldo" radius={[4, 4, 0, 0]}>
                 {data.map((entry, index) => (

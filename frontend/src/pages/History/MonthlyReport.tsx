@@ -257,7 +257,7 @@ export const MonthlyReport: React.FC = () => {
     <div id="monthly-report-container" className="space-y-8">
       {/* Cabeçalho e Filtros (Sempre visíveis) */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Relatório Mensal Unificado</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Relatório Mensal Unificado</h1>
         <div className="flex space-x-2">
           <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-blue-500 focus:border-blue-500">
             {months.map((month, index) => <option key={index} value={index}>{month}</option>)}
@@ -271,29 +271,29 @@ export const MonthlyReport: React.FC = () => {
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card Receitas */}
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-          <h3 className="text-sm font-medium text-gray-500">Receitas do Mês</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-green-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Receitas do Mês</h3>
           {isLoading ? <Skeleton className="h-8 w-32 mt-1" /> : (
             <p className="text-2xl font-bold text-green-600">{formatValue(totals.income)}</p>
           )}
         </div>
         {/* Card Despesas */}
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-          <h3 className="text-sm font-medium text-gray-500">Despesas do Mês</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-red-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Despesas do Mês</h3>
           {isLoading ? <Skeleton className="h-8 w-32 mt-1" /> : (
             <p className="text-2xl font-bold text-red-600">{formatValue(totals.expense)}</p>
           )}
         </div>
         {/* Card Saldo */}
-        <div className={`bg-white rounded-lg shadow p-6 border-l-4 ${!isLoading && totals.balance >= 0 ? 'border-blue-500' : 'border-red-600'}`}>
-          <h3 className="text-sm font-medium text-gray-500">Saldo Líquido</h3>
+        <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 ${!isLoading && totals.balance >= 0 ? 'border-blue-500' : 'border-red-600'}`}>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo Líquido</h3>
           {isLoading ? <Skeleton className="h-8 w-32 mt-1" /> : (
             <p className={`text-2xl font-bold ${totals.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatValue(totals.balance)}</p>
           )}
         </div>
         {/* Card Gerenciamento do Mês */}
-        <div id="monthly-report-management-card" className="bg-white md:col-span-1 lg:col-span-3 rounded-lg shadow p-4 border-l-4 border-blue-500">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Gerenciamento do Mês</h3>
+        <div id="monthly-report-management-card" className="bg-white dark:bg-gray-800 md:col-span-1 lg:col-span-3 rounded-lg shadow p-4 border-l-4 border-blue-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Gerenciamento do Mês</h3>
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-8 w-40" />
@@ -310,9 +310,9 @@ export const MonthlyReport: React.FC = () => {
                 investmentMonthlyAmount={investmentMonthlyAmount}
                 compact={true}
               />
-              <div className="mt-3 border-t border-gray-200 pt-2 space-y-2">
+              <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-2 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-gray-600">Investimento do Mês</p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Investimento do Mês</p>
                   <p className="text-xs text-gray-500">
                     {hasOverride ? (
                       <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
@@ -331,7 +331,7 @@ export const MonthlyReport: React.FC = () => {
                       onChange={(e) => setInvestmentInput(e.target.value)}
                       onKeyDown={handleInvestmentKeyDown}
                       placeholder={formatValue(investmentDefaultAmount)}
-                      className="flex-1 lg:flex-auto px-2.5 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-gray-800 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 lg:flex-auto px-2.5 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <button
                       type="button"
@@ -359,24 +359,24 @@ export const MonthlyReport: React.FC = () => {
         </div>
       </div>
 
-      <hr className="border-gray-200" />
+      <hr className="border-gray-200 dark:border-gray-700" />
 
       {/* ================= SEÇÃO DE RECEITAS ================= */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 flex items-center">
           <span className="w-2 h-6 bg-green-500 rounded mr-2"></span>
           Detalhamento de Receitas
         </h2>
 
         {/* Resumo por Categoria de Receitas */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-600 mb-4">Por Categoria</h3>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h3 className="text-md font-medium text-gray-600 dark:text-gray-300 mb-4">Por Categoria</h3>
 
           {isLoading ? (
             // Loading State: Categorias
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
                   <div className="flex items-center w-full">
                     <Skeleton className="w-3 h-3 rounded-full mr-3" />
                     <div className="space-y-1 w-full">
@@ -391,39 +391,39 @@ export const MonthlyReport: React.FC = () => {
           ) : incomesByCategory.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {incomesByCategory.map(({ category, total, count }) => (
-                <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: category.color || '#10B981' }}></div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{category.name}</p>
-                      <p className="text-xs text-gray-500">{count} transações</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{count} transações</p>
                     </div>
                   </div>
                   <span className="text-sm font-bold text-green-600">{formatValue(total)}</span>
                 </div>
               ))}
             </div>
-          ) : <p className="text-gray-500 text-sm">Nenhuma receita registrada.</p>}
+          ) : <p className="text-gray-500 dark:text-gray-400 text-sm">Nenhuma receita registrada.</p>}
         </div>
 
         {/* Tabela de Receitas */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-sm font-medium text-gray-700">Transações de Entrada</h3>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Transações de Entrada</h3>
           </div>
 
           {isLoading ? (
             // Loading State: Tabela
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-white">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-white dark:bg-gray-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrição</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
@@ -435,37 +435,37 @@ export const MonthlyReport: React.FC = () => {
               </tbody>
             </table>
           ) : monthlyIncomeData.sorted.length > 0 ? (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-white">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-white dark:bg-gray-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrição</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {monthlyIncomeData.sorted.map((t: any) => (
                   <tr key={t.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatUTCToDDMMAAAA(t.date)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{t.description}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{formatUTCToDDMMAAAA(t.date)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{t.description}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">{formatValue(t.actualAmount ?? t.amount)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                       {t.day ? <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Fixa</span> : 'Variável'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          ) : <div className="p-6 text-center text-gray-500 text-sm">Nenhuma transação encontrada.</div>}
+          ) : <div className="p-6 text-center text-gray-500 dark:text-gray-400 text-sm">Nenhuma transação encontrada.</div>}
         </div>
       </section>
 
-      <hr className="border-gray-200" />
+      <hr className="border-gray-200 dark:border-gray-700" />
 
       {/* ================= SEÇÃO DE DESPESAS ================= */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 flex items-center">
           <span className="w-2 h-6 bg-red-500 rounded mr-2"></span>
           Detalhamento de Despesas
         </h2>
@@ -495,13 +495,13 @@ export const MonthlyReport: React.FC = () => {
         </DndContext>
 
         {/* Resumo por Categoria de Despesas */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-md font-medium text-gray-600 mb-4">Por Categoria</h3>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h3 className="text-md font-medium text-gray-600 dark:text-gray-300 mb-4">Por Categoria</h3>
           {isLoading ? (
             // Loading State: Categorias Despesas
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border-l-4 border-gray-200">
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md border-l-4 border-gray-200 dark:border-gray-600">
                   <div className="flex flex-col w-full mr-4">
                     <Skeleton className="h-4 w-24 mb-1" />
                     <Skeleton className="h-3 w-16" />
@@ -513,37 +513,37 @@ export const MonthlyReport: React.FC = () => {
           ) : expensesByCategory.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {expensesByCategory.map(({ category, total, count }) => (
-                <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border-l-4" style={{ borderLeftColor: category.color }}>
+                <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md border-l-4" style={{ borderLeftColor: category.color }}>
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-gray-700">{category.name}</span>
-                    <span className="text-xs text-gray-500">{count} itens</span>
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{category.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{count} itens</span>
                   </div>
                   <span className="text-sm font-bold text-red-600">{formatValue(total)}</span>
                 </div>
               ))}
             </div>
-          ) : <p className="text-gray-500 text-sm">Nenhuma despesa registrada.</p>}
+          ) : <p className="text-gray-500 dark:text-gray-400 text-sm">Nenhuma despesa registrada.</p>}
         </div>
 
         {/* Tabela de Despesas */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-sm font-medium text-gray-700">Transações de Saída</h3>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Transações de Saída</h3>
           </div>
 
           {isLoading ? (
             // Loading State: Tabela Despesas
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-white">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-white dark:bg-gray-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrição</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Categoria</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
@@ -556,31 +556,31 @@ export const MonthlyReport: React.FC = () => {
               </tbody>
             </table>
           ) : monthlyExpenseData.sorted.length > 0 ? (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-white">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-white dark:bg-gray-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrição</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Categoria</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {monthlyExpenseData.sorted.map((t: any) => {
                   const cat = getCategory(t.categoryId);
                   return (
                     <tr key={t.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatUTCToDDMMAAAA(t.date)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{formatUTCToDDMMAAAA(t.date)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                         {t.description}
-                        {t.installmentInfo && <span className="text-xs text-gray-400 ml-1">({t.installmentInfo.current}/{t.installmentInfo.total})</span>}
+                        {t.installmentInfo && <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">({t.installmentInfo.current}/{t.installmentInfo.total})</span>}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {cat ? <span className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: `${cat.color}20`, color: cat.color }}>{cat.name}</span> : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">{formatValue(t.actualAmount ?? t.amount)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                         {t.day ? <span className="bg-red-50 text-red-800 px-2 py-0.5 rounded-full">Fixa</span> : 'Variável'}
                       </td>
                     </tr>
@@ -588,7 +588,7 @@ export const MonthlyReport: React.FC = () => {
                 })}
               </tbody>
             </table>
-          ) : <div className="p-6 text-center text-gray-500 text-sm">Nenhuma transação encontrada.</div>}
+          ) : <div className="p-6 text-center text-gray-500 dark:text-gray-400 text-sm">Nenhuma transação encontrada.</div>}
         </div>
 
       </section>

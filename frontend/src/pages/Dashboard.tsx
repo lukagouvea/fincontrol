@@ -15,7 +15,7 @@ import { SortableDashboardItem } from '../components/Dashboard/SortableDashboard
 import { formatDateToYYYYMMDD, parseDateInputToLocal, convertDateToUTCISOString } from '../utils/dateUtils';
 import { UpcomingBills } from '../components/Dashboard/UpcomingBills';
 import { VariableExpense } from '../types/FinanceTypes';
-import { useAddTransaction, useAddCompraParcelada } from '../hooks/useTransactions';
+import { useAddTransaction, useAddCompraParcelada, useTwelveMonthsTransactions } from '../hooks/useTransactions';
 import { Skeleton } from '../components/Shared/Skeleton';
 
 import { MonthlyManagementCardView } from '../components/Dashboard/MonthlyManagementCard';
@@ -94,6 +94,12 @@ export const Dashboard: React.FC = () => {
     selectedDateObject.getMonth(),
     selectedDateObject.getFullYear(),
   );
+  
+  const { data: twelveMonthsTransactions = [] } = useTwelveMonthsTransactions(
+    selectedDateObject.getMonth(),
+    selectedDateObject.getFullYear()
+  );
+
   const investmentMonthlyAmount = investmentEffective?.effectiveMonthlyAmount ?? 0;
   const isDashboardLoading = isLoading;
 
@@ -289,7 +295,7 @@ export const Dashboard: React.FC = () => {
       case 'weekly-spending':
         return <WeeklySpending transactions={transactionsWithoutInstallments} />;
       case 'monthly-histogram':
-        return <MonthlyHistogram transactions={transactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
+        return <MonthlyHistogram transactions={twelveMonthsTransactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
       case 'recent-transactions':
         return <RecentTransactions transactions={transactions} categories={categories} date={selectedDateObject} />;
       default:
@@ -316,18 +322,18 @@ export const Dashboard: React.FC = () => {
   return (
     <div id="dashboard-overview" className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
         <DashboardHeaderActions onAddExpense={handleOpenExpenseModal} onAddIncome={handleOpenIncomeModal} />
       </div>
       
       {/* Cards de Resumo - Usando dados limpos do summary */}
   <div id="cards" className="grid grid-cols-1 md:grid-rows-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Card Renda */}
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-          <h3 className="text-sm font-medium text-gray-500">Renda Total do Mês</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-green-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Renda Total do Mês</h3>
           <hr></hr>
           {isDashboardLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</p>}
-          <div className="mt-2 text-xs text-gray-500 space-y-1">
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
             <div className="flex justify-between items-center">
               <span>Rendas Fixas:</span>
               {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyFixedIncome)}</span>}
@@ -340,8 +346,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Card Gerenciamento do Mês */}
-        <div id="monthly-management-card" className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-          <h3 className="text-sm font-medium text-gray-500">Gerenciamento do Mês</h3>
+        <div id="monthly-management-card" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-blue-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Gerenciamento do Mês</h3>
           {isDashboardLoading ? (
             <div className="mt-3 space-y-2">
               <Skeleton className="h-8 w-40" />
@@ -362,11 +368,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Card Gastos */}
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-          <h3 className="text-sm font-medium text-gray-500">Gasto Total do Mês</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-red-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Gasto Total do Mês</h3>
           <hr></hr>
           {isDashboardLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyExpense)}</p>}
-          <div className="mt-2 text-xs text-gray-500 space-y-1">
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
             <div className="flex justify-between items-center">
               <span>Despesas Comprometidas:</span>
               {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-red-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyCommittedExpense)}</span>}
@@ -379,11 +385,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Card Saldo */}
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-          <h3 className="text-sm font-medium text-gray-500">Saldo do Mês</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-blue-500">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo do Mês</h3>
           <hr></hr>
           {isDashboardLoading ? <Skeleton className="h-8 w-40 my-1" /> : <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.balance)}</p>}
-          <div className="mt-2 text-xs text-gray-500 space-y-1">
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
             <div className="flex justify-between items-center">
               <span>Total de Rendas:</span>
               {isDashboardLoading ? <Skeleton className="h-3 w-20" /> : <span className="text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(summary.monthlyIncome)}</span>}

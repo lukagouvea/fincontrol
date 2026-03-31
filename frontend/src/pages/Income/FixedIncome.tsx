@@ -45,10 +45,10 @@ export const FixedIncome: React.FC = () => {
     <div id="fixed-income-container" className="space-y-6">
       {/* Header sempre visível */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Rendas Fixas</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Rendas Fixas</h1>
         <div className="flex items-center space-x-2">
           {!isLoading && archivedIncomes.length > 0 && (
-            <button onClick={() => setIsArchiveModalOpen(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center text-sm">
+            <button onClick={() => setIsArchiveModalOpen(true)} className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md flex items-center text-sm">
               <ArchiveIcon className="w-4 h-4 mr-2" />
               Ver Arquivadas ({archivedIncomes.length})
             </button>
@@ -60,18 +60,18 @@ export const FixedIncome: React.FC = () => {
         </div>
       </div>
       
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         {isLoading ? (
           // 1. LOADING STATE: Tabela com Skeletons
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {['Descrição', 'Categoria', 'Valor Padrão', 'Valor Atual', 'Dia Receb.', 'Período', 'Ações'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {Array.from({ length: 5 }).map((_, index) => (
                 <tr key={`skeleton-${index}`}>
                   <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
@@ -87,38 +87,38 @@ export const FixedIncome: React.FC = () => {
           </table>
         ) : activeIncomes.length > 0 ? (
           // 2. DATA STATE: Tabela Real
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor Padrão</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor Atual</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dia do Recebimento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Período</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrição</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Categoria</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor Padrão</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor Atual</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Dia do Recebimento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Período</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {activeIncomes.map(income => {
                 const category = getCategory(income.categoryId);
                 const currentAmount = getActualFixedItemAmount(income.id, 'income', new Date().getFullYear(), new Date().getMonth(), income.amount, monthlyVariations);
                 return (
                   <tr key={income.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{income.description}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{income.description}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: `${category.color}20`, color: category.color }}>{category.name}</span> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">{formatValue(income.amount)}</td>
                     <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${currentAmount !== income.amount ? 'text-blue-600' : 'text-green-600'}`}>
                       {formatValue(currentAmount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dia {income.day}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Dia {income.day}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatUTCToDDMMAAAA(income.startDate)}
                       {income.endDate ? ` até ${formatUTCToDDMMAAAA(income.endDate)}` : ' (contínua)'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <div className="flex items-center space-x-3">
                         <button onClick={() => openVariationModal(income)} className="text-blue-600 hover:text-blue-900" title="Adicionar variação mensal"><CalendarIcon className="w-5 h-5" /></button>
                         <button onClick={() => openEditModal(income)} className="text-blue-600 hover:text-blue-900" title="Editar renda fixa"><PencilIcon className="w-5 h-5" /></button>
@@ -132,7 +132,7 @@ export const FixedIncome: React.FC = () => {
           </table>
         ) : (
           // 3. EMPTY STATE
-          <div className="px-6 py-8 text-center text-gray-500">Nenhuma renda fixa ativa cadastrada.</div>
+          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">Nenhuma renda fixa ativa cadastrada.</div>
         )}
       </div>
       

@@ -275,7 +275,7 @@ export const Calendar: React.FC = () => {
   const dayOfWeekHeaders = () => {
     const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     return weekDays.map((day, index) => (
-      <div key={`header-${index}`} className="text-center text-sm font-medium text-gray-600">
+      <div key={`header-${index}`} className="text-center text-sm font-medium text-gray-600 dark:text-gray-300">
         {day}
       </div>
     ));
@@ -284,29 +284,29 @@ export const Calendar: React.FC = () => {
   return (
     <div id="calendar-container" className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
           Calendário Financeiro
         </h1>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-medium text-gray-700">Visão Mensal</h2>
+          <h2 className="text-lg font-medium text-gray-700 dark:text-gray-200">Visão Mensal</h2>
           <div className="flex items-center space-x-2">
-            <button onClick={goToPreviousMonth} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+            <button onClick={goToPreviousMonth} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300">
               <ChevronLeftIcon size={16} />
             </button>
             <button onClick={goToCurrentMonth} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
               Hoje
             </button>
-            <button onClick={goToNextMonth} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
+            <button onClick={goToNextMonth} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300">
               <ChevronRightIcon size={16} />
             </button>
           </div>
         </div>
         
         <div className="mb-4 text-center">
-          <h3 className="text-md font-medium text-gray-600">
+          <h3 className="text-md font-medium text-gray-600 dark:text-gray-300">
             {formatMonthYear(currentDate)}
           </h3>
         </div>
@@ -318,7 +318,7 @@ export const Calendar: React.FC = () => {
           {isLoading ? (
             // SKELETON
             Array.from({ length: 42 }).map((_, index) => (
-              <div key={`skeleton-day-${index}`} className="border border-gray-100 rounded-lg p-2 h-[120px]">
+              <div key={`skeleton-day-${index}`} className="border border-gray-100 dark:border-gray-700 rounded-lg p-2 h-[120px]">
                 <div className="flex justify-between mb-2">
                   <Skeleton className="w-6 h-6 rounded-full" /> 
                   <Skeleton className="w-12 h-3" /> 
@@ -341,14 +341,14 @@ export const Calendar: React.FC = () => {
                 <div 
                   key={`day-${index}`} 
                   className={`border rounded-lg p-2 h-[120px] overflow-hidden cursor-pointer transition-all
-                    ${isToday(day) ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}
+                    ${isToday(day) ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}
                     ${!isCurrentMonth(day) ? 'opacity-40' : ''}
-                    ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : ''}
+                    ${isSelected ? 'ring-2 ring-blue-500 border-transparent dark:border-transparent' : ''}
                     hover:border-blue-300 hover:shadow-sm`} 
                   onClick={() => handleDayClick(day)}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 text-blue-800' : 'text-gray-700'}`}>
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 text-blue-800' : 'text-gray-700 dark:text-gray-300'}`}>
                       {formatDayOfMonth(day)}
                     </span>
                     {events.length > 0 && (
@@ -363,10 +363,10 @@ export const Calendar: React.FC = () => {
                       {events.slice(0, 2).map((evt) => {
                         const event = evt as CalendarEventDisplay;
                         return (
-                          <div key={`${event.id}-${event.isFixed ? 'fixed' : 'var'}`} className="bg-gray-50 p-1 rounded text-xs hover:bg-gray-100">
-                            <div className="font-medium text-gray-800 truncate text-xs">
+                          <div key={`${event.id}-${event.isFixed ? 'fixed' : 'var'}`} className="bg-gray-50 dark:bg-gray-700 p-1 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-600">
+                            <div className="font-medium text-gray-800 dark:text-gray-200 truncate text-xs">
                               {event.description}
-                              {'isFixed' in event && event.isFixed && <span className="text-[9px] ml-1 text-gray-500">(Fixo)</span>}
+                              {'isFixed' in event && event.isFixed && <span className="text-[9px] ml-1 text-gray-500 dark:text-gray-400">(Fixo)</span>}
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-[10px] rounded-full px-1 py-0.5 truncate max-w-[60px]" style={{
@@ -383,7 +383,7 @@ export const Calendar: React.FC = () => {
                         );
                       })}
                       {events.length > 2 && (
-                        <div className="text-[10px] font-medium text-gray-600 pt-1">
+                        <div className="text-[10px] font-medium text-gray-600 dark:text-gray-400 pt-1">
                           +{events.length - 2} mais
                         </div>
                       )}
@@ -402,9 +402,9 @@ export const Calendar: React.FC = () => {
 
       {/* DETALHES DO DIA */}
       {selectedDay && (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-700">
+            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">
               Detalhes do dia {selectedDay.toLocaleDateString('pt-BR')}
             </h3>
             <div className="flex items-center space-x-2">
@@ -427,8 +427,8 @@ export const Calendar: React.FC = () => {
           ) : (
             <>
               <div className="mb-6">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="font-medium text-gray-700">Saldo do dia</span>
+                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Saldo do dia</span>
                   <span className={`font-bold ${getBalanceForDate(selectedDay) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(getBalanceForDate(selectedDay))}
                   </span>
@@ -438,14 +438,14 @@ export const Calendar: React.FC = () => {
               <div className="space-y-4">
                 {getTransactionsForDate(selectedDay).length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Transações</h4>
+                    <h4 className="font-medium text-gray-700 dark:text-gray-200 mb-2">Transações</h4>
                     <div className="space-y-2">
                       {getTransactionsForDate(selectedDay).map(event => (
-                        <div key={event.id} className="p-3 border border-gray-200 rounded-lg">
+                        <div key={event.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-gray-200">
                           <div className="flex justify-between items-center">
                             <div>
                               <div className="font-medium">{event.description}</div>
-                              <div className="text-sm rounded px-2 py-0.5 inline-block mt-1" style={{
+                              <div className="text-sm rounded px-2 py-0.5 inline-block mt-1 dark:opacity-80" style={{
                                 backgroundColor: `${event.categoryColor}20`,
                                 color: event.categoryColor
                               }}>
@@ -465,9 +465,9 @@ export const Calendar: React.FC = () => {
                 {/* Seções de fixas mantidas */}
                 {getFixedExpensesForDate(selectedDay).length > 0 && (
                     <div>
-                        <h4 className="font-medium text-gray-700 mb-2">Despesas Fixas</h4>
+                        <h4 className="font-medium text-gray-700 dark:text-gray-200 mb-2">Despesas Fixas</h4>
                         {getFixedExpensesForDate(selectedDay).map(e => (
-                            <div key={e.id} className="p-3 border border-gray-200 rounded-lg bg-red-50 mb-2">
+                            <div key={e.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-red-50 dark:bg-red-900/20 mb-2 dark:text-gray-200">
                                 <div className="flex justify-between">
                                     <span>{e.description}</span>
                                     <span className="text-red-600 font-bold">-{formatCurrency(e.amount)}</span>
@@ -479,9 +479,9 @@ export const Calendar: React.FC = () => {
                 
                 {getFixedIncomesForDate(selectedDay).length > 0 && (
                     <div>
-                        <h4 className="font-medium text-gray-700 mb-2">Rendas Fixas</h4>
+                        <h4 className="font-medium text-gray-700 dark:text-gray-200 mb-2">Rendas Fixas</h4>
                         {getFixedIncomesForDate(selectedDay).map(e => (
-                            <div key={e.id} className="p-3 border border-gray-200 rounded-lg bg-green-50 mb-2">
+                            <div key={e.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-green-50 dark:bg-green-900/20 mb-2 dark:text-gray-200">
                                 <div className="flex justify-between">
                                     <span>{e.description}</span>
                                     <span className="text-green-600 font-bold">+{formatCurrency(e.amount)}</span>

@@ -8,6 +8,20 @@ type WeeklySpendingProps = {
 export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
   transactions
 }) => {
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 shadow-md rounded">
+          <p className="text-black dark:text-white font-medium mb-1">{label}</p>
+          <p className="text-blue-500">
+            Valor : {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(payload[0].value))}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   // Obter as datas dos últimos 7 dias
   const today = new Date();
   const last7Days = Array.from({
@@ -47,10 +61,7 @@ export const WeeklySpending: React.FC<WeeklySpendingProps> = ({
           minimumFractionDigits: 0,
           maximumFractionDigits: 0
         }).format(value)} />
-          <Tooltip formatter={value => [new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(Number(value)), 'Valor']} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.2)' }} />
           <Bar dataKey="valor" fill="#2363eb" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>

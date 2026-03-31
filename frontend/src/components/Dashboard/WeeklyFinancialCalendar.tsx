@@ -181,17 +181,17 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
       currency: 'BRL'
     }).format(value);
   };
-  return <div className="bg-white p-6 rounded-lg mb-8">
+  return <div className="bg-white dark:bg-gray-800 p-6 rounded-lg mb-8">
       <div className="flex items-center justify-between mb-6">
         <div className="w-16"></div>
-        <h2 className="text-md font-medium text-gray-600">
+        <h2 className="text-md font-medium text-gray-600 dark:text-gray-300">
           {formatMonthYear(weekStart)}
         </h2>
         <div className="flex items-center space-x-2">
           <button
             onClick={goToPreviousWeek}
             disabled={!canGoPrev}
-            className={`p-2 rounded-full ${canGoPrev ? 'bg-gray-100 hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`}
+            className={`p-2 rounded-full ${canGoPrev ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
           >
             <ChevronLeftIcon size={16} />
           </button>
@@ -201,7 +201,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
           <button
             onClick={goToNextWeek}
             disabled={!canGoNext}
-            className={`p-2 rounded-full ${canGoNext ? 'bg-gray-100 hover:bg-gray-200' : 'bg-gray-50 text-gray-300 cursor-not-allowed'}`}
+            className={`p-2 rounded-full ${canGoNext ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
           >
             <ChevronRightIcon size={16} />
           </button>
@@ -209,7 +209,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
       </div>
       <div className="grid grid-cols-7 gap-2">
         {/* Day headers */}
-        {weekDays.map((day, index) => <div key={`header-${index}`} className="text-center text-sm font-medium text-gray-600 mb-2">
+        {weekDays.map((day, index) => <div key={`header-${index}`} className="text-center text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
             {formatDayOfWeek(day)}
           </div>)}
         {/* Calendar days */}
@@ -221,20 +221,20 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
         return <div
               key={`day-${index}`}
               className={`border rounded-lg p-2 h-[150px] overflow-hidden ${isOutOfMonth ? '' : 'cursor-pointer'} transition-all
-                ${isToday(day) ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}
+                ${isToday(day) ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-600'}
                 ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : ''}
-                ${isOutOfMonth ? 'bg-gray-200 border-gray-300 opacity-90' : 'hover:border-blue-300 hover:shadow-sm'}`}
+                ${isOutOfMonth ? 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 opacity-90' : 'hover:border-blue-300 hover:shadow-sm'}`}
               onClick={isOutOfMonth ? undefined : () => handleDayClick(day)}
               role={isOutOfMonth ? undefined : 'button'}
             >
               <div className="text-center mb-2">
-                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 text-blue-800' : 'text-gray-700'}`}>
+                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200' : 'text-gray-700 dark:text-gray-300'}`}>
                   {formatDayOfMonth(day)}
                 </span>
               </div>
               {expenses.length > 0 ? <div className="space-y-2 overflow-hidden max-h-[100px]">
-                  {expenses.slice(0, 2).map(expense => <div key={expense.id} className="bg-gray-50 p-2 rounded text-xs hover:bg-gray-100">
-                      <div className="font-medium text-gray-800 truncate">
+                  {expenses.slice(0, 2).map(expense => <div key={expense.id} className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-600">
+                      <div className="font-medium text-gray-800 dark:text-gray-200 truncate">
                         {expense.description}
                       </div>
                       <div className="flex justify-between items-center mt-1">
@@ -249,17 +249,17 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
                         </span>
                       </div>
                     </div>)}
-                  {expenses.length > 2 && <div className="text-xs font-medium text-gray-600 pt-1 border-t border-gray-100">
+                  {expenses.length > 2 && <div className="text-xs font-medium text-gray-600 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-600">
                       +{expenses.length - 2}{' '}
                       {expenses.length - 2 === 1 ? 'despesa' : 'despesas'}
                     </div>}
-                  {expenses.length > 1 && <div className="text-xs font-medium text-gray-600 pt-1 border-t border-gray-100">
+                  {expenses.length > 1 && <div className="text-xs font-medium text-gray-600 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-600">
                       Total:{' '}
                       <span className="text-red-600">
                         {formatCurrency(totalExpenses)}
                       </span>
                     </div>}
-                </div> : <div className="h-full flex items-center justify-center text-xs text-gray-400">
+                </div> : <div className="h-full flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">
                   {isOutOfMonth ? '' : 'Sem despesas'}
                 </div>}
             </div>;
@@ -267,7 +267,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
       </div>
       <div className="mt-4 flex items-start justify-end gap-10">
         <div className="text-right">
-          <h3 className="text-sm font-medium text-gray-500">Total gasto na semana</h3>
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total gasto na semana</h3>
           <p>
             <span className="font-medium text-red-600">
               {formatCurrency(weeklySpent)}
@@ -277,7 +277,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
 
         {typeof managementDaily === 'number' && (
           <div className="text-right">
-            <h3 className="text-sm font-medium text-gray-500">Saldo da semana</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo da semana</h3>
             <p>
               <span className={`font-medium ${weeklySaldo < 0 ? 'text-red-600' : 'text-blue-600'}`}>
                 {formatCurrency(weeklySaldo)}
@@ -289,20 +289,20 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
 
 
       {/* Selected day details */}
-      {selectedDay && <div className="mt-6 p-4 border border-blue-200 bg-blue-50 rounded-lg">
+      {selectedDay && <div className="mt-6 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="font-medium text-blue-800">
+            <h3 className="font-medium text-blue-800 dark:text-blue-300">
               Detalhes do dia {selectedDay.toLocaleDateString('pt-BR')}
             </h3>
-            <button onClick={() => setSelectedDay(null)} className="text-blue-600 hover:text-blue-900">
+            <button onClick={() => setSelectedDay(null)} className="text-blue-600 dark:text-blue-400 hover:text-blue-900">
               <XIcon size={20} />
             </button>
           </div>
           {getExpensesForDate(selectedDay).length > 0 ? <div className="space-y-3">
-              {getExpensesForDate(selectedDay).map(expense => <div key={expense.id} className="bg-white p-3 rounded shadow-sm">
+              {getExpensesForDate(selectedDay).map(expense => <div key={expense.id} className="bg-white dark:bg-gray-800 p-3 rounded shadow-sm">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="font-medium">{expense.description}</div>
+                      <div className="font-medium dark:text-gray-100">{expense.description}</div>
                       <div className="text-sm rounded px-2 py-0.5 inline-block mt-1" style={{
                 backgroundColor: `${expense.categoryColor}20`,
                 color: expense.categoryColor
@@ -315,7 +315,7 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
                     </div>
                   </div>
                 </div>)}
-            </div> : <p className="text-gray-500 text-center py-4">
+            </div> : <p className="text-gray-500 dark:text-gray-400 text-center py-4">
               Nenhuma despesa registrada para este dia.
             </p>}
           <div className="mt-4">

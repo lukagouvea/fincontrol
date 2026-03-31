@@ -57,39 +57,39 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
     return null;
   };
   return <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Data
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Descrição
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Categoria
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Valor
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {sortedTransactions.length > 0 ? sortedTransactions.map(transaction => {
           const category = getCategory(transaction);
           const isExpenseTransaction = isExpense(transaction);
           return <tr key={transaction.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {formatUTCToDDMMAAAA(transaction.date)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     {transaction.description}
-                    {isExpenseTransaction && 'installmentInfo' in transaction && transaction.installmentInfo && <span className="ml-2 text-xs text-gray-500">
+                    {isExpenseTransaction && 'installmentInfo' in transaction && transaction.installmentInfo && <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                           ({transaction.installmentInfo.current}/
                           {transaction.installmentInfo.total})
                         </span>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{
                 backgroundColor: `${category.color}20`,
                 color: category.color
@@ -103,7 +103,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                   </td>
                 </tr>;
         }) : <tr>
-              <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+              <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                 Nenhuma transação recente
               </td>
             </tr>}

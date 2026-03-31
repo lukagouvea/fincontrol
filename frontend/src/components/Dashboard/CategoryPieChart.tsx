@@ -14,6 +14,19 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   monthlyVariations,
   date
 }) => {
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 shadow-md rounded">
+          <p className="text-blue-500">
+            {payload[0].name} : {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(payload[0].value))}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   // getMonth() retorna o mês de 0 (Janeiro) a 11 (Dezembro), por isso somamos 1.
   const anoAtual = date.getFullYear(); // Ex: 2025
   const mesAtual = date.getMonth() + 1; // Ex: Para Outubro, retorna 10
@@ -40,20 +53,13 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   }).filter(item => item.value > 0);
   // Ordenar por valor (do maior para o menor)
   categoryTotals.sort((a, b) => b.value - a.value);
-  // Formatar o valor para o tooltip
-  const formatValue = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
   return <div className="h-64">
       {categoryTotals.length > 0 ? <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={categoryTotals} cx="50%" cy="50%" labelLine={false} outerRadius={80} innerRadius={45} fill="#8884d8" dataKey="value">
+            <Pie data={categoryTotals} cx="50%" cy="50%" labelLine={false} outerRadius={80} innerRadius={45} stroke="none" fill="#8884d8" dataKey="value">
               {categoryTotals.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
             </Pie>
-            <Tooltip formatter={value => formatValue(Number(value))} />
+            <Tooltip content={<CustomTooltip />} />
             <Legend />
           </PieChart>
         </ResponsiveContainer> : <div className="h-full flex items-center justify-center text-gray-400">

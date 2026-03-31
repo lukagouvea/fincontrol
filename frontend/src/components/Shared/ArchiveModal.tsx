@@ -67,30 +67,30 @@ export const ArchiveModal = <T extends ArchiveItem>({
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-4">
         <div className="px-6 py-4 border-b flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900 m-0">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 m-0">{title}</h3>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
         <div className="p-6">
           {items.length > 0 ? (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   {columns.map(col => (
-                    <th key={String(col.key)} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={String(col.key)} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {col.label}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {items.map(item => (
                   <tr key={item.id}>
                     {columns.map(col => (
-                      <td key={String(col.key)} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td key={String(col.key)} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                         {renderCellContent(item, col.key)}
                       </td>
                     ))}
@@ -99,7 +99,7 @@ export const ArchiveModal = <T extends ArchiveItem>({
               </tbody>
             </table>
           ) : (
-            <p className="text-center text-gray-500">Nenhum item arquivado.</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Nenhum item arquivado.</p>
           )}
         </div>
       </div>

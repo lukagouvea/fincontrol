@@ -83,17 +83,17 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
   return ReactDOM.createPortal(
     (<div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div className="px-6 py-4 border-b flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
             {initialData ? 'Editar Despesa' : 'Nova Despesa'}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-500"><XIcon className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300"><XIcon className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descrição</label>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição</label>
               <input type="text" id="description" value={description} onChange={e => setDescription(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required />
             </div>
             <div>
@@ -116,7 +116,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
               <>
                 <div className="flex items-center">
                   <input type="checkbox" id="isInstallment" checked={isInstallment} onChange={e => setIsInstallment(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                  <label htmlFor="isInstallment" className="ml-2 block text-sm text-gray-900">Pagamento Parcelado</label>
+                  <label htmlFor="isInstallment" className="ml-2 block text-sm text-gray-900 dark:text-gray-100">Pagamento Parcelado</label>
                 </div>
                 {isInstallment && (
                   <div>
@@ -128,7 +128,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             )}
           </div>
           <div className="mt-6 flex justify-end">
-            <button type="button" onClick={onClose} className="bg-white py-2 px-4 border border-gray-300 rounded-md mr-3 hover:bg-gray-50">Cancelar</button>
+            <button type="button" onClick={onClose} className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md mr-3 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
             <button type="submit" className="bg-blue-600 py-2 px-4 border border-transparent rounded-md text-white hover:bg-blue-700 disabled:bg-blue-400 flex items-center" disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {initialData ? 'Salvar' : 'Criar'}            

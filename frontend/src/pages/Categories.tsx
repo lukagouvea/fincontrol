@@ -102,7 +102,7 @@ export const Categories: React.FC = () => {
     <div id="category-container" className="space-y-6">
       {/* Header sempre visível */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Categorias</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Categorias</h1>
         <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
           <PlusIcon className="w-4 h-4 mr-2" />
           Nova Categoria
@@ -110,22 +110,22 @@ export const Categories: React.FC = () => {
       </div>
       
       {/* Tabs sempre visíveis */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8">
-          <button onClick={() => setActiveTab('expense')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'expense' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+          <button onClick={() => setActiveTab('expense')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'expense' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}`}>
             Categorias de Despesa
           </button>
-          <button onClick={() => setActiveTab('income')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'income' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+          <button onClick={() => setActiveTab('income')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'income' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}`}>
             Categorias de Renda
           </button>
         </nav>
       </div>
 
       {/* Lista de categorias com Skeleton */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         {isLoading ? (
           // 2. Estado de Loading: Renderiza 5 itens falsos
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {Array.from({ length:  6}).map((_, index) => (
               <li key={`skeleton-${index}`} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center w-full">
@@ -143,14 +143,14 @@ export const Categories: React.FC = () => {
           </ul>
         ) : filteredCategories.length > 0 ? (
           // 3. Estado com Dados Reais
-          <ul className="divide-y divide-gray-200">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {filteredCategories.map(category => (
               <li key={category.id} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="w-4 h-4 rounded-full mr-3 shrink-0" style={{ backgroundColor: category.color || '#888888' }}></div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">{category.name}</h3>
-                    {category.description && <p className="text-sm text-gray-500">{category.description}</p>}
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</h3>
+                    {category.description && <p className="text-sm text-gray-500 dark:text-gray-400">{category.description}</p>}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -170,7 +170,7 @@ export const Categories: React.FC = () => {
           </ul>
         ) : (
           // 4. Estado Vazio
-          <div className="px-6 py-8 text-center text-gray-500">
+          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
             Nenhuma categoria de {activeTab === 'expense' ? 'despesa' : 'renda'} cadastrada.
           </div>
         )}
@@ -179,9 +179,9 @@ export const Categories: React.FC = () => {
       {/* Modal (Mantido igual) */}
       {isModalOpen && modalRoot && ReactDOM.createPortal(
         <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-medium text-gray-900">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="px-6 py-4 border-b dark:border-gray-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                 {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
               </h3>
             </div>
@@ -189,7 +189,7 @@ export const Categories: React.FC = () => {
               {/* ... form content ... (mantive o conteúdo interno do form igual para não extender demais a resposta, mas o código original deve ser colado aqui) */}
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nome</label>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
                   <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />
                 </div>
                 <div>
@@ -202,11 +202,11 @@ export const Categories: React.FC = () => {
                     <div className="mt-1 flex space-x-4">
                       <label className="inline-flex items-center">
                         <input type="radio" value="expense" checked={type === 'expense'} onChange={() => setType('expense')} className="h-4 w-4 text-blue-600" />
-                        <span className="ml-2 text-sm text-gray-700">Despesa</span>
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Despesa</span>
                       </label>
                       <label className="inline-flex items-center">
                         <input type="radio" value="income" checked={type === 'income'} onChange={() => setType('income')} className="h-4 w-4 text-blue-600" />
-                        <span className="ml-2 text-sm text-gray-700">Renda</span>
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Renda</span>
                       </label>
                     </div>
                   </div>
@@ -227,7 +227,7 @@ export const Categories: React.FC = () => {
                 </div>
               </div>
               <div className="mt-6 flex justify-end">
-                <button type="button" onClick={closeModal} className="bg-white py-2 px-4 border border-gray-300 rounded-md mr-3 hover:bg-gray-50">Cancelar</button>
+                <button type="button" onClick={closeModal} className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md mr-3 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
                 <button 
                   type="submit" 
                   disabled={addMutation.isPending || updateMutation.isPending}

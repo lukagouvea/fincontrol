@@ -83,29 +83,29 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
   return (
     <div className="flex flex-col h-full min-h-0">
       {upcomingBills.length === 0 ? (
-        <div className="flex items-center justify-center h-full text-gray-500">
+        <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
           Nenhuma conta a pagar para este mês.
         </div>
       ) : (
         <div className="flex-grow min-h-0 overflow-y-auto pr-2">
           <ul className="space-y-2">
             {upcomingBills.map((bill, index) => (
-              <li key={bill.id} className={`flex items-center justify-between py-3 ${index < upcomingBills.length - 1 ? 'border-b border-gray-100' : ''}`}>
+              <li key={bill.id} className={`flex items-center justify-between py-3 ${index < upcomingBills.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}`}>
                 <div className="flex items-center space-x-3">
                   {/* 3. Lógica para renderizar o ícone correto */}
-                  <div className="bg-gray-100 p-2 rounded-full">
+                  <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full">
                     {bill.type === 'installment' ? (
-                      <CreditCard className="w-4 h-4 text-gray-500" />
+                      <CreditCard className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     ) : (
-                      <ArrowDownCircle className="w-4 h-4 text-gray-500" />
+                      <ArrowDownCircle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-sm text-gray-800">{bill.description}</p>
-                    <p className="text-xs text-gray-500">{getDueDateText(bill.dueDate)}</p>
+                    <p className="font-medium text-sm text-gray-800 dark:text-gray-100">{bill.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{getDueDateText(bill.dueDate)}</p>
                   </div>
                 </div>
-                <p className="font-bold text-sm text-gray-800">
+                <p className="font-bold text-sm text-gray-800 dark:text-gray-100">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(bill.amount)}
                 </p>
               </li>
@@ -115,9 +115,9 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({ fixedExpenses, tra
       )}
       
       {upcomingBills.length > 0 && (
-        <div className="mt-auto pt-4 border-t border-gray-200 bg-white">
+        <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-transparent">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-600">Total a Pagar no Mês:</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total a Pagar no Mês:</span>
             <span className="text-lg font-bold text-red-600">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalAmount)}
             </span>

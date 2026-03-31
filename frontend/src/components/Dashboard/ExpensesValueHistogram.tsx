@@ -26,6 +26,20 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   monthlyVariations,
   date
 }) => {
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 shadow-md rounded">
+          <p className="text-black dark:text-white font-medium mb-1">{label}</p>
+          <p className="text-blue-500">
+            {payload[0].value} gastos
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const hoje = date;
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth() + 1;
@@ -145,11 +159,7 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
               height={50}
             />
             <YAxis allowDecimals={false} />
-            <Tooltip 
-              cursor={{fill: 'transparent'}}
-              formatter={(value) => [`${value} gastos`, 'Frequência']}
-              labelStyle={{ color: 'black' }}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.2)' }} />
             <Bar dataKey="quantidade" fill="#2563eb" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

@@ -46,10 +46,10 @@ export const FixedExpenses: React.FC = () => {
     <div id="fixed-expenses-container" className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Despesas Fixas</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Despesas Fixas</h1>
         <div className="flex items-center space-x-2">
           {!isLoading && archivedExpenses.length > 0 && (
-            <button onClick={() => setIsArchiveModalOpen(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md flex items-center text-sm">
+            <button onClick={() => setIsArchiveModalOpen(true)} className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-md flex items-center text-sm">
               <ArchiveIcon className="w-4 h-4 mr-2" />
               Ver Arquivadas ({archivedExpenses.length})
             </button>
@@ -62,17 +62,17 @@ export const FixedExpenses: React.FC = () => {
       </div>
       
       {/* Tabela Principal */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         {isLoading ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {['Descrição', 'Categoria', 'Valor Padrão', 'Valor Atual', 'Dia Venc.', 'Período', 'Ações'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
                   <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
@@ -87,19 +87,19 @@ export const FixedExpenses: React.FC = () => {
             </tbody>
           </table>
         ) : activeExpenses.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor Padrão</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor Atual</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dia do Vencimento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Período</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrição</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Categoria</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor Padrão</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Valor Atual</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Dia do Vencimento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Período</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {activeExpenses.map(expense => {
                 const category = getCategory(expense.categoryId);
                 const currentAmount = getActualFixedItemAmount(
@@ -107,18 +107,18 @@ export const FixedExpenses: React.FC = () => {
                 );
                 return (
                   <tr key={expense.id}>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{expense.description}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{expense.description}</td>
                     <td className="px-6 py-4 text-sm">
                       {category ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: `${category.color}20`, color: category.color }}>{category.name}</span> : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{formatValue(expense.amount)}</td>
-                    <td className={`px-6 py-4 text-sm font-medium ${currentAmount !== expense.amount ? 'text-blue-600' : 'text-gray-900'}`}>{formatValue(currentAmount)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">Dia {expense.day}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{formatValue(expense.amount)}</td>
+                    <td className={`px-6 py-4 text-sm font-medium ${currentAmount !== expense.amount ? 'text-blue-600' : 'text-gray-900 dark:text-gray-100'}`}>{formatValue(currentAmount)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">Dia {expense.day}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {formatUTCToDDMMAAAA(expense.startDate)}
                       {expense.endDate ? ` até ${formatUTCToDDMMAAAA(expense.endDate)}` : ' (contínua)'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       <div className="flex items-center space-x-3">
                         <button onClick={() => openVariationModal(expense)} className="text-blue-600 hover:text-blue-900"><CalendarIcon className="w-5 h-5" /></button>
                         <button onClick={() => openEditModal(expense)} className="text-blue-600 hover:text-blue-900"><PencilIcon className="w-5 h-5" /></button>
@@ -131,7 +131,7 @@ export const FixedExpenses: React.FC = () => {
             </tbody>
           </table>
         ) : (
-          <div className="px-6 py-8 text-center text-gray-500">Nenhuma despesa fixa ativa cadastrada.</div>
+          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">Nenhuma despesa fixa ativa cadastrada.</div>
         )}
       </div>
       

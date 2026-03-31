@@ -47,7 +47,7 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
     // Total de rendas (fixas + variáveis)
     const monthlyIncome = monthlyVariableIncome + monthlyFixedIncome;
     // Despesas variáveis do mês atual
-    const monthlyVariableExpense = transactions.filter(t => t.type=='expense' && !t.recurringRuleId && t.date.startsWith(anoMesAtualString)).reduce((sum, t) => sum + t.amount, 0);
+    const monthlyVariableExpense = transactions.filter(t => t.type === 'expense' && t.date.startsWith(anoMesAtualString)).reduce((sum, t) => sum + t.amount, 0);
 
     // Despesas fixas do mês atual (Igualmente limpo!)
     const monthlyFixedExpense = fixedExpenses

@@ -124,7 +124,7 @@ export const VariableExpenses: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div id="variable-expenses-container" className="space-y-6">
       {/* Header sempre visível */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Despesas Variáveis</h1>

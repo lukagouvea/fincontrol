@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { WeeklySpending } from '../components/Dashboard/WeeklySpending';
 import { CategoryPieChart } from '../components/Dashboard/CategoryPieChart';
@@ -18,7 +18,7 @@ import { VariableExpense } from '../types/FinanceTypes';
 import { useAddTransaction, useAddCompraParcelada } from '../hooks/useTransactions';
 import { Skeleton } from '../components/Shared/Skeleton';
 
-import { MonthlyManagementCard } from '../components/Dashboard/MonthlyManagementCard';
+import { MonthlyManagementCardView } from '../components/Dashboard/MonthlyManagementCard';
 import { useMonthlyInvestment } from '../hooks/useInvestmentSettings';
 import { getActualFixedItemAmount, isItemActiveInMonth } from '../utils/financeUtils';
 
@@ -32,6 +32,46 @@ type DashboardComponentConfig = {
   title: string;
   span: number;
 };
+
+type DashboardHeaderActionsProps = {
+  onAddExpense: () => void;
+  onAddIncome: () => void;
+};
+
+const DashboardHeaderActionsComponent = ({ onAddExpense, onAddIncome }: DashboardHeaderActionsProps) => {
+  const expenseRef = useRef(onAddExpense);
+  const incomeRef = useRef(onAddIncome);
+
+  useEffect(() => {
+    expenseRef.current = onAddExpense;
+  }, [onAddExpense]);
+
+  useEffect(() => {
+    incomeRef.current = onAddIncome;
+  }, [onAddIncome]);
+
+  const handleAddExpense = useCallback(() => {
+    expenseRef.current();
+  }, []);
+
+  const handleAddIncome = useCallback(() => {
+    incomeRef.current();
+  }, []);
+
+  return (
+    <div id="btn-add-transaction" className="flex space-x-2">
+      <button onClick={handleAddExpense} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center text-sm">
+        <PlusIcon className="w-4 h-4 mr-2" /> Nova Despesa
+      </button>
+      <button onClick={handleAddIncome} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center text-sm">
+        <PlusIcon className="w-4 h-4 mr-2" /> Nova Renda
+      </button>
+    </div>
+  );
+};
+
+export const DashboardHeaderActions = React.memo(DashboardHeaderActionsComponent, () => true);
+DashboardHeaderActions.displayName = 'DashboardHeaderActions';
 
 const defaultDashboardLayout: DashboardComponentConfig[] = [
   { id: 'weekly-calendar', title: 'Calendário Financeiro Semanal', span: 4 },
@@ -94,6 +134,47 @@ export const Dashboard: React.FC = () => {
     return daysInMonth > 0 ? safeRemaining / daysInMonth : 0;
   }, [selectedDateObject, fixedExpenses, monthlyVariations, transactions, summary.monthlyIncome, investmentMonthlyAmount]);
 
+  const monthlyManagementValues = React.useMemo(() => {
+    const year = selectedDateObject.getFullYear();
+    const month = selectedDateObject.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const committedFixed = fixedExpenses
+      .filter((expense) => isItemActiveInMonth(expense, selectedDateObject))
+      .reduce(
+        (sum, expense) =>
+          sum +
+          getActualFixedItemAmount(
+            expense.id,
+            'expense',
+            year,
+            month,
+            expense.amount,
+            monthlyVariations,
+          ),
+        0,
+      );
+
+    const committedInstallments = transactions
+      .filter((t) => ('installmentInfo' in t && !!t.installmentInfo))
+      .filter((t) => {
+        const d = new Date(t.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const committedTotal = committedFixed + committedInstallments;
+    const remainingAfterInvestment = summary.monthlyIncome - committedTotal - investmentMonthlyAmount;
+    const safeRemaining = isFinite(remainingAfterInvestment) ? remainingAfterInvestment : 0;
+
+    return {
+      committedTotal,
+      remainingAfterInvestment,
+      perDay: daysInMonth > 0 ? safeRemaining / daysInMonth : 0,
+      perWeek: daysInMonth > 0 ? safeRemaining / (daysInMonth / 7) : 0,
+    };
+  }, [selectedDateObject, fixedExpenses, monthlyVariations, transactions, summary.monthlyIncome, investmentMonthlyAmount]);
+
   // 2. Lógica de UI e Mutações (Botões e Modais continuam aqui pois interagem com o usuário)
   const addTransactionMutation = useAddTransaction();
   const addCompraParceladaMutation = useAddCompraParcelada();
@@ -102,6 +183,14 @@ export const Dashboard: React.FC = () => {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [initialDateForModal, setInitialDateForModal] = useState<string | undefined>(undefined);
+
+  const handleOpenExpenseModal = useCallback(() => {
+    setIsExpenseModalOpen(true);
+  }, [setIsExpenseModalOpen]);
+
+  const handleOpenIncomeModal = useCallback(() => {
+    setIsIncomeModalOpen(true);
+  }, [setIsIncomeModalOpen]);
 
   // Lógica do Drag and Drop (Layout)
   const [dashboardComponents, setDashboardComponents] = useState<DashboardComponentConfig[]>(() => {
@@ -225,17 +314,10 @@ export const Dashboard: React.FC = () => {
 
   // Renderização Principal (Agora usa o objeto 'summary' do hook)
   return (
-    <div className="space-y-6">
+    <div id="dashboard-overview" className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <div className="flex space-x-2">
-             <button onClick={() => setIsExpenseModalOpen(true)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center text-sm">
-                <PlusIcon className="w-4 h-4 mr-2" /> Nova Despesa
-             </button>
-             <button onClick={() => setIsIncomeModalOpen(true)} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center text-sm">
-                <PlusIcon className="w-4 h-4 mr-2" /> Nova Renda
-             </button>
-        </div>
+        <DashboardHeaderActions onAddExpense={handleOpenExpenseModal} onAddIncome={handleOpenIncomeModal} />
       </div>
       
       {/* Cards de Resumo - Usando dados limpos do summary */}
@@ -258,7 +340,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Card Gerenciamento do Mês */}
-        <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+        <div id="monthly-management-card" className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-500">Gerenciamento do Mês</h3>
           {isDashboardLoading ? (
             <div className="mt-3 space-y-2">
@@ -266,12 +348,11 @@ export const Dashboard: React.FC = () => {
               <Skeleton className="h-20 w-full" />
             </div>
           ) : (
-            <MonthlyManagementCard
-              date={selectedDateObject}
-              monthlyIncome={summary.monthlyIncome}
-              fixedExpenses={fixedExpenses}
-              monthlyVariations={monthlyVariations}
-              transactions={transactions}
+            <MonthlyManagementCardView
+              committedTotal={monthlyManagementValues.committedTotal}
+              remainingAfterInvestment={monthlyManagementValues.remainingAfterInvestment}
+              perDay={monthlyManagementValues.perDay}
+              perWeek={monthlyManagementValues.perWeek}
               investmentMonthlyAmount={investmentMonthlyAmount}
             />
           )}

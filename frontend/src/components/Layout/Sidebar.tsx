@@ -3,10 +3,10 @@ import { NavLink } from 'react-router-dom';
 import { HomeIcon, TagIcon, DollarSignIcon, CoinsIcon, CreditCardIcon, ShoppingCartIcon, CalendarIcon, ClockIcon } from 'lucide-react';
 export const Sidebar: React.FC = () => {
   return <aside className="w-64 h-full bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+      <NavLink to="/" className="p-4 border-b border-gray-200 block">
         <h1 className="text-xl font-bold text-blue-600">FinControl</h1>
         <p className="text-sm text-gray-500">Controle financeiro pessoal</p>
-      </div>
+      </NavLink>
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
           <li>
@@ -23,7 +23,7 @@ export const Sidebar: React.FC = () => {
             </div>
             <ul className="space-y-1">
               <li>
-                <NavLink to="/categorias" className={({
+                <NavLink id="menu-categories" to="/categorias" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <TagIcon className="w-5 h-5 mr-3" />
@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/rendas-fixas" className={({
+                <NavLink id="menu-fixed-income" to="/rendas-fixas" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <DollarSignIcon className="w-5 h-5 mr-3" />
@@ -39,7 +39,7 @@ export const Sidebar: React.FC = () => {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/rendas-variaveis" className={({
+                <NavLink id="menu-variable-income" to="/rendas-variaveis" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <CoinsIcon className="w-5 h-5 mr-3" />
@@ -47,7 +47,7 @@ export const Sidebar: React.FC = () => {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/despesas-fixas" className={({
+                <NavLink id="menu-fixed-expenses" to="/despesas-fixas" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <CreditCardIcon className="w-5 h-5 mr-3" />
@@ -55,7 +55,7 @@ export const Sidebar: React.FC = () => {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/despesas-variaveis" className={({
+                <NavLink id="menu-variable-expenses" to="/despesas-variaveis" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <ShoppingCartIcon className="w-5 h-5 mr-3" />
@@ -70,13 +70,14 @@ export const Sidebar: React.FC = () => {
             </div>
             <ul className="space-y-1">
               <li>
-                <NavLink to="/calendario" className={({
+                <NavLink id="menu-calendar" to="/calendario" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <CalendarIcon className="w-5 h-5 mr-3" />
                   Calendário
                 </NavLink>
               </li>
+              {/*    
               <li>
                 <NavLink to="/historico-despesas" className={({
                 isActive
@@ -93,8 +94,9 @@ export const Sidebar: React.FC = () => {
                   Histórico de Rendas
                 </NavLink>
               </li>
+              */}
               <li>
-                <NavLink to="/relatorio-mensal" className={({
+                <NavLink id="menu-monthly-report" to="/relatorio-mensal" className={({
                 isActive
               }) => `flex items-center px-4 py-2 rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}>
                   <ClockIcon className="w-5 h-5 mr-3" />

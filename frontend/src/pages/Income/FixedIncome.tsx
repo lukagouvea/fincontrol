@@ -42,7 +42,7 @@ export const FixedIncome: React.FC = () => {
   })) : [];
 
   return (
-    <div className="space-y-6">
+    <div id="fixed-income-container" className="space-y-6">
       {/* Header sempre visível */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Rendas Fixas</h1>

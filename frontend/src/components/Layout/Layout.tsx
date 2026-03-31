@@ -3,10 +3,14 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '../../context/AuthContext';
+import { useTutorial } from '../../hooks/useTutorial';
+
 export const Layout: React.FC = () => {
-  const {
-    isAuthenticated
-  } = useAuth();
+  const { isAuthenticated } = useAuth();
+  
+  // Inicializa o tutorial (auto-início se necessário)
+  useTutorial();
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }

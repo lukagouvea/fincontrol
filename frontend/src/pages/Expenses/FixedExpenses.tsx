@@ -43,7 +43,7 @@ export const FixedExpenses: React.FC = () => {
   })) : [];
 
   return (
-    <div className="space-y-6">
+    <div id="fixed-expenses-container" className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Despesas Fixas</h1>

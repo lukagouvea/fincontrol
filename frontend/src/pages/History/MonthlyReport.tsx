@@ -254,7 +254,7 @@ export const MonthlyReport: React.FC = () => {
   const years = Array.from({ length: 7 }, (_, i) => currentYear + 2 - i);
 
   return (
-    <div className="space-y-8">
+    <div id="monthly-report-container" className="space-y-8">
       {/* Cabeçalho e Filtros (Sempre visíveis) */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Relatório Mensal Unificado</h1>
@@ -292,7 +292,7 @@ export const MonthlyReport: React.FC = () => {
           )}
         </div>
         {/* Card Gerenciamento do Mês */}
-        <div className="bg-white md:col-span-1 lg:col-span-3 rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <div id="monthly-report-management-card" className="bg-white md:col-span-1 lg:col-span-3 rounded-lg shadow p-4 border-l-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Gerenciamento do Mês</h3>
           {isLoading ? (
             <div className="space-y-2">

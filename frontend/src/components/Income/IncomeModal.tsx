@@ -110,7 +110,7 @@ export const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose, onSub
                   setAmount(value);
                   setNumericAmount(values?.float ?? null);
                 }}
-                prefix="R$ "
+                prefix="R$"
                 intlConfig={{ locale: 'pt-BR', currency: 'BRL' }}
                 decimalScale={2}
                 allowNegativeValue={false}

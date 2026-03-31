@@ -1,0 +1,166 @@
+/**
+ * CSS CUSTOMIZADO PARA O TUTORIAL DRIVER.JS
+ * 
+ * Este arquivo contém estilos opcionais para personalizar a aparência
+ * do tutorial. Adicione ao seu index.css ou arquivo de estilos globais.
+ * 
+ * O Driver.js já vem com estilos padrão excelentes, mas você pode
+ * customizar para combinar melhor com o tema do FinControl.
+ */
+
+/* 
+  NOTA: O Driver.js já importa seus próprios estilos via:
+  import 'driver.js/dist/driver.css';
+  
+  As classes abaixo são OPCIONAIS e servem apenas para customização adicional.
+*/
+
+/* ==========================================
+   Customização do Popover do Tutorial
+   ========================================== */
+
+/* Popover principal */
+.fincontrol-tutorial-popover {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+  font-family: inherit !important;
+}
+
+/* Título do popover */
+.fincontrol-tutorial-popover .driver-popover-title {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: #1a202c !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Descrição do popover */
+.fincontrol-tutorial-popover .driver-popover-description {
+  font-size: 0.95rem !important;
+  line-height: 1.6 !important;
+  color: #4a5568 !important;
+}
+
+/* Botões de navegação */
+.fincontrol-tutorial-popover .driver-popover-footer button {
+  border-radius: 8px !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Botão "Próximo" */
+.fincontrol-tutorial-popover .driver-popover-next-btn {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.fincontrol-tutorial-popover .driver-popover-next-btn:hover {
+  background: #2563eb !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Botão "Anterior" */
+.fincontrol-tutorial-popover .driver-popover-prev-btn {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.fincontrol-tutorial-popover .driver-popover-prev-btn:hover {
+  background: #d1d5db !important;
+}
+
+/* Botão "Fechar/Pular" */
+.fincontrol-tutorial-popover .driver-popover-close-btn {
+  color: #6b7280 !important;
+  font-size: 1.5rem !important;
+  transition: transform 0.2s ease !important;
+}
+
+.fincontrol-tutorial-popover .driver-popover-close-btn:hover {
+  transform: scale(1.2) !important;
+  color: #ef4444 !important;
+}
+
+/* Indicador de progresso */
+.fincontrol-tutorial-popover .driver-popover-progress-text {
+  font-size: 0.875rem !important;
+  color: #6b7280 !important;
+  font-weight: 500 !important;
+}
+
+/* ==========================================
+   Overlay (Fundo escurecido)
+   ========================================== */
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ==========================================
+   Elemento destacado
+   ========================================== */
+.driver-highlighted-element {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* ==========================================
+   Modo Escuro (Dark Theme)
+   ========================================== */
+.dark .fincontrol-tutorial-popover {
+  background: #1f2937 !important;
+  border: 1px solid #374151 !important;
+}
+
+.dark .fincontrol-tutorial-popover .driver-popover-title {
+  color: #f9fafb !important;
+}
+
+.dark .fincontrol-tutorial-popover .driver-popover-description {
+  color: #d1d5db !important;
+}
+
+.dark .fincontrol-tutorial-popover .driver-popover-prev-btn {
+  background: #374151 !important;
+  color: #f9fafb !important;
+}
+
+.dark .fincontrol-tutorial-popover .driver-popover-prev-btn:hover {
+  background: #4b5563 !important;
+}
+
+/* ==========================================
+   Animações Suaves
+   ========================================== */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fincontrol-tutorial-popover {
+  animation: fadeInScale 0.3s ease-out !important;
+}
+
+/* ==========================================
+   Responsividade Mobile
+   ========================================== */
+@media (max-width: 640px) {
+  .fincontrol-tutorial-popover {
+    max-width: 90vw !important;
+    font-size: 0.9rem !important;
+  }
+
+  .fincontrol-tutorial-popover .driver-popover-title {
+    font-size: 1.1rem !important;
+  }
+
+  .fincontrol-tutorial-popover .driver-popover-description {
+    font-size: 0.875rem !important;
+  }
+}

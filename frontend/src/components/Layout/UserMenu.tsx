@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDownIcon, LogOutIcon, PiggyBankIcon, UserIcon } from 'lucide-react';
+import { ChevronDownIcon, LogOutIcon, PiggyBankIcon, UserIcon, HelpCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useInvestmentSettings } from '../../hooks/useInvestmentSettings';
+import { useTutorial } from '../../hooks/useTutorial';
 
 const formatBRL = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -11,6 +12,7 @@ export const UserMenu: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { investmentMonthlyAmount, setInvestmentMonthlyAmount } = useInvestmentSettings();
+  const { startTutorial } = useTutorial();
 
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState<string>(() => String(investmentMonthlyAmount));
@@ -46,6 +48,7 @@ export const UserMenu: React.FC = () => {
   return (
     <div className="relative" ref={rootRef}>
       <button
+        id="user-menu-button"
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex items-center space-x-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-2"
@@ -71,7 +74,7 @@ export const UserMenu: React.FC = () => {
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Configurações</p>
             </div>
 
-            <div className="flex items-start space-x-3">
+            <div id="investment-setting" className="flex items-start space-x-3">
               <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full">
                 <PiggyBankIcon className="w-4 h-4 text-gray-600 dark:text-gray-200" />
               </div>
@@ -105,11 +108,26 @@ export const UserMenu: React.FC = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400">Atual: {theme === 'dark' ? 'Escuro' : 'Claro'}</p>
               </div>
               <button
+                id="theme-toggle"
                 type="button"
                 onClick={toggleTheme}
                 className="px-3 py-2 text-sm rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600"
               >
                 Alternar
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  startTutorial();
+                }}
+                className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>Ver Tutorial Novamente</span>
               </button>
             </div>
 

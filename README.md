@@ -27,6 +27,7 @@ FinControl é uma aplicação web moderna e completa para gerenciamento financei
 - 📅 **Calendário Financeiro** - Veja suas transações em formato de calendário
 - 💳 **Parcelamentos** - Gerencie compras parceladas
 - 🌓 **Tema Claro/Escuro** - Interface adaptável às suas preferências
+- 🎓 **Tutorial Guiado Interativo** - Onboarding automático para novos usuários com Driver.js
 
 ---
 

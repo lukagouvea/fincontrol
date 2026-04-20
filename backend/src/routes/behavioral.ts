@@ -172,4 +172,71 @@ app.post('/analyze', async (c) => {
   }
 });
 
+// ── Monte Carlo: interpretação via LLM ─────────────────────────────────────────
+app.post('/interpret-simulation', async (c) => {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  const GROQ_MODEL   = process.env.GROQ_MODEL ?? 'meta-llama/llama-4-scout-17b-16e-instruct';
+
+  if (!GROQ_API_KEY) {
+    return c.json({ error: 'GROQ_API_KEY não configurada no servidor' }, 500);
+  }
+
+  try {
+    const body = await c.req.json<{
+      meta: number;
+      prazo: number;
+      sobra: number;
+      desvio: number;
+      prob: number;
+      mediana: number;
+      p90: number;
+      p10: number;
+      mesMediana: number | null;
+      extraNecessario: number;
+      extra?: number;
+      probExtra?: number;
+    }>();
+
+    const prompt = [
+      'Interprete esta simulação Monte Carlo de meta financeira de forma direta e objetiva.',
+      'Português brasileiro, 3–4 frases com os números. Sem listas, sem bullet points.',
+      `- Meta: R$${body.meta.toLocaleString('pt-BR')} em ${body.prazo} meses`,
+      `- Sobra mensal atual: R$${body.sobra.toLocaleString('pt-BR')}/mês ± R$${body.desvio.toLocaleString('pt-BR')}`,
+      `- Probabilidade de sucesso: ${body.prob}%`,
+      `- Mediana final: R$${body.mediana.toLocaleString('pt-BR')} | P90: R$${body.p90.toLocaleString('pt-BR')} | P10: R$${body.p10.toLocaleString('pt-BR')}`,
+      body.mesMediana
+        ? `- 50% das simulações atingem a meta no mês ${body.mesMediana}`
+        : '- Menos de 50% atingem no prazo',
+      body.extraNecessario > 0
+        ? `- Faltam R$${body.extraNecessario.toLocaleString('pt-BR')}/mês para 80% de probabilidade`
+        : '- Meta já com 80%+ de probabilidade',
+      body.extra && body.extra > 0
+        ? `- Hipótese (+R$${body.extra.toLocaleString('pt-BR')}/mês): ${body.probExtra}% de probabilidade`
+        : '',
+      'Conclua com a ação mais específica e impactante para aumentar a probabilidade de sucesso.',
+    ].filter(Boolean).join('\n');
+
+    const groq = new Groq({ apiKey: GROQ_API_KEY });
+
+    const completion = await groq.chat.completions.create({
+      model: GROQ_MODEL,
+      max_tokens: 400,
+      temperature: 0.6,
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um consultor financeiro brasileiro especializado em planejamento de metas. Seja direto, cite os números, e dê uma recomendação prática.'
+        },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    const text = completion.choices[0]?.message?.content ?? '';
+    return c.json({ text });
+  } catch (error) {
+    console.error('Erro na interpretação Monte Carlo:', error);
+    return c.json({ error: 'Erro ao interpretar a simulação.' }, 500);
+  }
+});
+
 export default app;

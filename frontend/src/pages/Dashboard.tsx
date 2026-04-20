@@ -22,6 +22,7 @@ import { MonthlyManagementCardView } from '../components/Dashboard/MonthlyManage
 import { useMonthlyInvestment } from '../hooks/useInvestmentSettings';
 import { getActualFixedItemAmount, isItemActiveInMonth } from '../utils/financeUtils';
 import { BehavioralAgent } from '../components/Dashboard/BehavioralAgent';
+import { MonteCarloSimulator } from '../components/Dashboard/MonteCarloSimulator';
 
 
 // IMPORTANTE: Importamos nosso novo hook aqui
@@ -80,6 +81,7 @@ const defaultDashboardLayout: DashboardComponentConfig[] = [
   { id: 'upcoming-bills', title: 'Contas do Mês', span: 1 },
   { id: 'category-pie', title: 'Gastos por Categoria', span: 1 },
   { id: 'behavioral-agent', title: '🧠 Agente Comportamental', span: 4 },
+  { id: 'monte-carlo', title: '🎯 Simulador Monte Carlo', span: 4 },
   { id: 'expenses-histogram', title: 'Distribuição de Gastos por Valor', span: 2 },
   { id: 'weekly-spending', title: 'Gastos nos Últimos 7 dias', span: 2 },
   { id: 'monthly-histogram', title: 'Histórico de Saldo Mensal', span: 2 },
@@ -224,7 +226,9 @@ export const Dashboard: React.FC = () => {
     }
   }, [dashboardComponents]);
 
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, {
+  const sensors = useSensors(useSensor(PointerSensor, {
+    activationConstraint: { distance: 8 },
+  }), useSensor(KeyboardSensor, {
     coordinateGetter: sortableKeyboardCoordinates
   }));
 
@@ -306,6 +310,16 @@ export const Dashboard: React.FC = () => {
         return <MonthlyHistogram transactions={twelveMonthsTransactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations} />;
       case 'behavioral-agent':
         return <BehavioralAgent />;
+      case 'monte-carlo':
+        return (
+          <MonteCarloSimulator
+            transactions={twelveMonthsTransactions}
+            fixedIncomes={fixedIncomes}
+            fixedExpenses={fixedExpenses}
+            monthlyVariations={monthlyVariations}
+            date={selectedDateObject}
+          />
+        );
       case 'recent-transactions':
         return <RecentTransactions transactions={transactions} categories={categories} date={selectedDateObject} />;
       default:

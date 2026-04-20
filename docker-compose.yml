@@ -8,12 +8,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
+      PGDATA: /var/lib/postgresql/data
     ports:
       - '5432:5432'
     volumes:
       - fincontrol-data-dev:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,12 +31,14 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fincontrol}?schema=public
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       JWT_SECRET: ${JWT_SECRET:-changeme}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL}
     restart: always
     ports:
       - '${BACKEND_PORT:-3001}:${BACKEND_PORT:-3001}'
     volumes:
-      - ./backend:/app        # Espelha sua pasta local
-      - /app/node_modules     # Protege as dependências internas
+      - ./backend:/app # Espelha sua pasta local
+      - /app/node_modules # Protege as dependências internas
     depends_on:
       db:
         condition: service_healthy

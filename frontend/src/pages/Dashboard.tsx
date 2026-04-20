@@ -21,6 +21,8 @@ import { Skeleton } from '../components/Shared/Skeleton';
 import { MonthlyManagementCardView } from '../components/Dashboard/MonthlyManagementCard';
 import { useMonthlyInvestment } from '../hooks/useInvestmentSettings';
 import { getActualFixedItemAmount, isItemActiveInMonth } from '../utils/financeUtils';
+import { BehavioralAgent } from '../components/Dashboard/BehavioralAgent';
+
 
 // IMPORTANTE: Importamos nosso novo hook aqui
 import { useDashboardFinance } from '../hooks/useDashboardFinance';
@@ -77,6 +79,7 @@ const defaultDashboardLayout: DashboardComponentConfig[] = [
   { id: 'weekly-calendar', title: 'Calendário Financeiro Semanal', span: 4 },
   { id: 'upcoming-bills', title: 'Contas do Mês', span: 1 },
   { id: 'category-pie', title: 'Gastos por Categoria', span: 1 },
+  { id: 'behavioral-agent', title: '🧠 Agente Comportamental', span: 4 },
   { id: 'expenses-histogram', title: 'Distribuição de Gastos por Valor', span: 2 },
   { id: 'weekly-spending', title: 'Gastos nos Últimos 7 dias', span: 2 },
   { id: 'monthly-histogram', title: 'Histórico de Saldo Mensal', span: 2 },
@@ -85,16 +88,16 @@ const defaultDashboardLayout: DashboardComponentConfig[] = [
 
 export const Dashboard: React.FC = () => {
   // 1. Chamada do Hook Mágico (Toda a lógica vem daqui)
-  const { 
-    transactions, transactionsWithoutInstallments, fixedExpenses, fixedIncomes, monthlyVariations, 
-    categories, isLoading, selectedDateObject, summary 
+  const {
+    transactions, transactionsWithoutInstallments, fixedExpenses, fixedIncomes, monthlyVariations,
+    categories, isLoading, selectedDateObject, summary
   } = useDashboardFinance();
 
   const { data: investmentEffective, isLoading: isLoadingInvestment } = useMonthlyInvestment(
     selectedDateObject.getMonth(),
     selectedDateObject.getFullYear(),
   );
-  
+
   const { data: twelveMonthsTransactions = [] } = useTwelveMonthsTransactions(
     selectedDateObject.getMonth(),
     selectedDateObject.getFullYear()
@@ -202,8 +205,13 @@ export const Dashboard: React.FC = () => {
   const [dashboardComponents, setDashboardComponents] = useState<DashboardComponentConfig[]>(() => {
     try {
       const savedLayout = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-      return savedLayout ? JSON.parse(savedLayout) : defaultDashboardLayout;
-    } catch (error) {
+      if (!savedLayout) return defaultDashboardLayout;
+      const parsed: DashboardComponentConfig[] = JSON.parse(savedLayout);
+      // Merge: add any new default widgets missing from the saved layout
+      const savedIds = new Set(parsed.map(c => c.id));
+      const newItems = defaultDashboardLayout.filter(c => !savedIds.has(c.id));
+      return newItems.length > 0 ? [...parsed, ...newItems] : parsed;
+    } catch {
       return defaultDashboardLayout;
     }
   });
@@ -291,11 +299,13 @@ export const Dashboard: React.FC = () => {
       case 'category-pie':
         return <CategoryPieChart transactions={transactionsWithoutInstallments} categories={categories} date={selectedDateObject} monthlyVariations={monthlyVariations} />;
       case 'expenses-histogram':
-        return <ExpensesValueHistogram transactions={transactionsWithoutInstallments} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
+        return <ExpensesValueHistogram transactions={transactionsWithoutInstallments} date={selectedDateObject} monthlyVariations={monthlyVariations} />;
       case 'weekly-spending':
         return <WeeklySpending transactions={transactionsWithoutInstallments} />;
       case 'monthly-histogram':
-        return <MonthlyHistogram transactions={twelveMonthsTransactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations}/>;
+        return <MonthlyHistogram transactions={twelveMonthsTransactions} categories={categories} fixedExpenses={fixedExpenses} fixedIncomes={fixedIncomes} date={selectedDateObject} monthlyVariations={monthlyVariations} />;
+      case 'behavioral-agent':
+        return <BehavioralAgent />;
       case 'recent-transactions':
         return <RecentTransactions transactions={transactions} categories={categories} date={selectedDateObject} />;
       default:
@@ -305,15 +315,15 @@ export const Dashboard: React.FC = () => {
 
   const renderWidgetContent = (config: DashboardComponentConfig) => {
     if (isDashboardLoading) {
-        return (
-            <div className="w-full h-full min-h-[200px] p-4 flex flex-col gap-4">
-                <div className="flex justify-between">
-                    <Skeleton className="h-6 w-1/3" />
-                    <Skeleton className="h-6 w-16" />
-                </div>
-                <Skeleton className="flex-1 w-full rounded-lg" />
-            </div>
-        );
+      return (
+        <div className="w-full h-full min-h-[200px] p-4 flex flex-col gap-4">
+          <div className="flex justify-between">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-6 w-16" />
+          </div>
+          <Skeleton className="flex-1 w-full rounded-lg" />
+        </div>
+      );
     }
     return getComponentById(config.id);
   };
@@ -325,9 +335,9 @@ export const Dashboard: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
         <DashboardHeaderActions onAddExpense={handleOpenExpenseModal} onAddIncome={handleOpenIncomeModal} />
       </div>
-      
+
       {/* Cards de Resumo - Usando dados limpos do summary */}
-  <div id="cards" className="grid grid-cols-1 md:grid-rows-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div id="cards" className="grid grid-cols-1 md:grid-rows-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Card Renda */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-green-500">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Renda Total do Mês</h3>
@@ -401,7 +411,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* GRID COM DRAG AND DROP */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={dashboardComponents.map(item => item.id)} strategy={verticalListSortingStrategy}>
@@ -414,10 +424,10 @@ export const Dashboard: React.FC = () => {
           </div>
         </SortableContext>
       </DndContext>
-      
+
       {/* Modais */}
-      <ExpenseModal 
-        isOpen={isExpenseModalOpen} 
+      <ExpenseModal
+        isOpen={isExpenseModalOpen}
         onClose={() => {
           setIsExpenseModalOpen(false);
           setInitialDateForModal(undefined);
@@ -426,8 +436,8 @@ export const Dashboard: React.FC = () => {
         initialDate={initialDateForModal}
         isLoading={isSaving}
       />
-      <IncomeModal 
-        isOpen={isIncomeModalOpen} 
+      <IncomeModal
+        isOpen={isIncomeModalOpen}
         onClose={() => setIsIncomeModalOpen(false)}
         onSubmit={handleIncomeSubmit}
         isLoading={isSaving}

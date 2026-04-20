@@ -10,6 +10,7 @@ import transactionsRoute from './routes/transactions.js';
 import recurringRoute from './routes/recurring.js';
 import investmentRoute from './routes/investment.js';
 import usersRoute from './routes/users.js';
+import behavioralRoute from './routes/behavioral.js';
 
 const app = new Hono();
 
@@ -32,6 +33,7 @@ app.route('/transactions', transactionsRoute);
 app.route('/recurring', recurringRoute);
 app.route('/investment', investmentRoute);
 app.route('/users', usersRoute);
+app.route('/behavioral', behavioralRoute);
 
 serve({
   fetch: app.fetch,

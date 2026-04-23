@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
 import Groq from 'groq-sdk';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -8,76 +9,223 @@ const app = new Hono<{ Variables: { userId: string } }>();
 app.use('/*', authMiddleware);
 
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const ANALYZE_DEFAULT_MODEL = 'groq/compound';
 
-function buildPayload(
-  transactions: Array<{
-    date: Date;
-    amount: unknown;
-    description: string;
-    category: { name: string } | null;
-  }>,
-) {
-  const totalGasto = transactions.reduce((s, t) => s + Number(t.amount), 0);
-  const qtd = transactions.length;
+function normalizeSeverity(value: unknown): unknown {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (
+    normalized.includes('alta') ||
+    normalized.includes('alto') ||
+    normalized.includes('high') ||
+    normalized.includes('severa') ||
+    normalized.includes('severo') ||
+    normalized.includes('critica')
+  ) {
+    return 'alta';
+  }
+
+  if (
+    normalized.includes('media') ||
+    normalized.includes('medio') ||
+    normalized.includes('moderada') ||
+    normalized.includes('moderado') ||
+    normalized.includes('medium')
+  ) {
+    return 'media';
+  }
+
+  if (
+    normalized.includes('baixa') ||
+    normalized.includes('baixo') ||
+    normalized.includes('low') ||
+    normalized.includes('leve')
+  ) {
+    return 'baixa';
+  }
+
+  return normalized;
+}
+
+const severitySchema = z.preprocess(normalizeSeverity, z.enum(['alta', 'media', 'baixa']));
+
+const biasSchema = z.object({
+  nome: z.string().min(1),
+  descricao: z.string().min(1),
+  evidencias: z.array(z.string().min(1)).min(1),
+  severidade: severitySchema,
+  recomendacao: z.string().min(1),
+});
+
+const behavioralInsightsSchema = z.object({
+  perfil: z.string().min(1),
+  gatilho_principal: z.string().min(1),
+  vieses: z.array(biasSchema).length(3),
+});
+
+type BehavioralInsights = z.infer<typeof behavioralInsightsSchema>;
+type TxForBehavioral = {
+  date: Date;
+  amount: unknown;
+  description: string;
+  category: { name: string } | null;
+};
+
+function toAmount(value: unknown): number {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) {
+    throw new Error('Valor de transação inválido para análise');
+  }
+  return amount;
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function buildPayload(transactions: TxForBehavioral[]) {
+  const normalized = transactions.map((transaction) => ({
+    ...transaction,
+    amount: toAmount(transaction.amount),
+  }));
+
+  const totalGasto = normalized.reduce((s, t) => s + t.amount, 0);
+  const qtd = normalized.length;
 
   const porCategoria: Record<string, { total: number; count: number }> = {};
-  for (const t of transactions) {
+  for (const t of normalized) {
     const cat = t.category?.name ?? 'Sem Categoria';
     porCategoria[cat] ??= { total: 0, count: 0 };
-    porCategoria[cat].total += Number(t.amount);
+    porCategoria[cat].total += t.amount;
     porCategoria[cat].count++;
   }
 
   const porDiaSemana: Record<string, { total: number; count: number }> = {};
-  for (const t of transactions) {
+  for (const t of normalized) {
     const d = DAY_NAMES[t.date.getDay()];
     porDiaSemana[d] ??= { total: 0, count: 0 };
-    porDiaSemana[d].total += Number(t.amount);
+    porDiaSemana[d].total += t.amount;
     porDiaSemana[d].count++;
   }
 
   const porFaixaMes = { d1a5: 0, d6a15: 0, d16a31: 0 };
-  for (const t of transactions) {
+  for (const t of normalized) {
     const dia = t.date.getDate();
-    if (dia <= 5) porFaixaMes.d1a5 += Number(t.amount);
-    else if (dia <= 15) porFaixaMes.d6a15 += Number(t.amount);
-    else porFaixaMes.d16a31 += Number(t.amount);
+    if (dia <= 5) porFaixaMes.d1a5 += t.amount;
+    else if (dia <= 15) porFaixaMes.d6a15 += t.amount;
+    else porFaixaMes.d16a31 += t.amount;
   }
 
-  const fimDeSemana = transactions
+  const fimDeSemana = normalized
     .filter((t) => [0, 6].includes(t.date.getDay()))
-    .reduce((s, t) => s + Number(t.amount), 0);
+    .reduce((s, t) => s + t.amount, 0);
 
-  const top5 = [...transactions]
-    .sort((a, b) => Number(b.amount) - Number(a.amount))
+  const top5 = [...normalized]
+    .sort((a, b) => b.amount - a.amount)
     .slice(0, 5)
     .map((t) => ({
-      v: Math.round(Number(t.amount) * 100) / 100,
+      v: round2(t.amount),
       d: t.description.slice(0, 30),
       c: t.category?.name ?? '-',
       ds: DAY_NAMES[t.date.getDay()],
       dm: t.date.getDate(),
     }));
 
-  const r = (n: number) => Math.round(n * 100) / 100;
-
   return {
     n: qtd,
-    total: r(totalGasto),
-    media: r(totalGasto / qtd),
-    fds: r(fimDeSemana),
-    util: r(totalGasto - fimDeSemana),
+    total: round2(totalGasto),
+    media: qtd > 0 ? round2(totalGasto / qtd) : 0,
+    fds: round2(fimDeSemana),
+    util: round2(totalGasto - fimDeSemana),
     cat: Object.fromEntries(
       Object.entries(porCategoria)
         .sort((a, b) => b[1].total - a[1].total)
-        .map(([k, v]) => [k, { t: r(v.total), n: v.count }]),
+        .map(([k, v]) => [k, { t: round2(v.total), n: v.count }]),
     ),
     sem: Object.fromEntries(
-      Object.entries(porDiaSemana).map(([k, v]) => [k, { t: r(v.total), n: v.count }]),
+      Object.entries(porDiaSemana).map(([k, v]) => [k, { t: round2(v.total), n: v.count }]),
     ),
-    mes: { d1a5: r(porFaixaMes.d1a5), d6a15: r(porFaixaMes.d6a15), d16a31: r(porFaixaMes.d16a31) },
+    mes: {
+      d1a5: round2(porFaixaMes.d1a5),
+      d6a15: round2(porFaixaMes.d6a15),
+      d16a31: round2(porFaixaMes.d16a31),
+    },
     top5,
   };
+}
+
+function getGroqConfig(defaultModel: string) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  return {
+    apiKey,
+    model: process.env.GROQ_MODEL ?? defaultModel,
+  };
+}
+
+async function requestGroqText(params: {
+  apiKey: string;
+  model: string;
+  maxTokens: number;
+  temperature: number;
+  systemPrompt: string;
+  userPrompt: string;
+}) {
+  const groq = new Groq({ apiKey: params.apiKey });
+
+  const completion = await groq.chat.completions.create({
+    model: params.model,
+    max_tokens: params.maxTokens,
+    temperature: params.temperature,
+    messages: [
+      { role: 'system', content: params.systemPrompt },
+      { role: 'user', content: params.userPrompt },
+    ],
+  });
+
+  return {
+    text: completion.choices[0]?.message?.content?.trim() ?? '',
+    model: completion.model,
+  };
+}
+
+function extractJsonBlock(text: string): { thinking: string; rawJson: string } {
+  const tagged = text.match(/<json>\s*([\s\S]*?)\s*<\/json>/i);
+  if (tagged?.[1]) {
+    return {
+      thinking: text.slice(0, tagged.index ?? 0).trim(),
+      rawJson: tagged[1].trim(),
+    };
+  }
+
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace < 0 || lastBrace <= firstBrace) {
+    throw new Error('Resposta da IA sem bloco JSON válido');
+  }
+
+  return {
+    thinking: text.slice(0, firstBrace).trim(),
+    rawJson: text.slice(firstBrace, lastBrace + 1).trim(),
+  };
+}
+
+function parseBehavioralInsights(fullText: string): { thinking: string; insights: BehavioralInsights } {
+  const { thinking, rawJson } = extractJsonBlock(fullText);
+  const parsed = JSON.parse(rawJson);
+  const insights = behavioralInsightsSchema.parse(parsed);
+  return { thinking, insights };
 }
 
 const SYSTEM_PROMPT = `Você é um especialista em behavioral finance e psicologia econômica aplicada às finanças pessoais brasileiras.
@@ -117,10 +265,8 @@ Identifique exatamente 3 vieses. O campo severidade deve ser: alta, media ou bai
 app.post('/analyze', async (c) => {
   const userId = c.var.userId;
 
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  const GROQ_MODEL   = process.env.GROQ_MODEL ?? 'groq/compound';
-
-  if (!GROQ_API_KEY) {
+  const groqConfig = getGroqConfig(ANALYZE_DEFAULT_MODEL);
+  if (!groqConfig) {
     return c.json({ error: 'GROQ_API_KEY não configurada no servidor' }, 500);
   }
 
@@ -144,98 +290,41 @@ app.post('/analyze', async (c) => {
     const payload = buildPayload(transactions);
     const userContent = `Estatísticas (90 dias):\n${JSON.stringify(payload)}`;
     const totalBytes = Buffer.byteLength(SYSTEM_PROMPT + userContent, 'utf8');
-    console.log(`[behavioral] model=${GROQ_MODEL} tx=${transactions.length} payload=${totalBytes}B`);
+    console.log(
+      `[behavioral] route=analyze model=${groqConfig.model} tx=${transactions.length} payload=${totalBytes}B`,
+    );
 
-    const groq = new Groq({ apiKey: GROQ_API_KEY });
-
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
-      max_tokens: 1500,
+    const { text: fullText, model } = await requestGroqText({
+      apiKey: groqConfig.apiKey,
+      model: groqConfig.model,
+      maxTokens: 1500,
       temperature: 0.65,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userContent },
-      ],
+      systemPrompt: SYSTEM_PROMPT,
+      userPrompt: userContent,
     });
 
-    const fullText = completion.choices[0]?.message?.content ?? '';
+    if (!fullText) {
+      return c.json({ error: 'O modelo não retornou conteúdo para a análise.' }, 502);
+    }
+
+    const { thinking, insights } = parseBehavioralInsights(fullText);
 
     return c.json({
+      thinking,
+      insights,
       fullText,
       transactionCount: transactions.length,
       periodDays: 90,
-      model: completion.model,
+      model,
     });
   } catch (error) {
+    if (error instanceof z.ZodError || error instanceof SyntaxError) {
+      console.error('Resposta inválida do modelo no agente comportamental:', error);
+      return c.json({ error: 'Resposta inválida recebida do modelo de análise.' }, 502);
+    }
+
     console.error('Erro no agente comportamental:', error);
     return c.json({ error: 'Erro interno ao processar a análise.' }, 500);
-  }
-});
-
-// ── Monte Carlo: interpretação via LLM ─────────────────────────────────────────
-app.post('/interpret-simulation', async (c) => {
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  const GROQ_MODEL   = process.env.GROQ_MODEL ?? 'meta-llama/llama-4-scout-17b-16e-instruct';
-
-  if (!GROQ_API_KEY) {
-    return c.json({ error: 'GROQ_API_KEY não configurada no servidor' }, 500);
-  }
-
-  try {
-    const body = await c.req.json<{
-      meta: number;
-      prazo: number;
-      sobra: number;
-      desvio: number;
-      prob: number;
-      mediana: number;
-      p90: number;
-      p10: number;
-      mesMediana: number | null;
-      extraNecessario: number;
-      extra?: number;
-      probExtra?: number;
-    }>();
-
-    const prompt = [
-      'Interprete esta simulação Monte Carlo de meta financeira de forma direta e objetiva.',
-      'Português brasileiro, 3–4 frases com os números. Sem listas, sem bullet points.',
-      `- Meta: R$${body.meta.toLocaleString('pt-BR')} em ${body.prazo} meses`,
-      `- Sobra mensal atual: R$${body.sobra.toLocaleString('pt-BR')}/mês ± R$${body.desvio.toLocaleString('pt-BR')}`,
-      `- Probabilidade de sucesso: ${body.prob}%`,
-      `- Mediana final: R$${body.mediana.toLocaleString('pt-BR')} | P90: R$${body.p90.toLocaleString('pt-BR')} | P10: R$${body.p10.toLocaleString('pt-BR')}`,
-      body.mesMediana
-        ? `- 50% das simulações atingem a meta no mês ${body.mesMediana}`
-        : '- Menos de 50% atingem no prazo',
-      body.extraNecessario > 0
-        ? `- Faltam R$${body.extraNecessario.toLocaleString('pt-BR')}/mês para 80% de probabilidade`
-        : '- Meta já com 80%+ de probabilidade',
-      body.extra && body.extra > 0
-        ? `- Hipótese (+R$${body.extra.toLocaleString('pt-BR')}/mês): ${body.probExtra}% de probabilidade`
-        : '',
-      'Conclua com a ação mais específica e impactante para aumentar a probabilidade de sucesso.',
-    ].filter(Boolean).join('\n');
-
-    const groq = new Groq({ apiKey: GROQ_API_KEY });
-
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
-      max_tokens: 400,
-      temperature: 0.6,
-      messages: [
-        {
-          role: 'system',
-          content: 'Você é um consultor financeiro brasileiro especializado em planejamento de metas. Seja direto, cite os números, e dê uma recomendação prática.'
-        },
-        { role: 'user', content: prompt },
-      ],
-    });
-
-    const text = completion.choices[0]?.message?.content ?? '';
-    return c.json({ text });
-  } catch (error) {
-    console.error('Erro na interpretação Monte Carlo:', error);
-    return c.json({ error: 'Erro ao interpretar a simulação.' }, 500);
   }
 });
 

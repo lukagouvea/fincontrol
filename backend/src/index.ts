@@ -11,6 +11,7 @@ import recurringRoute from './routes/recurring.js';
 import investmentRoute from './routes/investment.js';
 import usersRoute from './routes/users.js';
 import behavioralRoute from './routes/behavioral.js';
+import simulationRoute from './routes/simulation.js';
 
 const app = new Hono();
 
@@ -34,6 +35,7 @@ app.route('/recurring', recurringRoute);
 app.route('/investment', investmentRoute);
 app.route('/users', usersRoute);
 app.route('/behavioral', behavioralRoute);
+app.route('/simulation', simulationRoute);
 
 serve({
   fetch: app.fetch,

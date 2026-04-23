@@ -1,7 +1,7 @@
 // src/components/Dashboard/BehavioralAgent.tsx
 import React, { useState, useRef, useCallback } from 'react';
 import { BrainCircuit, Sparkles, RotateCcw, AlertTriangle, TrendingUp } from 'lucide-react';
-import { behavioralService } from '../../services/behavioralService';
+import { behavioralAnalysisApi } from '../../services/behavioralService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -189,15 +189,10 @@ export const BehavioralAgent: React.FC = () => {
     setErrorMessage('');
 
     try {
-      const result = await behavioralService.analyze();
+      const result = await behavioralAnalysisApi.analyzeStructured();
       setTransactionCount(result.transactionCount);
-      const fullText = result.fullText;
-
-      // Split thinking from JSON block
-      const jStart = fullText.indexOf('<json>');
-      const thinkingPart = jStart > -1 ? fullText.slice(0, jStart).trim() : fullText;
-      const rawJson =
-        jStart > -1 ? fullText.slice(jStart + 6, fullText.indexOf('</json>')).trim() : '';
+      const thinkingPart = result.thinking || '';
+      const rawInsights = result.insights;
 
       setPhase('thinking');
 
@@ -214,19 +209,13 @@ export const BehavioralAgent: React.FC = () => {
 
         if (i >= thinkingPart.length) {
           clearTimer();
-          if (!rawJson) {
+          if (!rawInsights) {
             setPhase('error');
             setErrorMessage('O agente não retornou a análise estruturada. Tente novamente.');
             return;
           }
-          try {
-            const parsed = JSON.parse(rawJson) as Insights;
-            setInsights(parsed);
-            setTimeout(() => setPhase('done'), 300);
-          } catch {
-            setPhase('error');
-            setErrorMessage('Erro ao interpretar os insights. Tente novamente.');
-          }
+          setInsights(rawInsights as unknown as Insights);
+          setTimeout(() => setPhase('done'), 300);
         }
       }, 14);
     } catch (err: unknown) {

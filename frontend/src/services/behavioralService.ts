@@ -1,9 +1,28 @@
 import { api } from './api';
 
-export interface BehavioralAnalysisResponse {
-  fullText: string;
+export type BiasSeverity = 'alta' | 'media' | 'baixa';
+
+export interface BehavioralBias {
+  nome: string;
+  descricao: string;
+  evidencias: string[];
+  severidade: BiasSeverity;
+  recomendacao: string;
+}
+
+export interface BehavioralInsights {
+  perfil: string;
+  gatilho_principal: string;
+  vieses: BehavioralBias[];
+}
+
+export interface BehavioralAnalysisStructuredResponse {
+  thinking: string;
+  insights: BehavioralInsights;
   transactionCount: number;
   periodDays: number;
+  model?: string;
+  fullText?: string;
 }
 
 export interface InterpretSimulationPayload {
@@ -21,14 +40,27 @@ export interface InterpretSimulationPayload {
   probExtra?: number;
 }
 
-export const behavioralService = {
-  analyze: async (): Promise<BehavioralAnalysisResponse> => {
-    const { data } = await api.post<BehavioralAnalysisResponse>('/behavioral/analyze');
-    return data;
-  },
+export interface InterpretSimulationResponse {
+  text: string;
+  model?: string;
+}
 
-  interpretSimulation: async (payload: InterpretSimulationPayload): Promise<string> => {
-    const { data } = await api.post<{ text: string }>('/behavioral/interpret-simulation', payload);
-    return data.text;
-  },
+const analyzeStructured = async (): Promise<BehavioralAnalysisStructuredResponse> => {
+  const { data } = await api.post<BehavioralAnalysisStructuredResponse>('/behavioral/analyze');
+  return data;
+};
+
+const interpretSimulationStructured = async (
+  payload: InterpretSimulationPayload,
+): Promise<InterpretSimulationResponse> => {
+  const { data } = await api.post<InterpretSimulationResponse>('/simulation/interpret', payload);
+  return data;
+};
+
+export const behavioralAnalysisApi = {
+  analyzeStructured,
+};
+
+export const simulationInterpretationApi = {
+  interpretStructured: interpretSimulationStructured,
 };

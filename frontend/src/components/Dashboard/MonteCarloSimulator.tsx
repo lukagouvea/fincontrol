@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Target, TrendingUp, Sparkles, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
-import { behavioralService } from '../../services/behavioralService';
+import { simulationInterpretationApi } from '../../services/behavioralService';
 import { Transaction, FixedIncome, FixedExpense, MonthlyVariation } from '../../types/FinanceTypes';
 import { parseDateInputToLocal } from '../../utils/dateUtils';
 import { isItemActiveInMonth, getActualFixedItemAmount } from '../../utils/financeUtils';
@@ -571,7 +571,7 @@ export const MonteCarloSimulator: React.FC<MonteCarloSimulatorProps> = ({
     setAiText('');
 
     try {
-      const full = await behavioralService.interpretSimulation({
+      const result = await simulationInterpretationApi.interpretStructured({
         meta: goal,
         prazo,
         sobra: monthlySavings,
@@ -585,6 +585,8 @@ export const MonteCarloSimulator: React.FC<MonteCarloSimulatorProps> = ({
         extra: extra > 0 ? extra : undefined,
         probExtra: extra > 0 && res.whatIfProb != null ? res.whatIfProb : undefined,
       });
+
+      const full = result.text;
 
       if (!full) { setAiPhase('done'); setAiText('Sem resposta do modelo.'); return; }
 

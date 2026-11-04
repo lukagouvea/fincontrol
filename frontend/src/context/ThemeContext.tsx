@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 
 type Theme = "light" | "dark";
@@ -18,17 +19,33 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [preference, setPreference] = useState<Theme | null>(() => {
     try {
       const saved = localStorage.getItem("theme");
       if (saved === "light" || saved === "dark") return saved;
     } catch {
       /* Storage can be disabled in a private browser. */
     }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return null;
   });
+  const [systemTheme, setSystemTheme] = useState<Theme>(() =>
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
+  );
+  const theme = preference ?? systemTheme;
+
+  useEffect(() => {
+    if (preference !== null) return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const updateSystemTheme = () => {
+      setSystemTheme(media.matches ? "dark" : "light");
+    };
+    updateSystemTheme();
+    media.addEventListener("change", updateSystemTheme);
+    return () => media.removeEventListener("change", updateSystemTheme);
+  }, [preference]);
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
@@ -36,18 +53,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", theme === "dark" ? "#151b18" : "#f5f6f5");
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setPreference(nextTheme);
     try {
-      localStorage.setItem("theme", theme);
+      localStorage.setItem("theme", nextTheme);
     } catch {
       /* The selected theme still applies without persistence. */
     }
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
-
-  const value = useMemo(() => ({ theme, toggleTheme }), [theme]);
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

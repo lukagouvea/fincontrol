@@ -1,14 +1,25 @@
-import React, { useEffect, useState, createContext, useContext, useMemo } from 'react';
-import { User, LoginCredentials, SignupCredentials } from '../types/AuthTypes';
-import { authService } from '../services/authService';
+import React, {
+  useEffect,
+  useState,
+  createContext,
+  useContext,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
+import { User, LoginCredentials, SignupCredentials } from "../types/AuthTypes";
+import { authService } from "../services/authService";
+import { useQueryClient } from "@tanstack/react-query";
 
 type AuthContextType = {
   currentUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean; // Adicionado estado de loading global
+  sessionVersion: number;
+  isCurrentSession: (version: number) => boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,12 +27,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const queryClient = useQueryClient();
+  const activeSession = useRef(0);
+  const [sessionVersion, setSessionVersion] = useState(0);
+  const isCurrentSession = useCallback(
+    (version: number) => activeSession.current === version,
+    [],
+  );
+  const resetSessionCache = () => {
+    activeSession.current += 1;
+    setSessionVersion(activeSession.current);
+    queryClient.clear();
+  };
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Começa true para verificar localStorage
@@ -47,12 +72,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
       const { user } = await authService.login(credentials);
-      
+      resetSessionCache();
+
       // Atualiza estado
       setCurrentUser(user);
       setIsAuthenticated(true);
@@ -67,7 +92,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const { user } = await authService.signup(credentials);
-      
+      resetSessionCache();
+
       setCurrentUser(user);
       setIsAuthenticated(true);
     } catch (error) {
@@ -77,8 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    authService.logout(); // Chama o serviço (fire and forget)
+  const logout = async () => {
+    await authService.logout();
+    resetSessionCache();
     setCurrentUser(null);
     setIsAuthenticated(false);
   };
@@ -88,11 +115,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       currentUser,
       isAuthenticated,
       isLoading,
+      sessionVersion,
+      isCurrentSession,
       login,
       signup,
-      logout
+      logout,
     }),
-    [currentUser, isAuthenticated, isLoading]
+    [currentUser, isAuthenticated, isLoading, sessionVersion, isCurrentSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

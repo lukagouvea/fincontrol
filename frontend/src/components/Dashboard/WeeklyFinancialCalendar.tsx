@@ -1,28 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react';
-import { Transaction, VariableExpense, Category } from '../../types/FinanceTypes';
-import { areSameDay, getEndOfWeek, getStartOfWeek } from '../../utils/dateUtils';
+import React, { useEffect, useState } from "react";
+import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
+import {
+  Transaction,
+  VariableExpense,
+  Category,
+} from "../../types/FinanceTypes";
+import {
+  areSameDay,
+  getEndOfWeek,
+  getStartOfWeek,
+} from "../../utils/dateUtils";
 type WeeklyFinancialCalendarProps = {
   onAddExpense?: (date: Date) => void;
   transactions: Transaction[];
   categories: Category[];
   managementDaily?: number;
 };
-export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = ({
-  onAddExpense,
-  transactions,
-  categories,
-  managementDaily
-}) => {
+export const WeeklyFinancialCalendar: React.FC<
+  WeeklyFinancialCalendarProps
+> = ({ onAddExpense, transactions, categories, managementDaily }) => {
   // Mês real atual (de hoje) — o usuário não pode navegar para fora dele
   const currentMonthRef = new Date();
-  const currentMonthStart = new Date(currentMonthRef.getFullYear(), currentMonthRef.getMonth(), 1);
+  const currentMonthStart = new Date(
+    currentMonthRef.getFullYear(),
+    currentMonthRef.getMonth(),
+    1,
+  );
   currentMonthStart.setHours(0, 0, 0, 0);
-  const currentMonthEnd = new Date(currentMonthRef.getFullYear(), currentMonthRef.getMonth() + 1, 0);
+  const currentMonthEnd = new Date(
+    currentMonthRef.getFullYear(),
+    currentMonthRef.getMonth() + 1,
+    0,
+  );
   currentMonthEnd.setHours(23, 59, 59, 999);
 
   // State for tracking the current week and selected day
-  const [weekStart, setWeekStart] = useState<Date>(() => getStartOfWeek(new Date()));
+  const [weekStart, setWeekStart] = useState<Date>(() =>
+    getStartOfWeek(new Date()),
+  );
   const [weekDays, setWeekDays] = useState<Date[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
@@ -41,8 +56,20 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     return candidateStart;
   };
 
-  const canGoPrev = getEndOfWeek(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() - 7)) >= currentMonthStart;
-  const canGoNext = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 7) <= currentMonthEnd;
+  const canGoPrev =
+    getEndOfWeek(
+      new Date(
+        weekStart.getFullYear(),
+        weekStart.getMonth(),
+        weekStart.getDate() - 7,
+      ),
+    ) >= currentMonthStart;
+  const canGoNext =
+    new Date(
+      weekStart.getFullYear(),
+      weekStart.getMonth(),
+      weekStart.getDate() + 7,
+    ) <= currentMonthEnd;
 
   // Generate the days for the current week whenever weekStart changes
   useEffect(() => {
@@ -84,18 +111,20 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     setWeekStart(clampWeekStartToCurrentMonth(newStart));
     setSelectedDay(null);
   };
-  
+
   // Date formatting functions
   const formatMonthYear = (date: Date): string => {
-    return date.toLocaleDateString('pt-BR', {
-      month: 'long',
-      year: 'numeric'
+    return date.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
     });
   };
   const formatDayOfWeek = (date: Date): string => {
-    return date.toLocaleDateString('pt-BR', {
-      weekday: 'short'
-    }).slice(0, 3);
+    return date
+      .toLocaleDateString("pt-BR", {
+        weekday: "short",
+      })
+      .slice(0, 3);
   };
   const formatDayOfMonth = (date: Date): string => {
     return date.getDate().toString();
@@ -103,7 +132,11 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   // Check if a date is today
   const isToday = (date: Date): boolean => {
     const today = new Date();
-    return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
   };
   // Handle day click
   const handleDayClick = (day: Date) => {
@@ -119,32 +152,40 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   // Get expenses for a specific date
   const getExpensesForDate = (date: Date) => {
     // Filter variable expenses for this date
-    return transactions.filter(t => t.type=='expense' && !t.recurringRuleId).filter(t => areSameDay(t.date, date)).map(t => {
-      const expense = t as VariableExpense;
-      const category = categories.find(c => c.id === expense.categoryId);
-      return {
-        id: expense.id,
-        description: expense.description,
-        amount: expense.amount,
-        category: category?.name || 'Sem categoria',
-        categoryColor: category?.color || '#999'
-      };
-    });
+    return transactions
+      .filter((t) => t.type == "expense" && !t.recurringRuleId)
+      .filter((t) => areSameDay(t.date, date))
+      .map((t) => {
+        const expense = t as VariableExpense;
+        const category = categories.find((c) => c.id === expense.categoryId);
+        return {
+          id: expense.id,
+          description: expense.description,
+          amount: expense.amount,
+          category: category?.name || "Sem categoria",
+          categoryColor: category?.color || "#999",
+        };
+      });
   };
   // Get total expenses for a specific date
   const getTotalExpensesForDate = (date: Date): number => {
-    return transactions.filter(t => t.type=='expense' && !t.recurringRuleId).filter(t => areSameDay(t.date, date)).reduce((sum, t) => sum + t.amount, 0);
+    return transactions
+      .filter((t) => t.type == "expense" && !t.recurringRuleId)
+      .filter((t) => areSameDay(t.date, date))
+      .reduce((sum, t) => sum + t.amount, 0);
   };
 
   // Função Type Guard para identificar VariableExpense de forma segura
-  const isVariableExpense = (transaction: Transaction): transaction is VariableExpense => {
+  const isVariableExpense = (
+    transaction: Transaction,
+  ): transaction is VariableExpense => {
     // A propriedade 'isInstallment' só existe em VariableExpense no seu modelo
-    return transaction.type=='expense' && !transaction.recurringRuleId;
-  }
+    return transaction.type == "expense" && !transaction.recurringRuleId;
+  };
 
   const calculateWeeklyExpenses = (
     variableTransactions: Transaction[],
-    dateInWeek: Date
+    dateInWeek: Date,
   ): number => {
     // --- 1. Definir o intervalo da semana usando suas funções ---
     const weekStart = getStartOfWeek(dateInWeek);
@@ -153,15 +194,15 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
     // --- 2. Encontrar as DESPESAS VARIÁVEIS da semana ---
     const variableExpensesInWeek = variableTransactions
       .filter(isVariableExpense) // Usa sua função Type Guard
-      .filter(expense => {
+      .filter((expense) => {
         const expenseDate = new Date(expense.date);
         return expenseDate >= weekStart && expenseDate <= weekEnd;
       });
 
     // --- 3. Somar o total ---
     const weeklyTotal = variableExpensesInWeek.reduce(
-      (total, expense) => total + expense.amount, 
-      0
+      (total, expense) => total + expense.amount,
+      0,
     );
 
     return weeklyTotal;
@@ -170,159 +211,127 @@ export const WeeklyFinancialCalendar: React.FC<WeeklyFinancialCalendarProps> = (
   const weeklySpent = calculateWeeklyExpenses(transactions, weekStart);
 
   // Orçamento semanal: gerenciamento diário * quantidade de dias desta semana que pertencem ao mês atual
-  const daysInCurrentMonthThisWeek = weekDays.filter((d) => isInCurrentMonth(d)).length;
+  const daysInCurrentMonthThisWeek = weekDays.filter((d) =>
+    isInCurrentMonth(d),
+  ).length;
   const weeklyBudget = (managementDaily ?? 0) * daysInCurrentMonthThisWeek;
   const weeklySaldo = weeklyBudget - weeklySpent;
 
   // Format currency values
   const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value);
   };
-  return <div className="bg-white dark:bg-gray-800 p-6 rounded-lg mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="w-16"></div>
-        <h2 className="text-md font-medium text-gray-600 dark:text-gray-300">
-          {formatMonthYear(weekStart)}
-        </h2>
-        <div className="flex items-center space-x-2">
+  return (
+    <div className="weekly-calendar">
+      <div className="calendar-toolbar">
+        <p className="small subtle">{formatMonthYear(weekStart)}</p>
+        <div className="inline-actions">
           <button
+            className="icon-button"
+            aria-label="Semana anterior"
             onClick={goToPreviousWeek}
             disabled={!canGoPrev}
-            className={`p-2 rounded-full ${canGoPrev ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
           >
-            <ChevronLeftIcon size={16} />
+            <ChevronLeftIcon size={18} />
           </button>
-          <button onClick={goToCurrentWeek} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+          <button className="button button-ghost" onClick={goToCurrentWeek}>
             Hoje
           </button>
           <button
+            className="icon-button"
+            aria-label="Próxima semana"
             onClick={goToNextWeek}
             disabled={!canGoNext}
-            className={`p-2 rounded-full ${canGoNext ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed'}`}
           >
-            <ChevronRightIcon size={16} />
+            <ChevronRightIcon size={18} />
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-2">
-        {/* Day headers */}
-        {weekDays.map((day, index) => <div key={`header-${index}`} className="text-center text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-            {formatDayOfWeek(day)}
-          </div>)}
-        {/* Calendar days */}
-        {weekDays.map((day, index) => {
-        const expenses = getExpensesForDate(day);
-        const totalExpenses = getTotalExpensesForDate(day);
-        const isSelected = selectedDay && day.getTime() === selectedDay.getTime();
-        const isOutOfMonth = !isInCurrentMonth(day);
-        return <div
-              key={`day-${index}`}
-              className={`border rounded-lg p-2 h-[150px] overflow-hidden ${isOutOfMonth ? '' : 'cursor-pointer'} transition-all
-                ${isToday(day) ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-600'}
-                ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : ''}
-                ${isOutOfMonth ? 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 opacity-90' : 'hover:border-blue-300 hover:shadow-sm'}`}
-              onClick={isOutOfMonth ? undefined : () => handleDayClick(day)}
-              role={isOutOfMonth ? undefined : 'button'}
+      <div className="week-grid">
+        {weekDays.map((day) => {
+          const selected = selectedDay?.getTime() === day.getTime();
+          const spent = getTotalExpensesForDate(day);
+          return (
+            <button
+              key={day.toISOString()}
+              type="button"
+              className="week-day"
+              aria-pressed={selected}
+              aria-current={isToday(day) ? "date" : undefined}
+              disabled={!isInCurrentMonth(day)}
+              onClick={() => handleDayClick(day)}
+              aria-label={
+                day.toLocaleDateString("pt-BR") +
+                ", " +
+                formatCurrency(spent) +
+                " em despesas"
+              }
             >
-              <div className="text-center mb-2">
-                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm ${isToday(day) ? 'bg-blue-600 text-white' : isSelected ? 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200' : 'text-gray-700 dark:text-gray-300'}`}>
-                  {formatDayOfMonth(day)}
-                </span>
-              </div>
-              {expenses.length > 0 ? <div className="space-y-2 overflow-hidden max-h-[100px]">
-                  {expenses.slice(0, 2).map(expense => <div key={expense.id} className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-600">
-                      <div className="font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {expense.description}
-                      </div>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-xs rounded-full px-1.5 py-0.5 truncate max-w-[70px]" style={{
-                  backgroundColor: `${expense.categoryColor}20`,
-                  color: expense.categoryColor
-                }}>
-                          {expense.category}
-                        </span>
-                        <span className="text-xs font-medium text-red-600">
-                          {formatCurrency(expense.amount)}
-                        </span>
-                      </div>
-                    </div>)}
-                  {expenses.length > 2 && <div className="text-xs font-medium text-gray-600 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-600">
-                      +{expenses.length - 2}{' '}
-                      {expenses.length - 2 === 1 ? 'despesa' : 'despesas'}
-                    </div>}
-                  {expenses.length > 1 && <div className="text-xs font-medium text-gray-600 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-600">
-                      Total:{' '}
-                      <span className="text-red-600">
-                        {formatCurrency(totalExpenses)}
-                      </span>
-                    </div>}
-                </div> : <div className="h-full flex items-center justify-center text-xs text-gray-400 dark:text-gray-500">
-                  {isOutOfMonth ? '' : 'Sem despesas'}
-                </div>}
-            </div>;
-      })}
+              <span>{formatDayOfWeek(day)}</span>
+              <strong>{formatDayOfMonth(day)}</strong>
+              <i className={spent > 0 ? "has-event" : ""} aria-hidden="true" />
+              <small>{spent ? formatCurrency(spent) : "—"}</small>
+            </button>
+          );
+        })}
       </div>
-      <div className="mt-4 flex items-start justify-end gap-10">
-        <div className="text-right">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total gasto na semana</h3>
-          <p>
-            <span className="font-medium text-red-600">
-              {formatCurrency(weeklySpent)}
-            </span>
-          </p>
+      <div className="week-totals">
+        <div>
+          <span>Total gasto na semana</span>
+          <strong>{formatCurrency(weeklySpent)}</strong>
         </div>
-
-        {typeof managementDaily === 'number' && (
-          <div className="text-right">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo da semana</h3>
-            <p>
-              <span className={`font-medium ${weeklySaldo < 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                {formatCurrency(weeklySaldo)}
-              </span>
-            </p>
+        {typeof managementDaily === "number" && (
+          <div>
+            <span>Saldo da semana</span>
+            <strong className={weeklySaldo < 0 ? "negative" : ""}>
+              {formatCurrency(weeklySaldo)}
+            </strong>
           </div>
         )}
       </div>
-
-
-      {/* Selected day details */}
-      {selectedDay && <div className="mt-6 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-medium text-blue-800 dark:text-blue-300">
-              Detalhes do dia {selectedDay.toLocaleDateString('pt-BR')}
+      {selectedDay && (
+        <div className="selected-week-day">
+          <div className="calendar-toolbar">
+            <h3>
+              {selectedDay.toLocaleDateString("pt-BR", {
+                day: "numeric",
+                month: "long",
+              })}
             </h3>
-            <button onClick={() => setSelectedDay(null)} className="text-blue-600 dark:text-blue-400 hover:text-blue-900">
-              <XIcon size={20} />
+            <button
+              className="icon-button"
+              aria-label="Fechar detalhes do dia"
+              onClick={() => setSelectedDay(null)}
+            >
+              <XIcon size={18} />
             </button>
           </div>
-          {getExpensesForDate(selectedDay).length > 0 ? <div className="space-y-3">
-              {getExpensesForDate(selectedDay).map(expense => <div key={expense.id} className="bg-white dark:bg-gray-800 p-3 rounded shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium dark:text-gray-100">{expense.description}</div>
-                      <div className="text-sm rounded px-2 py-0.5 inline-block mt-1" style={{
-                backgroundColor: `${expense.categoryColor}20`,
-                color: expense.categoryColor
-              }}>
-                        {expense.category}
-                      </div>
-                    </div>
-                    <div className="font-medium text-red-600">
-                      {formatCurrency(expense.amount)}
-                    </div>
-                  </div>
-                </div>)}
-            </div> : <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-              Nenhuma despesa registrada para este dia.
-            </p>}
-          <div className="mt-4">
-            <button className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => onAddExpense?.(selectedDay)} >
-              Adicionar nova despesa para este dia
-            </button>
-          </div>
-        </div>}
-    </div>;
+          {getExpensesForDate(selectedDay).length ? (
+            getExpensesForDate(selectedDay).map((expense) => (
+              <div className="agenda-item" key={expense.id}>
+                <div>
+                  <strong>{expense.description}</strong>
+                  <p className="small subtle">{expense.category}</p>
+                </div>
+                <span className="money money-negative">
+                  {formatCurrency(expense.amount)}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="small subtle">Nenhuma despesa neste dia.</p>
+          )}
+          <button
+            className="button button-secondary w-full mt-4"
+            onClick={() => onAddExpense?.(selectedDay)}
+          >
+            Adicionar despesa neste dia
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };

@@ -1,152 +1,219 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDownIcon, LogOutIcon, PiggyBankIcon, UserIcon, HelpCircle } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { useInvestmentSettings } from '../../hooks/useInvestmentSettings';
-import { useTutorial } from '../../hooks/useTutorial';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { LogOut, Moon, Sun, HelpCircle, UserRound } from "lucide-react";
+import CurrencyInput from "react-currency-input-field";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useInvestmentSettings } from "../../hooks/useInvestmentSettings";
+import { useTutorial } from "../../hooks/useTutorial";
+import { Dialog } from "../Shared/Dialog";
+import { Button, ErrorState, formatMoney, LoadingState } from "../Shared/UI";
 
-const formatBRL = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
-export const UserMenu: React.FC = () => {
+const AccountContext = createContext<() => void>(() => {});
+export function AccountProvider({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { investmentMonthlyAmount, setInvestmentMonthlyAmount } = useInvestmentSettings();
   const { startTutorial } = useTutorial();
-
-  const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState<string>(() => String(investmentMonthlyAmount));
-
-  const rootRef = useRef<HTMLDivElement | null>(null);
-
+  const investment = useInvestmentSettings();
+  const [amount, setAmount] = useState<string>();
+  const [numeric, setNumeric] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const dirty = useRef(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   useEffect(() => {
-    setInputValue(String(investmentMonthlyAmount));
-  }, [investmentMonthlyAmount]);
-
-  useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      if (!open) return;
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
+    if (open) {
+      dirty.current = false;
+      setAmount(String(investment.investmentMonthlyAmount));
+      setNumeric(investment.investmentMonthlyAmount);
+      setMessage("");
+      setError("");
+    }
+    // Opening starts a draft; server updates must not reset feedback or user edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-
-  const applyInvestment = () => {
-    setInvestmentMonthlyAmount(inputValue);
-  };
-
-  const handleInvestmentKeyDown = (e: any) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      applyInvestment();
+  useEffect(() => {
+    if (open && !dirty.current) {
+      setAmount(String(investment.investmentMonthlyAmount));
+      setNumeric(investment.investmentMonthlyAmount);
+    }
+  }, [open, investment.investmentMonthlyAmount]);
+  const save = async () => {
+    if (numeric === null || numeric < 0 || saving) return;
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      await investment.saveInvestment(numeric);
+      setMessage("Investimento mensal salvo.");
+    } catch {
+      setError("Não foi possível salvar. Seu preenchimento foi mantido.");
+    } finally {
+      setSaving(false);
     }
   };
-
   return (
-    <div className="relative" ref={rootRef}>
-      <button
-        id="user-menu-button"
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center space-x-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-2"
+    <AccountContext.Provider value={() => setOpen(true)}>
+      {children}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Conta e preferências"
+        variant="panel"
+        dismissible={!saving && !loggingOut}
       >
-        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-          <UserIcon className="w-5 h-5" />
-        </div>
-        <div className="hidden md:block text-left">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {currentUser?.name || 'Usuário'}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {currentUser?.email || 'usuario@exemplo.com'}
-          </p>
-        </div>
-        <ChevronDownIcon className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 z-50">
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Configurações</p>
-            </div>
-
-            <div id="investment-setting" className="flex items-start space-x-3">
-              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full">
-                <PiggyBankIcon className="w-4 h-4 text-gray-600 dark:text-gray-200" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Investimento mensal</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Define quanto você quer separar todo mês.</p>
-                <div className="mt-2 flex items-center space-x-2">
-                  <input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onBlur={applyInvestment}
-                    onKeyDown={handleInvestmentKeyDown}
-                    placeholder="0"
-                    className="w-full px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={applyInvestment}
-                    className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Salvar
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Atual: {formatBRL(investmentMonthlyAmount)}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-              <div>
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Tema</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Atual: {theme === 'dark' ? 'Escuro' : 'Claro'}</p>
-              </div>
-              <button
-                id="theme-toggle"
-                type="button"
-                onClick={toggleTheme}
-                className="px-3 py-2 text-sm rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                Alternar
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  startTutorial();
-                }}
-                className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30"
-              >
-                <HelpCircle className="w-4 h-4" />
-                <span>Ver Tutorial Novamente</span>
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  logout();
-                }}
-                className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm rounded-md bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
-              >
-                <LogOutIcon className="w-4 h-4" />
-                <span>Sair</span>
-              </button>
-            </div>
+        <div className="account-identity">
+          <span className="account-avatar">
+            {currentUser?.name?.slice(0, 1).toUpperCase()}
+          </span>
+          <div>
+            <strong>{currentUser?.name}</strong>
+            <p>{currentUser?.email}</p>
           </div>
         </div>
-      )}
-    </div>
+        <section className="account-section" id="investment-setting">
+          <h3>Investimento mensal</h3>
+          <p>
+            Valor reservado por padrão no seu planejamento. Você pode definir um
+            valor diferente para um mês em Relatórios.
+          </p>
+          {investment.isLoading ? (
+            <LoadingState />
+          ) : investment.isError ? (
+            <ErrorState retry={() => void investment.refetch()} />
+          ) : (
+            <>
+              <label className="sr-only" htmlFor="default-investment">
+                Investimento mensal padrão
+              </label>
+              <div className="inline-actions">
+                <CurrencyInput
+                  id="default-investment"
+                  value={amount}
+                  prefix="R$ "
+                  intlConfig={{ locale: "pt-BR", currency: "BRL" }}
+                  decimalsLimit={2}
+                  allowNegativeValue={false}
+                  inputMode="decimal"
+                  onValueChange={(value, _name, values) => {
+                    dirty.current = true;
+                    setAmount(value);
+                    setNumeric(values?.float ?? null);
+                    setMessage("");
+                  }}
+                />
+                <Button
+                  onClick={() => void save()}
+                  disabled={saving || loggingOut || numeric === null}
+                >
+                  {saving ? "Salvando…" : "Salvar investimento"}
+                </Button>
+              </div>
+              <p>Atual: {formatMoney(investment.investmentMonthlyAmount)}</p>
+            </>
+          )}
+          {message && (
+            <p className="notice notice-success" role="status">
+              {message}
+            </p>
+          )}
+          {error && <ErrorState message={error} />}
+        </section>
+        <section className="account-section">
+          <h3>Aparência</h3>
+          <div className="inline-actions">
+            <p>Tema {theme === "dark" ? "escuro" : "claro"}</p>
+            <Button id="theme-toggle" variant="secondary" onClick={toggleTheme}>
+              {theme === "dark" ? <Sun /> : <Moon />}
+              {theme === "dark" ? "Usar tema claro" : "Usar tema escuro"}
+            </Button>
+          </div>
+        </section>
+        <section className="account-section">
+          <Button
+            variant="secondary"
+            disabled={saving || loggingOut}
+            onClick={() => {
+              setOpen(false);
+              startTutorial();
+            }}
+          >
+            <HelpCircle />
+            Rever tutorial
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={loggingOut || saving}
+            onClick={async () => {
+              if (loggingOut || saving) return;
+              setLoggingOut(true);
+              setLogoutError("");
+              try {
+                await logout();
+                setOpen(false);
+              } catch {
+                setLogoutError(
+                  "Não foi possível sair da conta. Verifique a conexão e tente novamente.",
+                );
+              } finally {
+                setLoggingOut(false);
+              }
+            }}
+          >
+            <LogOut />
+            {loggingOut ? "Saindo…" : "Sair da conta"}
+          </Button>
+          {logoutError && <ErrorState message={logoutError} />}
+        </section>
+      </Dialog>
+    </AccountContext.Provider>
   );
-};
+}
+export function UserMenu({
+  placement = "header",
+  beforeOpen,
+}: {
+  placement?: "header" | "sidebar" | "more";
+  beforeOpen?: () => void;
+}) {
+  const open = useContext(AccountContext);
+  const { currentUser } = useAuth();
+  return (
+    <button
+      type="button"
+      id={placement === "header" ? "header-account-button" : undefined}
+      className={
+        placement === "header" ? "icon-button" : "nav-item w-full text-left"
+      }
+      aria-label={
+        placement === "header"
+          ? "Abrir conta e preferências"
+          : "Conta e preferências"
+      }
+      onClick={() => {
+        beforeOpen?.();
+        open();
+      }}
+    >
+      {placement === "header" ? (
+        <span className="account-avatar" aria-hidden="true">
+          {currentUser?.name?.slice(0, 1).toUpperCase()}
+        </span>
+      ) : (
+        <>
+          <UserRound size={18} />
+          <span>Conta e preferências</span>
+        </>
+      )}
+    </button>
+  );
+}

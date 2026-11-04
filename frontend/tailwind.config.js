@@ -1,6 +1,40 @@
 export default {
-  darkMode: 'class',
-  content: [
-  './index.html',
-  './src/**/*.{js,ts,jsx,tsx}'
-],}
+  darkMode: "class",
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        canvas: "var(--canvas)",
+        surface: "var(--surface)",
+        "surface-muted": "var(--surface-muted)",
+        control: "var(--control)",
+        ink: "var(--ink)",
+        secondary: "var(--secondary)",
+        muted: "var(--muted)",
+        line: "var(--line)",
+        accent: "var(--accent)",
+        negative: "var(--negative)",
+        "negative-soft": "var(--negative-soft)",
+        warning: "var(--warning)",
+        blue: {
+          50: "var(--accent-soft)",
+          100: "var(--accent-soft)",
+          200: "var(--accent-soft)",
+          300: "var(--accent)",
+          400: "var(--accent)",
+          500: "var(--accent)",
+          600: "var(--accent)",
+          700: "var(--accent-hover)",
+          800: "var(--accent)",
+          900: "var(--accent-soft)",
+        },
+      },
+      boxShadow: {
+        DEFAULT: "none",
+        sm: "none",
+        md: "none",
+        lg: "0 8px 32px rgb(0 0 0 / .08)",
+      },
+    },
+  },
+};

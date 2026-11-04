@@ -1,69 +1,141 @@
-import { useMemo } from 'react';
-import { useTransactions } from './useTransactions';
-import { useFixedExpenses, useFixedIncomes } from './useFixedTransactions';
-import { useMonthlyVariations } from './useMonthlyVariations';
-import { useCategories } from './useCategories';
-import { parseDateInputToLocal } from '../utils/dateUtils';
-import { isItemActiveInMonth, getActualFixedItemAmount } from '../utils/financeUtils';
-import { Transaction, FixedExpense, FixedIncome, MonthlyVariation, Category } from '../types/FinanceTypes';
+import { useMemo } from "react";
+import { useTransactions } from "./useTransactions";
+import { useFixedExpenses, useFixedIncomes } from "./useFixedTransactions";
+import { useMonthlyVariations } from "./useMonthlyVariations";
+import { useCategories } from "./useCategories";
+import { parseDateInputToLocal } from "../utils/dateUtils";
+import {
+  isItemActiveInMonth,
+  getActualFixedItemAmount,
+} from "../utils/financeUtils";
+import {
+  Transaction,
+  FixedExpense,
+  FixedIncome,
+  MonthlyVariation,
+  Category,
+} from "../types/FinanceTypes";
 
 export const useDashboardFinance = () => {
   // 1. Busca de Dados
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useTransactions();
-  const { data: fixedExpenses = [], isLoading: isLoadingFixedExpenses } = useFixedExpenses();
-  const { data: fixedIncomes = [], isLoading: isLoadingFixedIncomes } = useFixedIncomes();
-  const { data: monthlyVariations = [], isLoading: isLoadingMonthlyVariations } = useMonthlyVariations();
-  const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
+  const transactionQuery = useTransactions();
+  const { data: transactions = [], isLoading: isLoadingTransactions } =
+    transactionQuery;
+  const expenseQuery = useFixedExpenses();
+  const { data: fixedExpenses = [], isLoading: isLoadingFixedExpenses } =
+    expenseQuery;
+  const incomeQuery = useFixedIncomes();
+  const { data: fixedIncomes = [], isLoading: isLoadingFixedIncomes } =
+    incomeQuery;
+  const variationQuery = useMonthlyVariations();
+  const {
+    data: monthlyVariations = [],
+    isLoading: isLoadingMonthlyVariations,
+  } = variationQuery;
+  const categoryQuery = useCategories();
+  const { data: categories = [], isLoading: isLoadingCategories } =
+    categoryQuery;
 
   // 2. Estado de Carregamento Geral
-  const isLoading = isLoadingCategories || isLoadingFixedExpenses || isLoadingTransactions || isLoadingFixedIncomes || isLoadingMonthlyVariations;
+  const isLoading =
+    isLoadingCategories ||
+    isLoadingFixedExpenses ||
+    isLoadingTransactions ||
+    isLoadingFixedIncomes ||
+    isLoadingMonthlyVariations;
 
   // 3. Definição da Data (Mês Atual)
   const selectedMonth = new Date().getMonth();
   const selectedYear = new Date().getFullYear();
-  const selectedDateObject = useMemo(() => new Date(selectedYear, selectedMonth, 1), [selectedMonth, selectedYear]);
+  const selectedDateObject = useMemo(
+    () => new Date(selectedYear, selectedMonth, 1),
+    [selectedMonth, selectedYear],
+  );
 
   // 4. A Grande Lógica de Cálculo (Movida do componente para cá)
   const summary = useMemo(() => {
     const anoAtual = selectedDateObject.getFullYear();
     const mesAtual = selectedDateObject.getMonth();
 
-    const getVariableTransactions = (type: 'income' | 'expense') => {
+    const getVariableTransactions = (type: "income" | "expense") => {
       return (transactions as Transaction[]).filter((t: Transaction) => {
-        const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
+        const transactionDate = parseDateInputToLocal(t.date.split("T")[0]);
         const isCorrectType = t.type === type;
-        const isSameMonth = transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
+        const isSameMonth =
+          transactionDate.getFullYear() === anoAtual &&
+          transactionDate.getMonth() === mesAtual;
         const isNotFixedVariation = !t.recurringRuleId;
         return isCorrectType && isSameMonth && isNotFixedVariation;
       });
     };
 
-    const variableIncomes = getVariableTransactions('income');
-    const variableExpenses = getVariableTransactions('expense');
+    const variableIncomes = getVariableTransactions("income");
+    const variableExpenses = getVariableTransactions("expense");
 
-  const monthlyVariableIncome = variableIncomes.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
-  const monthlyVariableExpense = variableExpenses.reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+    const monthlyVariableIncome = variableIncomes.reduce(
+      (sum: number, t: Transaction) => sum + t.amount,
+      0,
+    );
+    const monthlyVariableExpense = variableExpenses.reduce(
+      (sum: number, t: Transaction) => sum + t.amount,
+      0,
+    );
 
     const monthlyFixedIncome = (fixedIncomes as FixedIncome[])
-      .filter((income: FixedIncome) => isItemActiveInMonth(income, selectedDateObject))
-      .reduce((sum: number, income: FixedIncome) => sum + getActualFixedItemAmount(income.id, 'income', anoAtual, mesAtual, income.amount, monthlyVariations as MonthlyVariation[]), 0);
+      .filter((income: FixedIncome) =>
+        isItemActiveInMonth(income, selectedDateObject),
+      )
+      .reduce(
+        (sum: number, income: FixedIncome) =>
+          sum +
+          getActualFixedItemAmount(
+            income.id,
+            "income",
+            anoAtual,
+            mesAtual,
+            income.amount,
+            monthlyVariations as MonthlyVariation[],
+          ),
+        0,
+      );
 
     const monthlyFixedExpense = (fixedExpenses as FixedExpense[])
-      .filter((expense: FixedExpense) => isItemActiveInMonth(expense, selectedDateObject))
-      .reduce((sum: number, expense: FixedExpense) => sum + getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual, expense.amount, monthlyVariations as MonthlyVariation[]), 0);
+      .filter((expense: FixedExpense) =>
+        isItemActiveInMonth(expense, selectedDateObject),
+      )
+      .reduce(
+        (sum: number, expense: FixedExpense) =>
+          sum +
+          getActualFixedItemAmount(
+            expense.id,
+            "expense",
+            anoAtual,
+            mesAtual,
+            expense.amount,
+            monthlyVariations as MonthlyVariation[],
+          ),
+        0,
+      );
 
     const monthlyInstallmentExpense = (transactions as Transaction[])
-      .filter((t: Transaction) => t.type === 'expense' && ('installmentInfo' in t && !!t.installmentInfo))
+      .filter(
+        (t: Transaction) =>
+          t.type === "expense" && "installmentInfo" in t && !!t.installmentInfo,
+      )
       .filter((t: Transaction) => {
-        const transactionDate = parseDateInputToLocal(t.date.split('T')[0]);
-        return transactionDate.getFullYear() === anoAtual && transactionDate.getMonth() === mesAtual;
+        const transactionDate = parseDateInputToLocal(t.date.split("T")[0]);
+        return (
+          transactionDate.getFullYear() === anoAtual &&
+          transactionDate.getMonth() === mesAtual
+        );
       })
       .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
     const totalIncome = monthlyVariableIncome + monthlyFixedIncome;
     const totalExpense = monthlyVariableExpense + monthlyFixedExpense;
     const balance = totalIncome - totalExpense;
-    const monthlyCommittedExpense = monthlyFixedExpense + monthlyInstallmentExpense;
+    const monthlyCommittedExpense =
+      monthlyFixedExpense + monthlyInstallmentExpense;
     const monthlyMonthExpense = totalExpense - monthlyCommittedExpense;
 
     return {
@@ -76,9 +148,15 @@ export const useDashboardFinance = () => {
       monthlyInstallmentExpense,
       monthlyCommittedExpense,
       monthlyMonthExpense,
-      balance
+      balance,
     };
-  }, [selectedDateObject, transactions, fixedIncomes, fixedExpenses, monthlyVariations]);
+  }, [
+    selectedDateObject,
+    transactions,
+    fixedIncomes,
+    fixedExpenses,
+    monthlyVariations,
+  ]);
 
   // --- Regras de exibição na Dashboard ---
   // Parceladas (installments) não devem aparecer em nenhum widget,
@@ -87,7 +165,9 @@ export const useDashboardFinance = () => {
   // - transactions: original (com parceladas) -> usado por widgets permitidos
   // - transactionsWithoutInstallments: filtrado -> usado pelos demais widgets
   const transactionsWithoutInstallments = useMemo(() => {
-    return (transactions as Transaction[]).filter((t: Transaction) => !('installmentInfo' in t && !!t.installmentInfo));
+    return (transactions as Transaction[]).filter(
+      (t: Transaction) => !("installmentInfo" in t && !!t.installmentInfo),
+    );
   }, [transactions]);
 
   // Retorna tudo o que o componente precisa
@@ -99,7 +179,24 @@ export const useDashboardFinance = () => {
     monthlyVariations: monthlyVariations as MonthlyVariation[],
     categories: categories as Category[],
     isLoading,
+    isError: [
+      transactionQuery,
+      expenseQuery,
+      incomeQuery,
+      variationQuery,
+      categoryQuery,
+    ].some((query) => query.isError),
+    refetch: () =>
+      Promise.all(
+        [
+          transactionQuery,
+          expenseQuery,
+          incomeQuery,
+          variationQuery,
+          categoryQuery,
+        ].map((query) => query.refetch()),
+      ),
     selectedDateObject,
-    summary // Contém income, expense, balance, etc.
+    summary, // Contém income, expense, balance, etc.
   };
 };

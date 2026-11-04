@@ -18,7 +18,7 @@ export const authMiddleware = createMiddleware<Env>(async (c, next) => {
 
   try {
     const secret = process.env.JWT_SECRET || 'segredo_padrao';
-    const payload = await verify(token, secret);
+    const payload = await verify(token, secret, 'HS256');
 
     // Injeta o ID do usuário no contexto da requisição
     // Assim, as próximas rotas podem usar c.var.userId

@@ -1,113 +1,139 @@
-// src/components/Shared/VariationModal.tsx
+import { useEffect, useId, useState } from "react";
+import CurrencyInput from "react-currency-input-field";
+import type { MonthlyVariation } from "../../types/FinanceTypes";
+import { Dialog } from "./Dialog";
+import { Button, ErrorState, MonthPicker } from "./UI";
 
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { XIcon } from 'lucide-react';
-import CurrencyInput from 'react-currency-input-field';
-
-type VariationModalProps = {
+type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { year: number, month: number, amount: number }) => void;
+  onSubmit: (data: {
+    year: number;
+    month: number;
+    amount: number;
+  }) => void | Promise<void>;
   itemDescription: string;
   defaultAmount: number;
-  existingVariations: any[];
-  formatValue: (value: number) => string;
+  existingVariations: MonthlyVariation[];
+  formatValue: (amount: number) => string;
   formatMonthYear: (month: number, year: number) => string;
 };
-
-export const VariationModal: React.FC<VariationModalProps> = ({ isOpen, onClose, onSubmit, itemDescription, defaultAmount, existingVariations, formatValue, formatMonthYear }) => {
-  const [year, setYear] = useState(new Date().getFullYear());
+export function VariationModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  itemDescription,
+  defaultAmount,
+  existingVariations,
+  formatValue,
+  formatMonthYear,
+}: Props) {
+  const id = useId();
   const [month, setMonth] = useState(new Date().getMonth());
-  const [amount, setAmount] = useState<string | undefined>();
-  const [numericAmount, setNumericAmount] = useState<number | null>(null);
-
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [amount, setAmount] = useState<string>();
+  const [numeric, setNumeric] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   useEffect(() => {
     if (isOpen) {
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth();
-      const currentVariation = existingVariations.find(v => v.year === currentYear && v.month === currentMonth);
-      const initialAmount = currentVariation ? currentVariation.amount : defaultAmount;
-      
-      setYear(currentYear);
-      setMonth(currentMonth);
-      setNumericAmount(initialAmount);
-      setAmount(initialAmount.toString());
+      setMonth(new Date().getMonth());
+      setYear(new Date().getFullYear());
+      setError("");
     }
-  }, [isOpen, defaultAmount, existingVariations]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const value =
+      existingVariations.find((v) => v.year === year && v.month === month)
+        ?.amount ?? defaultAmount;
+    setAmount(String(value));
+    setNumeric(value);
+    // Reset the value only when changing the selected period, not on a background refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, month, year, defaultAmount]);
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (numericAmount === null) return;
-    onSubmit({ year, month, amount: numericAmount });
+    if (busy) return;
+    if (numeric === null || numeric < 0) {
+      setError("Informe um valor válido.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await onSubmit({ year, month, amount: numeric });
+    } catch {
+      setError(
+        "Não foi possível salvar a variação. Seu preenchimento foi mantido.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
-
-  if (!isOpen) return null;
-
-  const modalRoot = document.getElementById('modal-root');
-  if (!modalRoot) return null;
-
-  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
-
-  return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-60 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div className="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 m-0">Variação Mensal para {itemDescription}</h3>
-          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"><XIcon className="w-5 h-5" /></button>
+  return (
+    <Dialog
+      dismissible={!busy}
+      open={isOpen}
+      onClose={onClose}
+      title="Variação mensal"
+      description={itemDescription}
+      footer={
+        <>
+          <Button variant="secondary" disabled={busy} onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={id} disabled={busy}>
+            {busy ? "Salvando…" : "Salvar variação"}
+          </Button>
+        </>
+      }
+    >
+      <form id={id} className="form-stack" onSubmit={submit}>
+        {error && <ErrorState message={error} />}
+        <MonthPicker
+          month={month}
+          year={year}
+          onChange={(m, y) => {
+            setMonth(m);
+            setYear(y);
+          }}
+        />
+        <div className="field">
+          <label htmlFor={id + "-amount"}>Valor para este mês (R$)</label>
+          <CurrencyInput
+            id={id + "-amount"}
+            value={amount}
+            onValueChange={(value, _name, values) => {
+              setAmount(value);
+              setNumeric(values?.float ?? null);
+            }}
+            prefix="R$ "
+            intlConfig={{ locale: "pt-BR", currency: "BRL" }}
+            decimalScale={2}
+            decimalsLimit={2}
+            inputMode="decimal"
+            allowNegativeValue={false}
+          />
+          <p className="field-hint">
+            Padrão: {formatValue(defaultAmount)}. Use o mesmo valor para remover
+            a variação do mês.
+          </p>
         </div>
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
-            <div className="flex space-x-4">
-              <div className="flex-1">
-                <label htmlFor="variationMonth" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mês</label>
-                <select id="variationMonth" value={month} onChange={e => setMonth(parseInt(e.target.value))} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                  {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                </select>
-              </div>
-              <div className="flex-1">
-                <label htmlFor="variationYear" className="block text-sm font-medium text-gray-700">Ano</label>
-                <select id="variationYear" value={year} onChange={e => setYear(parseInt(e.target.value))} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                  {years.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between">
-                <label htmlFor="variationAmount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor para este mês (R$)</label>
-                <span className="text-xs text-gray-500 dark:text-gray-400">Padrão: {formatValue(defaultAmount)}</span>
-              </div>
-              <CurrencyInput id="variationAmount" name="variationAmount" placeholder="R$ 0,00" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required value={amount} onValueChange={(value, name, values) => { setAmount(value); setNumericAmount(values?.float ?? null); }} prefix="R$ " intlConfig={{ locale: 'pt-BR', currency: 'BRL' }} decimalScale={2} allowNegativeValue={false} />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Se o valor for igual ao padrão, a variação será removida.</p>
-            </div>
-            {existingVariations.length > 0 && <div>
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Variações Existentes</h4>
-              <div className="max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Período</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {existingVariations.map((v: any) => <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-4 py-2 whitespace-nowrap text-xs dark:text-gray-300">{formatMonthYear(v.month, v.year)}</td>
-                      <td className="px-4 py-2 whitespace-nowrap text-xs font-medium text-blue-600">{formatValue(v.amount)}</td>
-                    </tr>)}
-                  </tbody>
-                </table>
-              </div>
-            </div>}
+        {existingVariations.length > 0 && (
+          <div className="variation-history">
+            <h3>Valores por mês</h3>
+            {[...existingVariations]
+              .sort((a, b) => b.year - a.year || b.month - a.month)
+              .map((v) => (
+                <p key={v.id}>
+                  <span>{formatMonthYear(v.month, v.year)}</span>
+                  <strong>{formatValue(v.amount)}</strong>
+                </p>
+              ))}
           </div>
-          <div className="mt-6 flex justify-end">
-            <button type="button" onClick={onClose} className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600">Cancelar</button>
-            <button type="submit" className="ml-3 bg-blue-600 text-white py-2 px-4 rounded-md">Salvar Variação</button>
-          </div>
-        </form>
-      </div>
-    </div>,
-    modalRoot
+        )}
+      </form>
+    </Dialog>
   );
-};
+}

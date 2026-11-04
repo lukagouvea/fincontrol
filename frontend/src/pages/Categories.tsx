@@ -1,255 +1,291 @@
-import React, { useState } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, Loader2 } from 'lucide-react';
-import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from '../hooks/useCategories';
-import { Category } from '../types/FinanceTypes'
-import ReactDOM from 'react-dom';
-import { ConfirmationModal } from '../components/Shared/ConfirmationModal';
-import { Skeleton } from '../components/Shared/Skeleton';
+import { useId, useState } from "react";
+import { Plus, Pencil, Trash2, Check } from "lucide-react";
+import {
+  useCategories,
+  useAddCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from "../hooks/useCategories";
+import type { Category } from "../types/FinanceTypes";
+import { Dialog } from "../components/Shared/Dialog";
+import { ConfirmationModal } from "../components/Shared/ConfirmationModal";
+import { Tabs } from "../components/Shared/Tabs";
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageTitle,
+} from "../components/Shared/UI";
 
-
-
-export const Categories: React.FC = () => {
-  const { data: categories = [], isLoading, isError } = useCategories();
-
-  const addMutation = useAddCategory();
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
-
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
-
-  const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  // Estado para o formulário
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [color, setColor] = useState('#F44336');
-  // Filtrar categorias pelo tipo ativo
-  const filteredCategories = categories.filter(cat => cat.type === activeTab && cat.active !== false);
-  // Cores predefinidas
-  const predefinedColors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#607D8B' // Blue Grey
-  ];
-  const openModal = (category?: Category) => {
-    if (category) {
-      setEditingCategory(category);
-      setName(category.name);
-      setDescription(category.description || '');
-      setType(category.type);
-      setColor(category.color || '#F44336');
-    } else {
-      setEditingCategory(null);
-      setName('');
-      setDescription('');
-      setType(activeTab);
-      setColor('#F44336');
+const colors = [
+  ["#F44336", "Vermelho"],
+  ["#E91E63", "Rosa"],
+  ["#9C27B0", "Púrpura"],
+  ["#673AB7", "Violeta"],
+  ["#3F51B5", "Índigo"],
+  ["#2196F3", "Azul"],
+  ["#03A9F4", "Azul claro"],
+  ["#00BCD4", "Ciano"],
+  ["#009688", "Verde petróleo"],
+  ["#4CAF50", "Verde"],
+  ["#8BC34A", "Verde claro"],
+  ["#CDDC39", "Lima"],
+  ["#FFEB3B", "Amarelo"],
+  ["#FFC107", "Âmbar"],
+  ["#FF9800", "Laranja"],
+  ["#FF5722", "Terracota"],
+  ["#795548", "Marrom"],
+  ["#607D8B", "Ardósia"],
+];
+export function Categories() {
+  const query = useCategories();
+  const create = useAddCategory(),
+    update = useUpdateCategory(),
+    remove = useDeleteCategory();
+  const [tab, setTab] = useState<"expense" | "income">("expense");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState<Category | null>(null);
+  const [name, setName] = useState(""),
+    [description, setDescription] = useState("");
+  const [type, setType] = useState<"expense" | "income">("expense");
+  const [color, setColor] = useState("#009688");
+  const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const id = useId();
+  const busy = create.isPending || update.isPending;
+  const items = (query.data || []).filter(
+    (c) => c.type === tab && c.active !== false,
+  );
+  const openForm = (item?: Category) => {
+    setEditing(item || null);
+    setName(item?.name || "");
+    setDescription(item?.description || "");
+    setType(item?.type || tab);
+    setColor(item?.color || "#009688");
+    setError("");
+    setNameError("");
+    setOpen(true);
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy) return;
+    if (!name.trim()) {
+      setNameError("Informe o nome da categoria.");
+      document.getElementById(id + "-name")?.focus();
+      return;
     }
-    setIsModalOpen(true);
-  };
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingCategory(null);
-  };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name) return;
-
-    // Verifica qual mutação está rodando
-    const isSaving = addMutation.isPending || updateMutation.isPending;
-    if (isSaving) return;
-
-    if (editingCategory) {
-      updateMutation.mutate(
-        { id: editingCategory.id, data: { name, description, color } },
-        { onSuccess: closeModal } // Fecha o modal só se der certo
+    setNameError("");
+    setError("");
+    try {
+      if (editing)
+        await update.mutateAsync({
+          id: editing.id,
+          data: { name: name.trim(), description: description.trim(), color },
+        });
+      else
+        await create.mutateAsync({
+          name: name.trim(),
+          description: description.trim(),
+          color,
+          type,
+          active: true,
+        });
+      setOpen(false);
+    } catch {
+      setError(
+        "Não foi possível salvar a categoria. Seu preenchimento foi mantido.",
       );
-    } else {
-      addMutation.mutate(
-        { name, type, description, color, active: true },
-        { onSuccess: closeModal }
-      );
     }
   };
-
-  const confirmationMessage = "Você tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.";
-
-
-  const handleRequestDelete = (category: Category) => {
-    setCategoryToDelete(category);
-  };
-  
-  const handleCancelDelete = () => {
-    setCategoryToDelete(null);
-  };
-  
-  const handleConfirmDelete = () => {
-    if (categoryToDelete) {
-      deleteMutation.mutate(categoryToDelete.id);
-      setCategoryToDelete(null);
-    }
-  };
-
-
-  const modalRoot = document.getElementById('modal-root');
-  if (!modalRoot) return null;
-
-
-  if (isError) {
-    return <div className="text-red-500">Erro ao carregar categorias. Tente recarregar a página.</div>;
-  }
-
+  const count = (kind: string) =>
+    (query.data || []).filter((c) => c.type === kind && c.active !== false)
+      .length;
   return (
-    <div id="category-container" className="space-y-6">
-      {/* Header sempre visível */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Categorias</h1>
-        <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm">
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Nova Categoria
-        </button>
-      </div>
-      
-      {/* Tabs sempre visíveis */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button onClick={() => setActiveTab('expense')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'expense' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}`}>
-            Categorias de Despesa
-          </button>
-          <button onClick={() => setActiveTab('income')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'income' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'}`}>
-            Categorias de Renda
-          </button>
-        </nav>
-      </div>
-
-      {/* Lista de categorias com Skeleton */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        {isLoading ? (
-          // 2. Estado de Loading: Renderiza 5 itens falsos
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {Array.from({ length:  6}).map((_, index) => (
-              <li key={`skeleton-${index}`} className="px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center w-full">
-                  <Skeleton className="w-4 h-4 rounded-full mr-3 shrink-0" /> {/* Bola da cor */}
-                  <div className="space-y-2 w-full max-w-md">
-                     <Skeleton className="h-4 w-1/3 rounded" /> {/* Nome */}
-                  </div>
+    <div id="category-container" className="page-stack">
+      <PageTitle
+        title="Categorias"
+        actions={
+          <Button onClick={() => openForm()}>
+            <Plus />
+            Nova categoria
+          </Button>
+        }
+      />
+      <Tabs
+        label="Tipos de categoria"
+        value={tab}
+        onChange={(value) => setTab(value as "expense" | "income")}
+        panelId="category-list"
+        items={[
+          { value: "expense", label: "Despesas (" + count("expense") + ")" },
+          { value: "income", label: "Receitas (" + count("income") + ")" },
+        ]}
+      />
+      <div
+        role="tabpanel"
+        id="category-list"
+        aria-labelledby={"category-list-tab-" + tab}
+      >
+        {query.isError ? (
+          <ErrorState retry={() => void query.refetch()} />
+        ) : query.isLoading ? (
+          <LoadingState />
+        ) : items.length ? (
+          <ul className="category-list">
+            {items.map((item) => (
+              <li key={item.id}>
+                <span
+                  className="category-swatch"
+                  style={{ backgroundColor: item.color }}
+                  aria-hidden="true"
+                />
+                <div className="category-copy">
+                  <h2>{item.name}</h2>
+                  {item.description && <p>{item.description}</p>}
                 </div>
-                <div className="flex items-center space-x-2 pl-4">
-                  <Skeleton className="w-5 h-5 rounded" /> {/* Botão editar */}
-                  <Skeleton className="w-5 h-5 rounded" /> {/* Botão excluir */}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : filteredCategories.length > 0 ? (
-          // 3. Estado com Dados Reais
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredCategories.map(category => (
-              <li key={category.id} className="px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-4 h-4 rounded-full mr-3 shrink-0" style={{ backgroundColor: category.color || '#888888' }}></div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</h3>
-                    {category.description && <p className="text-sm text-gray-500 dark:text-gray-400">{category.description}</p>}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button onClick={() => openModal(category)} className="text-blue-600 hover:text-blue-900">
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => handleRequestDelete(category)} 
-                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                    disabled={deleteMutation.isPending}
+                <div className="inline-actions">
+                  <button
+                    className="icon-button"
+                    aria-label={"Editar " + item.name}
+                    onClick={() => openForm(item)}
                   >
-                    <TrashIcon className="w-5 h-5" />
+                    <Pencil size={17} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    aria-label={"Excluir " + item.name}
+                    onClick={() => setDeleting(item)}
+                  >
+                    <Trash2 size={17} />
                   </button>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          // 4. Estado Vazio
-          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-            Nenhuma categoria de {activeTab === 'expense' ? 'despesa' : 'renda'} cadastrada.
-          </div>
+          <EmptyState
+            title="Nenhuma categoria cadastrada"
+            description="Adicione uma categoria para classificar seus lançamentos."
+            action={
+              <Button variant="secondary" onClick={() => openForm()}>
+                Adicionar categoria
+              </Button>
+            }
+          />
         )}
       </div>
-
-      {/* Modal (Mantido igual) */}
-      {isModalOpen && modalRoot && ReactDOM.createPortal(
-        <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="px-6 py-4 border-b dark:border-gray-700">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
-              </h3>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6">
-              {/* ... form content ... (mantive o conteúdo interno do form igual para não extender demais a resposta, mas o código original deve ser colado aqui) */}
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
-                  <input type="text" id="name" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" required />
-                </div>
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">Descrição (Opcional)</label>
-                  <input type="text" id="description" value={description} onChange={e => setDescription(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" />
-                </div>
-                {!editingCategory && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Tipo</label>
-                    <div className="mt-1 flex space-x-4">
-                      <label className="inline-flex items-center">
-                        <input type="radio" value="expense" checked={type === 'expense'} onChange={() => setType('expense')} className="h-4 w-4 text-blue-600" />
-                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Despesa</span>
-                      </label>
-                      <label className="inline-flex items-center">
-                        <input type="radio" value="income" checked={type === 'income'} onChange={() => setType('income')} className="h-4 w-4 text-blue-600" />
-                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Renda</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cor</label>
-                  <div className="grid grid-cols-6 gap-2">
-                    {predefinedColors.map(presetColor => (
-                      <button 
-                        key={presetColor} 
-                        type="button" 
-                        className={`w-8 h-8 rounded-full ${color === presetColor ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`} 
-                        style={{ backgroundColor: presetColor }} 
-                        onClick={() => setColor(presetColor)}
-                      ></button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button type="button" onClick={closeModal} className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md mr-3 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300">Cancelar</button>
-                <button 
-                  type="submit" 
-                  disabled={addMutation.isPending || updateMutation.isPending}
-                  className="bg-blue-600 py-2 px-4 border border-transparent rounded-md text-white hover:bg-blue-700 disabled:bg-blue-400 flex items-center"
-                >
-                  {(addMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {editingCategory ? 'Salvar' : 'Criar'}
-                </button>
-              </div>
-            </form>
+      <Dialog
+        dismissible={!busy}
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editing ? "Editar categoria" : "Nova categoria"}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => setOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" form={id} disabled={busy}>
+              {busy ? "Salvando…" : editing ? "Salvar" : "Criar"}
+            </Button>
+          </>
+        }
+      >
+        <form id={id} onSubmit={submit} noValidate className="form-stack">
+          {error && <ErrorState message={error} />}
+          <div className="field">
+            <label htmlFor={id + "-name"}>Nome</label>
+            <input
+              id={id + "-name"}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              aria-invalid={!!nameError}
+              aria-describedby={nameError ? id + "-error" : undefined}
+            />
+            {nameError && (
+              <p className="field-error" id={id + "-error"}>
+                {nameError}
+              </p>
+            )}
           </div>
-        </div>,
-        modalRoot
-      )}
-
+          <div className="field">
+            <label htmlFor={id + "-description"}>Descrição (opcional)</label>
+            <input
+              id={id + "-description"}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          {!editing && (
+            <fieldset className="field">
+              <legend className="field-label">Tipo</legend>
+              <div className="inline-actions">
+                <label className="check-field">
+                  <input
+                    type="radio"
+                    name={id + "-type"}
+                    checked={type === "expense"}
+                    onChange={() => setType("expense")}
+                  />
+                  Despesa
+                </label>
+                <label className="check-field">
+                  <input
+                    type="radio"
+                    name={id + "-type"}
+                    checked={type === "income"}
+                    onChange={() => setType("income")}
+                  />
+                  Receita
+                </label>
+              </div>
+            </fieldset>
+          )}
+          <fieldset className="field">
+            <legend className="field-label">Cor da categoria</legend>
+            <div className="color-picker">
+              {colors.map(([value, label]) => (
+                <button
+                  key={value}
+                  className="color-choice"
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={color === value}
+                  onClick={() => setColor(value)}
+                >
+                  <span style={{ backgroundColor: value }} />
+                  {color === value && <Check size={17} aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+            <p className="field-hint">
+              Selecionada:{" "}
+              {colors.find(([value]) => value === color)?.[1] || color}
+            </p>
+          </fieldset>
+        </form>
+      </Dialog>
       <ConfirmationModal
-        isOpen={!!categoryToDelete}
-        onClose={handleCancelDelete}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar Exclusão"
-        message={confirmationMessage}
+        isOpen={!!deleting}
+        onClose={() => setDeleting(null)}
+        title="Excluir categoria?"
+        message={
+          "A categoria " +
+          (deleting?.name || "") +
+          " será excluída. Essa ação não pode ser desfeita."
+        }
+        confirmationMessage="Excluir"
+        onConfirm={async () => {
+          if (deleting) await remove.mutateAsync(deleting.id);
+          setDeleting(null);
+        }}
       />
     </div>
   );
-};
+}

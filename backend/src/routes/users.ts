@@ -29,7 +29,7 @@ app.patch(
 
     try {
       const secret = process.env.JWT_SECRET || 'segredo_padrao';
-      const payload = await verify(token, secret);
+      const payload = await verify(token, secret, 'HS256');
       const userId = payload.id as string;
 
       // 2. Pega o valor do body
@@ -70,7 +70,7 @@ app.get('/tutorial-status', async (c) => {
 
   try {
     const secret = process.env.JWT_SECRET || 'segredo_padrao';
-    const payload = await verify(token, secret);
+    const payload = await verify(token, secret, 'HS256');
     const userId = payload.id as string;
 
     // 2. Busca apenas o campo tutorialCompleted

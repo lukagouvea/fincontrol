@@ -1,10 +1,16 @@
-import { useQuery, useMutation, useQueryClient, useQueries, keepPreviousData } from '@tanstack/react-query';
-import { transactionService } from '../services/transactionService';
-import { Transaction } from '../types/FinanceTypes';
-import { useEffect } from 'react';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useQueries,
+  keepPreviousData,
+} from "@tanstack/react-query";
+import { transactionService } from "../services/transactionService";
+import { Transaction } from "../types/FinanceTypes";
+import { useEffect } from "react";
 
-const CACHE_KEY_TRANSACTIONS = ['transactions'];
-const CACHE_KEY_COMPRAS_PARCELADAS = ['compras-parceladas'];
+const CACHE_KEY_TRANSACTIONS = ["transactions"];
+const CACHE_KEY_COMPRAS_PARCELADAS = ["compras-parceladas"];
 
 // --- LEITURA (GET) ---
 
@@ -18,13 +24,33 @@ export const useTransactions = (month?: number, year?: number) => {
   });
 };
 
-export const useThreeMonthsTransactions = (centerMonth: number, centerYear: number) => {
-  
+export const useThreeMonthsTransactions = (
+  centerMonth: number,
+  centerYear: number,
+) => {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    // Warm the next three-month window before the user navigates to it.
+    for (const offset of [-2, 2]) {
+      const date = new Date(centerYear, centerMonth + offset, 1);
+      void queryClient.prefetchQuery({
+        queryKey: [
+          ...CACHE_KEY_TRANSACTIONS,
+          date.getMonth(),
+          date.getFullYear(),
+        ],
+        queryFn: () =>
+          transactionService.getAll(date.getMonth(), date.getFullYear()),
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 15,
+      });
+    }
+  }, [centerMonth, centerYear, queryClient]);
   // Definimos os deslocamentos: -1 (mês anterior), 0 (atual), +1 (próximo)
   const offsets = [-1, 0, 1];
 
   // Preparamos as configurações das 3 queries
-  const queriesOptions = offsets.map(offset => {
+  const queriesOptions = offsets.map((offset) => {
     // A mágica do Date resolve viradas de ano (ex: Mês 11 + 1 vira Mês 0 do ano seguinte)
     const date = new Date(centerYear, centerMonth + offset, 1);
     const m = date.getMonth();
@@ -34,6 +60,7 @@ export const useThreeMonthsTransactions = (centerMonth: number, centerYear: numb
       queryKey: [...CACHE_KEY_TRANSACTIONS, m, y],
       queryFn: () => transactionService.getAll(m, y),
       staleTime: 1000 * 60 * 5, // 5 minutos
+      gcTime: 1000 * 60 * 15,
     };
   });
 
@@ -41,35 +68,51 @@ export const useThreeMonthsTransactions = (centerMonth: number, centerYear: numb
   const results = useQueries({ queries: queriesOptions });
 
   // 1. Combina todos os arrays de retorno em um só (flat)
-  const combinedTransactions = results.flatMap(result => result.data || []);
+  const combinedTransactions = results.flatMap((result) => result.data || []);
 
   // 2. Verifica se algum deles ainda está carregando
-  const isLoading = results.some(result => result.isLoading);
+  const isLoading = results.some((result) => result.isLoading);
 
   // 3. Verifica se houve erro em algum
-  const isError = results.some(result => result.isError);
+  const isError = results.some((result) => result.isError);
 
   // Opcional: Ordenar por data (pois a junção pode vir fora de ordem)
-  const sortedTransactions = combinedTransactions.sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
+  const sortedTransactions = combinedTransactions.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
-  return { 
-    data: sortedTransactions, 
-    isLoading, 
-    isError 
+  return {
+    data: sortedTransactions,
+    isLoading,
+    isError,
+    getMonthState: (date: Date) => {
+      const offset =
+        (date.getFullYear() - centerYear) * 12 + date.getMonth() - centerMonth;
+      const result = results[offset + 1];
+      return {
+        isLoading: !result || result.isPending,
+        isError: result?.isError ?? false,
+        refetch: () => result?.refetch(),
+      };
+    },
+    refetch: () => Promise.all(results.map((result) => result.refetch())),
   };
 };
 
-export const useTwelveMonthsTransactions = (endMonth: number, endYear: number) => {
+export const useTwelveMonthsTransactions = (
+  endMonth: number,
+  endYear: number,
+  enabled = true,
+) => {
   const offsets = Array.from({ length: 12 }, (_, i) => -i); // 0, -1, -2 ... -11
 
-  const queriesOptions = offsets.map(offset => {
+  const queriesOptions = offsets.map((offset) => {
     const date = new Date(endYear, endMonth + offset, 1);
     const m = date.getMonth();
     const y = date.getFullYear();
 
     return {
+      enabled,
       queryKey: [...CACHE_KEY_TRANSACTIONS, m, y],
       queryFn: () => transactionService.getAll(m, y),
       staleTime: 1000 * 60 * 5, // 5 minutos
@@ -77,22 +120,26 @@ export const useTwelveMonthsTransactions = (endMonth: number, endYear: number) =
   });
 
   const results = useQueries({ queries: queriesOptions });
-  const combinedTransactions = results.flatMap(result => result.data || []);
-  const isLoading = results.some(result => result.isLoading);
-  const isError = results.some(result => result.isError);
+  const combinedTransactions = results.flatMap((result) => result.data || []);
+  const isLoading = results.some((result) => result.isLoading);
+  const isError = results.some((result) => result.isError);
 
-  const sortedTransactions = combinedTransactions.sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
+  const sortedTransactions = combinedTransactions.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
-  return { 
-    data: sortedTransactions, 
-    isLoading, 
-    isError 
+  return {
+    data: sortedTransactions,
+    isLoading,
+    isError,
+    refetch: () => Promise.all(results.map((result) => result.refetch())),
   };
 };
 
-export const usePrefetchAdjacentMonths = (currentMonth: number, currentYear: number) => {
+export const usePrefetchAdjacentMonths = (
+  currentMonth: number,
+  currentYear: number,
+) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -102,7 +149,7 @@ export const usePrefetchAdjacentMonths = (currentMonth: number, currentYear: num
       const y = d.getFullYear();
 
       queryClient.prefetchQuery({
-        queryKey: ['transactions', m, y],
+        queryKey: ["transactions", m, y],
         queryFn: () => transactionService.getAll(m, y),
         staleTime: 1000 * 60 * 5,
       });

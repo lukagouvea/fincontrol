@@ -1,61 +1,84 @@
-import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVerticalIcon } from 'lucide-react';
-type SortableDashboardItemProps = {
+import type { ReactNode } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
+
+type Props = {
   id: string;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   span: number;
+  organizing?: boolean;
+  onMove?: (direction: -1 | 1) => void;
+  first?: boolean;
+  last?: boolean;
 };
-export const SortableDashboardItem: React.FC<SortableDashboardItemProps> = ({
+export function SortableDashboardItem({
   id,
   title,
   children,
-  span
-}) => {
+  span,
+  organizing = false,
+  onMove,
+  first,
+  last,
+}: Props) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging
-  } = useSortable({
-    id
-  });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1 : 0
-  };
-  const spanClasses : Record<number, string> = {
-    1: 'col-span-1',
-    2: 'col-span-2',
-    3: 'col-span-3',
-    4: 'col-span-4',
-    5: 'col-span-5', // Adicione quantos precisar
-    6: 'col-span-6',
-  };
-
-  // Para widgets pequenos (span=1), limitamos a altura do conteúdo pra não
-  // estourar a linha do grid; o componente interno pode usar scroll.
-  const contentHeightBySpan: Record<number, string> = {
-    1: 'h-80',
-  };
-
-  const containerClasses = `
-    bg-white dark:bg-gray-800 shadow rounded-lg
-    ${spanClasses[span] || 'col-span-1'}
-  `;
-  return <div ref={setNodeRef} style={style} className={containerClasses}>
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100">{title}</h3>
-        <button className="cursor-grab p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400" {...attributes} {...listeners}>
-          <GripVerticalIcon className="w-5 h-5" />
-        </button>
+    isDragging,
+  } = useSortable({ id, disabled: !organizing });
+  return (
+    <section
+      ref={setNodeRef}
+      className={"panel dashboard-widget widget-span-" + span}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.6 : 1,
+        zIndex: isDragging ? 2 : undefined,
+      }}
+    >
+      <div className="panel-heading">
+        <h2>{title}</h2>
+        {organizing && (
+          <div className="organize-actions">
+            <button
+              type="button"
+              className="icon-button drag-handle"
+              aria-label={"Arrastar " + title}
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical size={18} />
+            </button>
+            {onMove && (
+              <>
+                <button
+                  className="icon-button move-button"
+                  disabled={first}
+                  aria-label={"Mover " + title + " para cima"}
+                  onClick={() => onMove(-1)}
+                >
+                  <ArrowUp size={16} />
+                </button>
+                <button
+                  className="icon-button move-button"
+                  disabled={last}
+                  aria-label={"Mover " + title + " para baixo"}
+                  onClick={() => onMove(1)}
+                >
+                  <ArrowDown size={16} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
-      <div className={`p-6 ${contentHeightBySpan[span] || ''} overflow-hidden`}>{children}</div>
-    </div>;
-};
+      <div className="panel-body">{children}</div>
+    </section>
+  );
+}

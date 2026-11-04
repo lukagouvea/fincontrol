@@ -59,7 +59,7 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
 
   // 4. Gera o Token JWT
   const secret = process.env.JWT_SECRET || 'segredo_padrao';
-  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret); // 7 dias
+  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret, 'HS256'); // 7 dias
 
   // 5. Define o Cookie HttpOnly (Segurança Máxima)
   setCookie(c, 'auth_token', token, {
@@ -94,7 +94,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
 
   // 3. Gera Token
   const secret = process.env.JWT_SECRET || 'segredo_padrao';
-  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret);
+  const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret, 'HS256');
 
   // 4. Cookie
   setCookie(c, 'auth_token', token, {
@@ -129,7 +129,7 @@ app.get('/me', async (c) => {
 
   try {
     const secret = process.env.JWT_SECRET || 'segredo_padrao';
-    const payload = await verify(token, secret);
+    const payload = await verify(token, secret, 'HS256');
     
     const user = await prisma.user.findUnique({
       where: { id: payload.id as string },

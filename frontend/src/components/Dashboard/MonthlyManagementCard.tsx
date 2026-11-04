@@ -1,6 +1,13 @@
-import React, { useMemo } from 'react';
-import { FixedExpense, MonthlyVariation, Transaction } from '../../types/FinanceTypes';
-import { getActualFixedItemAmount, isItemActiveInMonth } from '../../utils/financeUtils';
+import React, { useMemo } from "react";
+import {
+  FixedExpense,
+  MonthlyVariation,
+  Transaction,
+} from "../../types/FinanceTypes";
+import {
+  getActualFixedItemAmount,
+  isItemActiveInMonth,
+} from "../../utils/financeUtils";
 
 type MonthlyManagementCardProps = {
   date: Date;
@@ -22,69 +29,76 @@ type MonthlyManagementComputedProps = {
 };
 
 const formatBRL = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    value,
+  );
 
 const getDaysInMonth = (date: Date) => {
   // último dia do mês: dia 0 do mês seguinte
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 };
 
-const MonthlyManagementCardViewComponent: React.FC<MonthlyManagementComputedProps> = ({
+const MonthlyManagementCardViewComponent: React.FC<
+  MonthlyManagementComputedProps
+> = ({
   remainingAfterInvestment,
   perDay,
   perWeek,
   investmentMonthlyAmount,
   compact = false,
 }) => {
-  const negativeClass = (value: number) => (value < 0 ? 'text-red-600' : 'text-blue-600');
+  const negativeClass = (value: number) =>
+    value < 0 ? "text-negative" : "text-blue-600";
 
   return (
-    <div className={compact ? "space-y-2" : "space-y-3"}>
-
-      <div className={compact ? "border-t border-gray-200 dark:border-gray-600 pt-2" : "border-t border-gray-200 dark:border-gray-600 pt-3"}>
-        {/* Layout em 2 colunas para lg, vertical para md */}
-        <div className={compact ? "lg:grid lg:grid-cols-2 lg:gap-4" : ""}>
-          {/* Coluna esquerda: Investimento e Gerenciamento */}
-          <div>
-            <div className="flex justify-between items-center">
-              <span className={compact ? "text-xs font-medium text-gray-600 dark:text-gray-400" : "text-sm font-medium text-gray-600 dark:text-gray-400"}>Investimento</span>
-              <span className={compact ? "text-xs font-semibold text-gray-800 dark:text-gray-200" : "text-sm font-semibold text-gray-800 dark:text-gray-200"}>- {formatBRL(investmentMonthlyAmount)}</span>
-            </div>
-            <div className={compact ? "flex justify-between items-center mt-1" : "flex justify-between items-center mt-2"}>
-              <span className={compact ? "text-xs font-medium text-gray-600 dark:text-gray-400" : "text-sm font-medium text-gray-600 dark:text-gray-400"}>Gerenciamento</span>
-              <span className={`${compact ? "text-base" : "text-lg"} font-bold ${negativeClass(remainingAfterInvestment)}`}>{formatBRL(remainingAfterInvestment)}</span>
-            </div>
-          </div>
-
-          {/* Coluna direita: Por dia e Por semana */}
-          <div className={compact ? "mt-1 lg:mt-0 grid grid-cols-2 gap-2 lg:items-center" : "mt-2 grid grid-cols-2 gap-2"}>
-            <div className={compact ? "bg-gray-50 dark:bg-gray-700 rounded-lg p-2 text-center" : "bg-gray-50 dark:bg-gray-700 rounded-lg p-3"}>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Por dia</p>
-              <p className={`text-sm font-semibold ${negativeClass(perDay)}`}>{formatBRL(perDay)}</p>
-            </div>
-            <div className={compact ? "bg-gray-50 dark:bg-gray-700 rounded-lg p-2 text-center" : "bg-gray-50 dark:bg-gray-700 rounded-lg p-3"}>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Por semana</p>
-              <p className={`text-sm font-semibold ${negativeClass(perWeek)}`}>{formatBRL(perWeek)}</p>
-            </div>
-          </div>
+    <div
+      className={
+        compact ? "management-flow management-compact" : "management-flow"
+      }
+    >
+      <dl>
+        <div>
+          <dt>Investimento reservado</dt>
+          <dd>{formatBRL(investmentMonthlyAmount)}</dd>
+        </div>
+        <div>
+          <dt>Orçamento planejado</dt>
+          <dd className={negativeClass(remainingAfterInvestment)}>
+            {formatBRL(remainingAfterInvestment)}
+          </dd>
+        </div>
+      </dl>
+      <div className="budget-periods">
+        <div>
+          <span>Por dia</span>
+          <strong className={negativeClass(perDay)}>{formatBRL(perDay)}</strong>
+        </div>
+        <div>
+          <span>Por semana</span>
+          <strong className={negativeClass(perWeek)}>
+            {formatBRL(perWeek)}
+          </strong>
         </div>
       </div>
     </div>
   );
 };
 
-export const MonthlyManagementCardView = React.memo(MonthlyManagementCardViewComponent, (prev, next) => {
-  return (
-    prev.compact === next.compact &&
-    prev.investmentMonthlyAmount === next.investmentMonthlyAmount &&
-    prev.remainingAfterInvestment === next.remainingAfterInvestment &&
-    prev.perDay === next.perDay &&
-    prev.perWeek === next.perWeek &&
-    prev.committedTotal === next.committedTotal
-  );
-});
+export const MonthlyManagementCardView = React.memo(
+  MonthlyManagementCardViewComponent,
+  (prev, next) => {
+    return (
+      prev.compact === next.compact &&
+      prev.investmentMonthlyAmount === next.investmentMonthlyAmount &&
+      prev.remainingAfterInvestment === next.remainingAfterInvestment &&
+      prev.perDay === next.perDay &&
+      prev.perWeek === next.perWeek &&
+      prev.committedTotal === next.committedTotal
+    );
+  },
+);
 
-MonthlyManagementCardView.displayName = 'MonthlyManagementCardView';
+MonthlyManagementCardView.displayName = "MonthlyManagementCardView";
 
 const MonthlyManagementCardComponent: React.FC<MonthlyManagementCardProps> = ({
   date,
@@ -95,53 +109,57 @@ const MonthlyManagementCardComponent: React.FC<MonthlyManagementCardProps> = ({
   investmentMonthlyAmount,
   compact = false,
 }) => {
-  const {
-    committedTotal,
-    remainingAfterInvestment,
-    perDay,
-    perWeek,
-  } = useMemo(() => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
+  const { committedTotal, remainingAfterInvestment, perDay, perWeek } =
+    useMemo(() => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
 
-    const committedFixed = fixedExpenses
-      .filter((expense) => isItemActiveInMonth(expense, date))
-      .reduce(
-        (sum, expense) =>
-          sum +
-          getActualFixedItemAmount(
-            expense.id,
-            'expense',
-            year,
-            month,
-            expense.amount,
-            monthlyVariations,
-          ),
-        0,
-      );
+      const committedFixed = fixedExpenses
+        .filter((expense) => isItemActiveInMonth(expense, date))
+        .reduce(
+          (sum, expense) =>
+            sum +
+            getActualFixedItemAmount(
+              expense.id,
+              "expense",
+              year,
+              month,
+              expense.amount,
+              monthlyVariations,
+            ),
+          0,
+        );
 
-    const committedInstallmentsValue = transactions
-      .filter((t) => ('installmentInfo' in t && !!t.installmentInfo))
-      .filter((t) => {
-        const d = new Date(t.date);
-        return d.getFullYear() === year && d.getMonth() === month;
-      })
-      .reduce((sum, t) => sum + t.amount, 0);
+      const committedInstallmentsValue = transactions
+        .filter((t) => "installmentInfo" in t && !!t.installmentInfo)
+        .filter((t) => {
+          const d = new Date(t.date);
+          return d.getFullYear() === year && d.getMonth() === month;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
 
-    const committed = committedFixed + committedInstallmentsValue;
+      const committed = committedFixed + committedInstallmentsValue;
 
-    const remainingInvest = monthlyIncome - committed - investmentMonthlyAmount;
+      const remainingInvest =
+        monthlyIncome - committed - investmentMonthlyAmount;
 
-    const dim = getDaysInMonth(date);
-    const safeRemaining = isFinite(remainingInvest) ? remainingInvest : 0;
+      const dim = getDaysInMonth(date);
+      const safeRemaining = isFinite(remainingInvest) ? remainingInvest : 0;
 
-    return {
-      committedTotal: committed,
-      remainingAfterInvestment: remainingInvest,
-      perDay: safeRemaining / dim,
-      perWeek: safeRemaining / (dim / 7),
-    };
-  }, [date, fixedExpenses, monthlyVariations, transactions, monthlyIncome, investmentMonthlyAmount]);
+      return {
+        committedTotal: committed,
+        remainingAfterInvestment: remainingInvest,
+        perDay: safeRemaining / dim,
+        perWeek: safeRemaining / (dim / 7),
+      };
+    }, [
+      date,
+      fixedExpenses,
+      monthlyVariations,
+      transactions,
+      monthlyIncome,
+      investmentMonthlyAmount,
+    ]);
 
   return (
     <MonthlyManagementCardView
@@ -156,4 +174,4 @@ const MonthlyManagementCardComponent: React.FC<MonthlyManagementCardProps> = ({
 };
 
 export const MonthlyManagementCard = React.memo(MonthlyManagementCardComponent);
-MonthlyManagementCard.displayName = 'MonthlyManagementCard';
+MonthlyManagementCard.displayName = "MonthlyManagementCard";

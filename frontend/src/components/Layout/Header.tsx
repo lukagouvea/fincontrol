@@ -1,26 +1,39 @@
-import React from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { UserMenu } from './UserMenu';
-export const Header: React.FC = () => {
-  const {
-    currentUser
-  } = useAuth();
-  return <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4 px-6 flex items-center justify-between transition-colors duration-200">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-          Bem-vindo, {currentUser?.name || 'Usuário'}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {new Date().toLocaleDateString('pt-BR', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}
-        </p>
+import { useLocation } from "react-router-dom";
+import { Plus } from "lucide-react";
+import { Brand, mainNavigation } from "./Sidebar";
+import { UserMenu } from "./UserMenu";
+import { Button } from "../Shared/UI";
+import { useQuickAdd } from "./QuickAdd";
+
+export function Header() {
+  const { pathname } = useLocation();
+  const quickAdd = useQuickAdd();
+  const context =
+    mainNavigation.find((item) => item.to === pathname)?.label || "FinControl";
+  return (
+    <header className="app-header">
+      <div className="mobile-brand">
+        <Brand />
       </div>
-      <div className="flex items-center space-x-4">
-        <UserMenu />
+      <div className="header-context">
+        <span>Meu espaço</span>
+        <span aria-hidden="true">/</span>
+        <span>{context}</span>
       </div>
-    </header>;
-};
+      <div className="header-actions">
+        {pathname !== "/lancamentos" && (
+          <Button
+            variant="secondary"
+            id="quick-add"
+            onClick={quickAdd}
+            aria-label="Novo lançamento"
+          >
+            <Plus />
+            <span className="quick-add-label">Novo lançamento</span>
+          </Button>
+        )}
+        <UserMenu placement="header" />
+      </div>
+    </header>
+  );
+}

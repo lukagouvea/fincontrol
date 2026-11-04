@@ -1,7 +1,16 @@
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getActualFixedItemAmount } from '../../utils/financeUtils';
-import { Transaction, MonthlyVariation } from '../../types/FinanceTypes';
+import React from "react";
+import { ChartValues } from "../Shared/ChartValues";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { getActualFixedItemAmount } from "../../utils/financeUtils";
+import { Transaction, MonthlyVariation } from "../../types/FinanceTypes";
 
 type ExpensesValueHistogramProps = {
   transactions: Transaction[];
@@ -24,16 +33,14 @@ const getQuantile = (array: number[], quantile: number) => {
 export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   transactions,
   monthlyVariations,
-  date
+  date,
 }) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 shadow-md rounded">
-          <p className="text-black dark:text-white font-medium mb-1">{label}</p>
-          <p className="text-blue-500">
-            {payload[0].value} gastos
-          </p>
+        <div className="bg-surface dark:bg-surface border border-line dark:border-line p-2 shadow-md rounded">
+          <p className="text-ink font-medium mb-1">{label}</p>
+          <p className="text-blue-500">{payload[0].value} gastos</p>
         </div>
       );
     }
@@ -43,24 +50,36 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   const hoje = date;
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth() + 1;
-  const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, '0')}`;
+  const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, "0")}`;
 
   const expenses = transactions
-    .filter(t => t.type === 'expense' && !t.recurringRuleId && t.date.startsWith(anoMesAtualString))
-    .map(expense => ({
+    .filter(
+      (t) =>
+        t.type === "expense" &&
+        !t.recurringRuleId &&
+        t.date.startsWith(anoMesAtualString),
+    )
+    .map((expense) => ({
       ...expense,
-      amount: !expense.recurringRuleId 
-        ? expense.amount 
-        : getActualFixedItemAmount(expense.id, 'expense', anoAtual, mesAtual - 1, expense.amount, monthlyVariations)
+      amount: !expense.recurringRuleId
+        ? expense.amount
+        : getActualFixedItemAmount(
+            expense.id,
+            "expense",
+            anoAtual,
+            mesAtual - 1,
+            expense.amount,
+            monthlyVariations,
+          ),
     }));
 
   const generateHistogramData = (data: typeof expenses) => {
     if (data.length === 0) return [];
 
-    const amounts = data.map(e => e.amount).sort((a, b) => a - b);
+    const amounts = data.map((e) => e.amount).sort((a, b) => a - b);
 
     // --- LÓGICA ESTATÍSTICA ---
-    
+
     // 1. Calcular Quartis e IQR (Intervalo Interquartil)
     // Isso serve para identificar onde está a "maioria normal" dos seus gastos
     const q1 = getQuantile(amounts, 0.25);
@@ -70,19 +89,21 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
     // 2. Definir Limites (Cutoff)
     // Removemos o que estiver muito longe da média (ex: um gasto único gigante que estraga o gráfico)
     // Usamos 1.5 * IQR, que é o padrão estatístico para detectar outliers leves
-    let minRange = Math.max(0, q1 - 1.5 * iqr); 
+    let minRange = Math.max(0, q1 - 1.5 * iqr);
     const maxRange = q3 + 1.5 * iqr;
 
     // 3. Calcular largura do Bin usando Freedman-Diaconis
     // Formula: Width = 2 * IQR / (n ^ 1/3)
     const n = amounts.length;
     // Se o IQR for 0 (todos gastos iguais), força um bin width padrão
-    const iqrFiltered = (getQuantile(amounts, 0.75) - getQuantile(amounts, 0.25)) || 10;
-    
-    let binWidth = (2 * iqrFiltered) / Math.pow(n, (1/3));
-    
+    const iqrFiltered =
+      getQuantile(amounts, 0.75) - getQuantile(amounts, 0.25) || 10;
+
+    let binWidth = (2 * iqrFiltered) / Math.pow(n, 1 / 3);
+
     // Proteção contra binWidth zero ou infinito
-    if (binWidth <= 0 || !isFinite(binWidth)) binWidth = (maxRange - minRange) / 10 || 10;
+    if (binWidth <= 0 || !isFinite(binWidth))
+      binWidth = (maxRange - minRange) / 10 || 10;
 
     // Calcular número de bins sugerido
     let numBins = Math.ceil((maxRange - minRange) / binWidth);
@@ -96,26 +117,27 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
     // --- GERAÇÃO DAS BARRAS ---
 
     const ranges = Array.from({ length: numBins }, (_, i) => {
-      const start = minRange + (i * finalBinWidth);
+      const start = minRange + i * finalBinWidth;
       const end = start + finalBinWidth;
       return {
         min: start,
         max: end,
-        label: `R$${Math.round(start)}-${Math.round(end)}`
+        label: `R$${Math.round(start)}-${Math.round(end)}`,
       };
     });
 
     const histogramData = ranges.map((range, index) => {
-      const count = amounts.filter(amount => { // <--- Use 'amounts' (todos), não 'filteredAmounts'
-        
+      const count = amounts.filter((amount) => {
+        // <--- Use 'amounts' (todos), não 'filteredAmounts'
+
         // 1. Se for a PRIMEIRA barra, pega tudo que é menor ou igual ao max dela
         if (index === 0) {
-           return amount <= range.max; 
+          return amount <= range.max;
         }
-        
+
         // 2. Se for a ÚLTIMA barra, pega tudo que é maior ou igual ao min dela
         if (index === numBins - 1) {
-           return amount >= range.min;
+          return amount >= range.min;
         }
 
         // 3. Barras do meio (comportamento normal)
@@ -130,8 +152,8 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
       return {
         range: label,
         quantidade: count,
-        min: range.min, 
-        max: range.max
+        min: range.min,
+        max: range.max,
       };
     });
 
@@ -141,32 +163,51 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   const data = generateHistogramData(expenses);
 
   return (
-    <div className="h-64">
-      {data.length > 0 ? (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={data} 
-            margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
-            barCategoryGap={1} // Diminui o espaço entre barras para parecer mais um histograma contínuo
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis 
-              dataKey="range" 
-              tick={{fontSize: 10}} 
-              interval={0} // Tenta mostrar todos, ou ajuste para 'preserveStartEnd'
-              angle={-45} // Inclina se ficar muito apertado
-              textAnchor="end"
-              height={50}
-            />
-            <YAxis allowDecimals={false} />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.2)' }} />
-            <Bar dataKey="quantidade" fill="#2563eb" radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="flex items-center justify-center h-full text-gray-500">
-          Dados insuficientes para histograma neste mês.
-        </div>
+    <div>
+      <div className="h-64 chart-graphic">
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              accessibilityLayer
+              data={data}
+              margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+              barCategoryGap={1} // Diminui o espaço entre barras para parecer mais um histograma contínuo
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="range"
+                tick={{ fontSize: 10 }}
+                interval={0} // Tenta mostrar todos, ou ajuste para 'preserveStartEnd'
+                angle={-45} // Inclina se ficar muito apertado
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis allowDecimals={false} />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "rgba(107, 114, 128, 0.2)" }}
+              />
+              <Bar
+                dataKey="quantidade"
+                fill="var(--accent)"
+                radius={[2, 2, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full text-secondary">
+            Dados insuficientes para histograma neste mês.
+          </div>
+        )}
+      </div>
+      {data.length > 0 && (
+        <ChartValues
+          count
+          rows={data.map((row) => ({
+            label: row.range,
+            value: row.quantidade,
+          }))}
+        />
       )}
     </div>
   );

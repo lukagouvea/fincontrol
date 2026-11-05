@@ -20,13 +20,16 @@ FinControl é uma aplicação web moderna e completa para gerenciamento financei
 ### ✨ Principais Funcionalidades
 
 - 🔐 **Autenticação JWT** - Sistema seguro de login e registro
-- � **Gestão de Transações** - Controle completo de receitas e despesas
+- 💰 **Gestão de Transações** - Central de lançamentos com receitas e despesas fixas e variáveis
 - 🔄 **Transações Recorrentes** - Configure contas fixas mensais
-- 📊 **Dashboards Interativos** - Visualize seus dados com gráficos dinâmicos
+- 📊 **Dashboard Personalizável** - Saldo, planejamento mensal e sete módulos reorganizáveis, com gráficos e valores consultáveis
 - 🏷️ **Categorias Personalizadas** - Organize suas finanças do seu jeito
 - 📅 **Calendário Financeiro** - Veja suas transações em formato de calendário
 - 💳 **Parcelamentos** - Gerencie compras parceladas
-- 🌓 **Tema Claro/Escuro** - Interface adaptável às suas preferências
+- 🌓 **Tema Claro/Escuro** - Segue o sistema até a escolha manual, com preferência persistida no navegador
+- 📈 **Relatórios** - Resumo mensal e históricos de receitas e despesas em abas
+- 💰 **Planejamento de Investimento** - Valor mensal padrão e ajustes por mês, persistidos por usuário no banco
+- 📱 **Interface Responsiva** - Barra lateral no desktop, navegação inferior no celular e lançamento rápido
 - 🎓 **Tutorial Guiado Interativo** - Onboarding automático para novos usuários com Driver.js
 
 ---
@@ -55,7 +58,7 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │                    DATABASE                             │
-│  PostgreSQL 14                                          │
+│  PostgreSQL 18                                          │
 │  localhost:5432                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -103,7 +106,10 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
 | ![Recharts](https://img.shields.io/badge/Recharts-2.12.7-22B5BF) | Biblioteca de gráficos em React |
 | ![Axios](https://img.shields.io/badge/Axios-1.13.2-5A29E4?logo=axios) | Cliente HTTP |
 | ![Lucide React](https://img.shields.io/badge/Lucide-0.522.0-F56565) | Ícones modernos |
-| ![DND Kit](https://img.shields.io/badge/DND_Kit-6.3.1-00C7B7) | Drag and drop acessível |
+| ![DND Kit](https://img.shields.io/badge/DND_Kit-6.3.1-00C7B7) | Organização dos módulos do dashboard |
+| Radix UI Dialog | Modais e painéis com gerenciamento de foco |
+| Driver.js | Tutorial guiado |
+| Vitest + Testing Library + jsdom | Testes de componentes, hooks e interação |
 
 #### Backend
 | Tecnologia | Descrição |
@@ -112,7 +118,7 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
 | ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript) | Superset tipado do JavaScript |
 | ![Hono](https://img.shields.io/badge/Hono-4.10.6-E36002) | Framework web ultrarrápido |
 | ![Prisma](https://img.shields.io/badge/Prisma-7.0.0-2D3748?logo=prisma) | ORM moderno para Node.js |
-| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-336791?logo=postgresql) | Banco de dados relacional |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791?logo=postgresql) | Banco de dados relacional |
 | ![Zod](https://img.shields.io/badge/Zod-4.1.12-3E67B1) | Validação de schemas TypeScript |
 | ![JWT](https://img.shields.io/badge/JWT-Authentication-000000?logo=json-web-tokens) | Autenticação stateless |
 
@@ -129,9 +135,7 @@ O projeto segue uma arquitetura moderna de aplicação web full-stack:
 
 ---
 
----
-
-## � Início Rápido
+## 🚀 Início Rápido
 
 ### Pré-requisitos
 
@@ -160,9 +164,9 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-> � **Dica rápida:** mantenha `POSTGRES_HOST=db` no `.env.dev` (os containers se enxergam pelo nome do serviço) e configure um host/IP real no `.env.prod` quando o PostgreSQL estiver fora do Docker.
+> 💡 **Dica rápida:** mantenha `POSTGRES_HOST=db` no `.env.dev` (os containers se enxergam pelo nome do serviço) e configure um host/IP real no `.env.prod` quando o PostgreSQL estiver fora do Docker.
 
-> �📝 **Veja os READMEs específicos para detalhes adicionais:**
+> 📝 **Veja os READMEs específicos para detalhes adicionais:**
 > - [Configuração do Backend](./backend/README.md#variáveis-de-ambiente)
 > - [Configuração do Frontend](./frontend/README.md#variáveis-de-ambiente)
 
@@ -170,6 +174,14 @@ cp frontend/.env.example frontend/.env
 ```bash
 docker compose --env-file .env.dev up --build
 ```
+
+Na primeira execução, aplique as migrações em outro terminal, com o banco e o backend ativos:
+
+```bash
+docker compose --env-file .env.dev exec backend npx prisma migrate deploy
+```
+
+O container de desenvolvimento gera o cliente Prisma ao iniciar, mas não aplica as migrações automaticamente.
 
 ✅ **Pronto!** Acesse:
 - 🌐 Frontend: http://localhost:5173
@@ -181,12 +193,13 @@ docker compose --env-file .env.dev up --build
 
 ### Arquivos de Composição
 
-O projeto possui dois arquivos Docker Compose para diferentes ambientes:
+O projeto possui três arquivos Docker Compose:
 
 | Arquivo | Ambiente | Uso |
 |---------|----------|-----|
 | `docker-compose.yml` | **Desenvolvimento** | Hot reload, logs detalhados |
-| `docker-compose.prod.yml` | **Produção** | Build otimizado, Nginx |
+| `docker-compose.prod.yml` | **Produção: aplicação** | Imagens publicadas de backend e frontend com Nginx |
+| `docker-compose.prod.db.yml` | **Produção: banco** | PostgreSQL dedicado |
 
 ### Arquivos de Ambiente
 
@@ -225,90 +238,80 @@ docker compose --env-file .env.dev up --build
 
 Ambiente otimizado para deploy em servidores com arquitetura de 2 VPS.
 
-#### 🚀 Deploy Automático (Recomendado)
+#### 🚀 Deploy com GitHub Actions
 
-O projeto inclui um script de deploy automatizado:
+O workflow [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) constrói as imagens em pull requests para `main`. Em pushes para `main`, publica as imagens no Docker Hub e atualiza a VPS da aplicação por SSH.
 
-```bash
-./deploy.sh
-```
+Configure os secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VPS_HOST`, `VPS_USER` e `VPS_KEY`. O Compose de produção aponta para imagens de `lukagouvea`; ajuste esse namespace se publicar em outra conta.
 
-O script executa:
-1. Build das imagens Docker otimizadas
-2. Deploy do banco de dados (VPS 1)
-3. Aguarda o banco estar pronto para aceitar conexões
-4. Deploy do backend e frontend (VPS 2)
-5. Execução das migrações do Prisma
-
-> ⚠️ **Importante:** O backend executa `prisma migrate deploy` durante a inicialização. É **necessário aguardar** que o PostgreSQL esteja completamente inicializado e aceitando conexões antes de subir o backend, caso contrário as migrações falharão.
+O workflow copia somente o Compose da aplicação, renomeia-o para `docker-compose.yml` no servidor e executa `docker compose pull` e `docker compose up -d`. Prepare previamente o banco e um `.env` no diretório remoto com os valores de produção: o workflow não envia variáveis nem usa `--env-file .env.prod`.
 
 #### 🔧 Deploy Manual
 
-Se preferir executar manualmente:
-
 **Na VPS 1 (Banco de Dados):**
-```bash
-# Subir apenas o PostgreSQL
-docker compose -f docker-compose.db.prod.yml up -d
 
-# Verificar se está rodando e aceitando conexões
-docker compose -f docker-compose.db.prod.yml logs -f
+```bash
+# Configure .env.prod a partir de .env.prod.example
+docker compose --env-file .env.prod -f docker-compose.prod.db.yml up -d
+docker compose --env-file .env.prod -f docker-compose.prod.db.yml logs -f db
 ```
 
 **Na VPS 2 (Frontend + Backend):**
+
+Configure `.env.prod` com `POSTGRES_HOST` apontando para a VPS do banco e aguarde o PostgreSQL aceitar conexões.
+
 ```bash
-# Configure as variáveis de ambiente apontando para a VPS 1
-# Edite .env.prod com o IP/hostname da VPS 1
-
-# Aguarde o banco estar pronto (importante!)
-# Você pode testar a conexão com:
-# psql -h <IP_VPS1> -U postgres -d fincontrol
-
-# Suba os serviços
-docker compose -f docker-compose.prod.yml up -d
+docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
 ```
+
+O backend executa `prisma migrate deploy` antes de iniciar a versão compilada. O Compose de produção usa imagens publicadas; ele não compila as alterações locais da branch. Para construir imagens locais, consulte os READMEs do [frontend](./frontend/README.md) e do [backend](./backend/README.md).
+
+O Nginx encaminha `/api/` para `backend:3001` e remove o prefixo. Mantenha `BACKEND_PORT=3001` ou ajuste também o proxy. `VITE_API_URL` é definido no build da imagem frontend; alterar apenas o `.env.prod` não modifica uma imagem já compilada.
 
 **Otimizações:**
 - ✅ Build minificado e otimizado
 - ✅ Nginx como servidor web de alta performance
 - ✅ Banco de dados isolado em VPS dedicada
 - ✅ Containers em modo detached
-- ✅ Healthchecks para garantir disponibilidade
+- ✅ Healthcheck do PostgreSQL no Compose do banco
 
 **Portas:**
-- Aplicação completa: http://localhost (porta 80)
+- Aplicação completa: http://localhost (porta 80; HTTPS exige configuração adicional)
 - API acessível em: http://localhost/api
 - PostgreSQL (VPS 1): Port 5432
 
 ### Comandos Docker Úteis
 
+Os comandos abaixo usam o Compose de desenvolvimento. Para produção manual, acrescente `--env-file .env.prod -f docker-compose.prod.yml` antes do subcomando.
+
 ```bash
 # Ver status dos containers
-docker compose ps
+docker compose --env-file .env.dev ps
 
 # Ver logs em tempo real
-docker compose logs -f
+docker compose --env-file .env.dev logs -f
 
 # Ver logs de um serviço específico
-docker compose logs -f backend
+docker compose --env-file .env.dev logs -f backend
 
 # Parar containers
-docker compose down
+docker compose --env-file .env.dev down
 
 # Parar e remover volumes (⚠️ apaga dados do banco)
-docker compose down -v
+docker compose --env-file .env.dev down -v
 
 # Rebuild de um serviço específico
-docker compose up --build backend
+docker compose --env-file .env.dev up --build backend
 
 # Acessar shell do container
-docker compose exec backend sh
+docker compose --env-file .env.dev exec backend sh
 
 # Executar migrações do Prisma
-docker compose exec backend npx prisma migrate deploy
+docker compose --env-file .env.dev exec backend npx prisma migrate deploy
 
 # Reiniciar um serviço
-docker compose restart frontend
+docker compose --env-file .env.dev restart frontend
 ```
 
 ### Volumes e Persistência
@@ -343,7 +346,24 @@ volumes:
 
 ---
 
----
+## 🧪 Verificações de Desenvolvimento
+
+```bash
+# Frontend
+cd frontend
+npm run test
+npm run typecheck
+npm run build
+
+# Backend (com .env configurado e cliente Prisma gerado)
+cd ../backend
+npm test
+npm run build
+```
+
+Os testes do frontend usam Vitest, Testing Library e jsdom para cobrir navegação, formulários, calendário, relatórios, investimento e tema. Os testes do backend verificam autenticação por cookie e JWT HS256, com acesso ao Prisma substituído nos testes.
+
+A matriz de inspeção visual e suas pendências estão em [docs/ui-verification.md](./docs/ui-verification.md).
 
 ## 🧪 Testes de Carga
 
@@ -373,6 +393,8 @@ brew install k6
 docker pull grafana/k6
 ```
 
+Antes de executar, ajuste as URLs fixas e as credenciais nos scripts para o ambiente que deseja testar.
+
 ### Scripts Disponíveis
 
 #### 📈 Teste de Carga Geral
@@ -381,7 +403,7 @@ k6 run teste_carga.js
 # ou com Docker
 docker run --rm -i grafana/k6 run - < teste_carga.js
 ```
-Simula 50 usuários simultâneos por 1 minuto.
+Sobe até 50 usuários em 30 segundos, mantém a carga por 1 minuto e reduz a zero em 10 segundos.
 
 #### 🔐 Teste de Estresse de Login
 ```bash
@@ -389,7 +411,7 @@ k6 run teste_login.js
 # ou com Docker
 docker run --rm -i grafana/k6 run - < teste_login.js
 ```
-Testa a capacidade de processar 20 logins simultâneos.
+Sobe até 20 usuários em 30 segundos. O script aceita respostas 200 e 401; o Nginx também pode retornar 429 por limite de tentativas.
 
 ---
 
@@ -432,13 +454,17 @@ fincontrol/
 │   │   ├── components/         # Componentes React
 │   │   ├── pages/              # Páginas da aplicação
 │   │   ├── context/            # Context API (Auth, Finance, Theme)
+│   │   ├── styles/             # Sistema visual e estilos do tutorial
+│   │   ├── test/               # Configuração e fixtures de testes
 │   │   ├── hooks/              # Custom hooks
 │   │   ├── services/           # Chamadas à API
 │   │   └── types/              # TypeScript types
-│   └── README.md               # � Documentação do frontend
+│   └── README.md               # 📗 Documentação do frontend
 │
 ├── docker-compose.yml          # Desenvolvimento
-├── docker-compose.prod.yml     # Produção
+├── docker-compose.prod.yml     # Produção: aplicação
+├── docker-compose.prod.db.yml  # Produção: PostgreSQL
+├── docs/ui-verification.md     # Matriz de validação da interface
 ├── teste_carga.js              # Teste de performance k6
 ├── teste_login.js              # Teste de estresse k6
 └── README.md                   # 📖 Este arquivo

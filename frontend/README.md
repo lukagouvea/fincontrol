@@ -1,286 +1,156 @@
 # 🎨 FinControl Frontend
 
-Interface moderna e responsiva desenvolvida com React, TypeScript e Tailwind CSS para gerenciamento financeiro pessoal.
+Interface de controle financeiro pessoal com React, TypeScript e Tailwind CSS.
 
----
+## Funcionalidades
 
-## 📖 Sobre
+- **Início:** saldo, receitas, despesas e orçamento planejado. O planejamento reserva despesas fixas, parcelas e investimento antes dos gastos variáveis, com referências diária e semanal.
+- **Dashboard personalizável:** sete módulos — Contas do mês, Despesas recentes, Sua semana, Gastos por categoria, Gastos nos últimos 7 dias, Distribuição dos gastos e Evolução do saldo mensal. A organização permite arrastar ou usar controles de posição e é salva em `localStorage` na chave `dashboardLayout`.
+- **Lançamentos:** receitas e despesas fixas e variáveis na mesma central, com criação, edição, parcelamentos, variações mensais e consulta de recorrências encerradas.
+- **Relatórios:** abas de resumo mensal, despesas e receitas, com seleção de período e agrupamento por categoria.
+- **Calendário:** grade mensal e agenda do dia, navegação entre meses, ação Hoje e lançamento com a data selecionada. As consultas antecipam meses vizinhos no cache.
+- **Categorias:** nome, descrição, cor e tipo. A exclusão desativa a categoria, preservando os vínculos históricos.
+- **Conta:** investimento mensal padrão com salvamento explícito, tema, tutorial e saída. O investimento também aceita um valor específico por mês nos relatórios.
+- **Layout responsivo:** barra lateral no desktop e navegação inferior com menu Mais no celular. O botão Novo lançamento abre o formulário rápido.
 
-Frontend da aplicação FinControl, responsável por:
-- 🎨 Interface intuitiva e responsiva
-- 📊 Visualização de dados com gráficos interativos
-- 🔐 Autenticação e gestão de sessão
-- 💰 CRUD completo de transações e categorias
-- 🌓 Tema claro/escuro persistente
+## Tecnologias
 
----
+As versões e faixas de dependências estão em [package.json](./package.json); o [package-lock.json](./package-lock.json) fixa as versões instaladas por `npm ci`.
 
-## 🚀 Tecnologias
+| Tecnologia | Uso |
+|---|---|
+| React 18 + TypeScript | Componentes e tipagem |
+| Vite 7 | Desenvolvimento e build |
+| Tailwind CSS 3 + CSS próprio | Estilização e tokens visuais |
+| React Router 6 | Rotas e parâmetros de navegação |
+| TanStack Query 5 + Axios | Consultas, mutações, cache e HTTP |
+| Recharts + DND Kit | Gráficos e organização do dashboard |
+| Radix UI Dialog | Modais e painéis com gerenciamento de foco |
+| Driver.js | Tutorial guiado |
+| Public Sans + Lucide | Fonte local e ícones |
+| Vitest + Testing Library + jsdom | Testes automatizados |
 
-| Tecnologia | Versão | Descrição |
-|------------|--------|-----------|
-| ![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react) | 18.3.1 | Biblioteca UI |
-| ![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-3178C6?logo=typescript) | 5.5.4 | Superset tipado |
-| ![Vite](https://img.shields.io/badge/Vite-7.1.9-646CFF?logo=vite) | 7.1.9 | Build tool |
-| ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-38B2AC?logo=tailwind-css) | 3.4.17 | Framework CSS |
-| ![React Router](https://img.shields.io/badge/React_Router-6.26.2-CA4245?logo=react-router) | 6.26.2 | Roteamento |
-| ![React Query](https://img.shields.io/badge/React_Query-5.90.10-FF4154?logo=react-query) | 5.90.10 | Estado assíncrono |
-| ![Recharts](https://img.shields.io/badge/Recharts-2.12.7-22B5BF) | 2.12.7 | Gráficos |
-| ![Axios](https://img.shields.io/badge/Axios-1.13.2-5A29E4?logo=axios) | 1.13.2 | HTTP client |
-| ![Lucide React](https://img.shields.io/badge/Lucide-0.522.0-F56565) | 0.522.0 | Ícones |
-| ![DND Kit](https://img.shields.io/badge/DND_Kit-6.3.1-00C7B7) | 6.3.1 | Drag & Drop |
+## Desenvolvimento local
 
----
-
-## 📂 Estrutura do Projeto
-
-```
-frontend/
-├── src/
-│   ├── App.tsx                      # Componente raiz
-│   ├── AppRouter.tsx                # Configuração de rotas
-│   ├── index.tsx                    # Entry point
-│   ├── index.css                    # Estilos globais + Tailwind
-│   │
-│   ├── components/                  # Componentes reutilizáveis
-│   │   ├── Auth/
-│   │   │   └── ProtectedRoute.tsx   # HOC para rotas protegidas
-│   │   ├── Dashboard/               # Widgets do dashboard
-│   │   ├── Expenses/                # Modais de despesas
-│   │   ├── Income/                  # Modais de receitas
-│   │   ├── Layout/                  # Layout e navegação
-│   │   └── Shared/                  # Componentes reutilizáveis
-│   │
-│   ├── context/                     # Context API
-│   │   ├── AuthContext.tsx          # Autenticação e usuário
-│   │   ├── FinanceContext.tsx       # Estado financeiro global
-│   │   └── ThemeContext.tsx         # Tema claro/escuro
-│   │
-│   ├── hooks/                       # Custom hooks
-│   │   ├── useCategories.ts         # Hook de categorias
-│   │   ├── useFixedTransactions.ts  # Hook de transações fixas
-│   │   ├── useMonthlyVariations.ts  # Hook de variações mensais
-│   │   └── useTransactions.ts       # Hook de transações
-│   │
-│   ├── pages/                       # Páginas da aplicação
-│   │   ├── Dashboard.tsx
-│   │   ├── Calendar.tsx
-│   │   ├── Categories.tsx
-│   │   ├── Auth/                    # Login e Registro
-│   │   ├── Expenses/                # Despesas fixas e variáveis
-│   │   ├── Income/                  # Receitas fixas e variáveis
-│   │   └── History/                 # Histórico e relatórios
-│   │
-│   ├── services/                    # Chamadas à API
-│   │   ├── api.ts                   # Cliente Axios configurado
-│   │   ├── authService.ts
-│   │   ├── categoryService.ts
-│   │   ├── fixedTransactionService.ts
-│   │   └── transactionService.ts
-│   │
-│   ├── types/                       # Definições TypeScript
-│   │   ├── AuthTypes.ts
-│   │   └── FinanceTypes.ts
-│   │
-│   └── utils/                       # Funções utilitárias
-│       ├── dateUtils.tsx
-│       ├── financeUtils.tsx
-│       └── typeGuards.ts
-│
-├── public/                          # Arquivos estáticos
-├── vite.config.ts                   # Configuração Vite
-├── tailwind.config.js               # Configuração Tailwind
-├── nginx.conf                       # Nginx (produção)
-├── Dockerfile                       # Multi-stage build
-└── README.md                        # Este arquivo
-```
-
----
-
-## 🎯 Funcionalidades Principais
-
-### 📊 Dashboard Interativo
-- Gráfico de pizza por categoria
-- Histogramas de gastos mensais
-- Calendário financeiro semanal
-- Transações recentes
-- Contas a vencer
-- Widgets com drag-and-drop
-
-### 💰 Gestão de Transações
-- Receitas e despesas variáveis
-- Transações recorrentes (fixas)
-- Parcelamentos
-- Filtros avançados
-- Histórico completo
-
-### 🏷️ Categorias
-- Criação personalizada
-- Cores customizáveis
-- Separação por tipo (receita/despesa)
-- Arquivamento de categorias
-
-### 🔐 Autenticação
-- Login com JWT
-- Registro de usuários
-- Rotas protegidas
-- Logout automático em caso de erro
-
-### 🌓 Temas
-- Modo claro/escuro
-- Persistência de preferência
-- Toggle rápido no header
-
----
-
-## 🛠️ Desenvolvimento
-
-### Pré-requisitos
-
-- Node.js 18+
-- npm ou yarn
-
-### Instalação Local
+Use Node.js 22.12+ da linha 22 e npm, alinhados à imagem `node:22-alpine` do Dockerfile. Execute os comandos a partir de `frontend/`:
 
 ```bash
-# Instalar dependências
-npm install
-
-# Configurar .env
+npm ci
 cp .env.example .env
+```
 
-# Iniciar servidor de desenvolvimento
+Para executar frontend e backend diretamente na máquina, configure:
+
+```dotenv
+VITE_API_URL=http://localhost:3001
+```
+
+Inicie o backend com `FRONTEND_URL=http://localhost:5173` e depois execute:
+
+```bash
 npm run dev
 ```
 
-Acesse: http://localhost:5173
+Acesse http://localhost:5173. O [README do backend](../backend/README.md) descreve a configuração do banco e as migrações.
 
-### Scripts Disponíveis
+### Variáveis de ambiente
 
-```bash
-npm run dev       # Servidor Vite com hot reload
-npm run build     # Build de produção
-npm run preview   # Preview do build de produção
-npm run lint      # Executar ESLint
-```
+| Variável | Uso |
+|---|---|
+| `VITE_API_URL` | Base das chamadas HTTP. O exemplo usa `/api`, apropriado para os proxies Docker. |
 
----
+O proxy de [vite.config.ts](./vite.config.ts) encaminha `/api` para `http://backend:3001` e remove o prefixo. Esse hostname pertence à rede do Compose. Para rodar fora dela, use a URL absoluta acima ou adapte o proxy para `http://localhost:3001`.
 
-## ⚙️ Variáveis de Ambiente
+As variáveis `VITE_*` são incorporadas ao build. Alterá-las exige recompilar o frontend.
 
-Crie um arquivo `.env` na raiz do frontend:
+### Scripts
 
 ```bash
-cp .env.example .env
+npm run dev        # Vite com hot reload
+npm run test       # Vitest em execução única
+npm run typecheck  # TypeScript sem emitir arquivos
+npm run build      # Build Vite em dist/
+npm run preview    # Visualização do build
+npm run lint       # Executar ESLint
 ```
 
-| Variável | Descrição | Padrão |
-|----------|-----------|--------|
-| `VITE_API_URL` | URL base da API | `/api` |
+`npm run build` não executa a checagem de tipos; use também `npm run typecheck`. A suíte cobre navegação, formulários, calendário, relatórios, investimento, conta, tema e cálculos financeiros. O ambiente e as fixtures ficam em `src/test/`.
 
-**Nota:** Em desenvolvimento, o Vite usa proxy configurado em `vite.config.ts` para encaminhar `/api` para `http://localhost:3001`.
+A inspeção visual tem uma matriz própria e pendências registradas em [docs/ui-verification.md](../docs/ui-verification.md).
 
----
+## Rotas
 
-## 🎨 Arquitetura
+As rotas ativas são definidas em [src/App.tsx](./src/App.tsx), que também configura os providers e o carregamento de páginas sob demanda.
 
-### Context API
+| Caminho | Conteúdo |
+|---|---|
+| `/login` | Entrada |
+| `/signup` | Cadastro |
+| `/` | Início e dashboard |
+| `/lancamentos` | Central de receitas e despesas |
+| `/calendario` | Calendário e agenda |
+| `/relatorio-mensal` | Relatórios em abas |
+| `/categorias` | Gestão de categorias |
 
-**AuthContext:**
-- Gerencia autenticação e sessão
-- Persiste token em localStorage
-- Logout automático em erro 401
+As páginas financeiras exigem sessão. Endereços desconhecidos exibem uma página 404.
 
-**FinanceContext:**
-- Estado global de transações e categorias
-- Funções CRUD compartilhadas
+Em `/lancamentos`, `tipo=receita` ou `tipo=despesa` e `grupo=fixas` ou `grupo=variaveis` selecionam as listas. Em `/relatorio-mensal`, `aba=resumo`, `aba=despesas` ou `aba=receitas` seleciona o relatório.
 
-**ThemeContext:**
-- Tema claro/escuro
-- Sincronização com localStorage
+Os endereços anteriores `/despesas-variaveis`, `/despesas-fixas`, `/rendas-variaveis` e `/rendas-fixas` redirecionam para a central com os filtros correspondentes. `/historico-despesas` e `/historico-rendas` redirecionam para as abas de relatórios.
 
-### Custom Hooks
+## Estrutura e estado
 
-Toda lógica de negócio está em hooks reutilizáveis:
-
-```tsx
-// Exemplo de uso
-const { transactions, isLoading, createTransaction } = useTransactions();
+```text
+src/
+├── App.tsx                 # Providers, rotas e páginas sob demanda
+├── index.tsx               # Entrada da aplicação
+├── components/
+│   ├── Auth/               # Layout de autenticação e proteção de rotas
+│   ├── Dashboard/          # Resumos e módulos do início
+│   ├── Expenses/           # Formulários de despesas
+│   ├── Income/             # Formulários de receitas
+│   ├── Layout/             # Navegação, conta e lançamento rápido
+│   └── Shared/             # Dialog, UI, formulários, listas e relatórios
+├── context/                # AuthContext, ThemeContext e FinanceContext
+├── hooks/                  # Consultas, mutações, tutorial e viewport
+├── pages/                  # Telas, central de lançamentos e relatórios
+├── services/               # Cliente Axios e serviços REST
+├── styles/                 # system.css e tutorial-custom.css
+├── test/                   # Setup e fixtures HTTP
+├── types/                  # Tipos de autenticação e finanças
+└── utils/                  # Datas, cálculos, relatório e layout do dashboard
 ```
 
-### Services
+- **AuthContext:** restaura a sessão via `/auth/me`, gerencia entrada/saída e limpa o cache ao trocar de sessão. O JWT fica no cookie HttpOnly `auth_token`; o Axios usa `withCredentials: true`.
+- **ThemeContext:** usa a preferência válida `light` ou `dark` salva em `localStorage.theme`. Sem preferência, acompanha `prefers-color-scheme`, inclusive mudanças do sistema. Ao alternar manualmente pela conta, salva a escolha e passa a usá-la. A troca continua funcionando quando o armazenamento está indisponível. O provider atualiza as classes da raiz e a meta `theme-color`.
+- **TanStack Query:** gerencia os dados financeiros. O investimento inclui usuário e versão de sessão nas chaves de cache para isolar respostas entre contas. `FinanceContext.tsx` permanece no código, mas não está montado na árvore atual de providers.
+- **TutorialProvider:** conduz o tutorial com Driver.js e persiste a conclusão por usuário pela API. A conta permite revê-lo.
+- **Sistema visual:** `src/styles/system.css`, `src/index.css` e `tailwind.config.js` definem os estilos. Componentes compartilhados incluem estados de carregamento, erro, vazio e diálogos.
 
-Camada de abstração para chamadas à API:
+O saldo usa receitas menos despesas. O planejamento do dashboard desconta compromissos e investimento para estimar o orçamento disponível. `utils/reportData.ts` combina valores fixos e variáveis sem contar novamente as transações usadas como variações de recorrências.
 
-```typescript
-// services/categoryService.ts
-export const categoryService = {
-  getAll: (type?: string) => api.get('/categories', { params: { type } }),
-  create: (data) => api.post('/categories', data),
-  // ...
-};
-```
+## Docker e Nginx
 
----
-
-## 🐳 Docker
-
-### Modo Desenvolvimento
+A partir da raiz do repositório, após preparar `.env.dev`:
 
 ```bash
-# Da raiz do projeto
-docker compose up frontend
+docker compose --env-file .env.dev up --build
+# Em outro terminal, na primeira execução:
+docker compose --env-file .env.dev exec backend npx prisma migrate deploy
 ```
 
-### Modo Produção
-
-Build otimizado servido pelo Nginx:
+Para construir somente a imagem de produção, a partir de `frontend/`:
 
 ```bash
-docker compose -f docker-compose.prod.yml up frontend
+docker build --target runner --build-arg VITE_API_URL=/api -t fincontrol-frontend:local .
 ```
 
----
+O estágio `runner` serve `dist/` com Nginx. O Compose de produção usa imagens publicadas; consulte o [README principal](../README.md) para deploy.
 
-## 🤝 Contribuindo
+O [nginx.conf](./nginx.conf) atende as rotas da SPA com `index.html`, encaminha `/api/` para `backend:3001` e limita tentativas de login. O HTML exige revalidação de cache; arquivos estáticos têm cache de um ano. Isso permite que novos acessos obtenham o HTML do deploy atual.
 
-### Adicionar Nova Página
+## Contribuindo
 
-1. Criar arquivo em `src/pages/`
-2. Adicionar rota em `AppRouter.tsx`
-3. Adicionar link no `Sidebar.tsx`
+Adicione novas rotas em `src/App.tsx` e itens de navegação em `components/Layout/Sidebar.tsx`. Reutilize os componentes de `Shared/` e os serviços HTTP existentes. Valide as mudanças com os scripts adequados e a matriz visual.
 
-### Adicionar Novo Componente
-
-1. Criar em `src/components/[categoria]/`
-2. Usar TypeScript para props
-3. Seguir convenções de nomenclatura
-
-### Padrões de Código
-
-```typescript
-// Props sempre tipadas
-interface ComponentProps {
-  title: string;
-  onClose: () => void;
-}
-
-// Componente funcional
-export const Component: React.FC<ComponentProps> = ({ title, onClose }) => {
-  return <div>{/* JSX */}</div>;
-};
-```
-
----
-
-## 📚 Recursos Úteis
-
-- [React Documentation](https://react.dev)
-- [Vite Guide](https://vitejs.dev/guide/)
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [React Router](https://reactrouter.com)
-- [React Query](https://tanstack.com/query)
-
----
-
-[⬆ Voltar ao README principal](../README.md)
+[Voltar ao README principal](../README.md)

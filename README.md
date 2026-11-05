@@ -39,52 +39,34 @@ FinControl é uma aplicação web moderna e completa para gerenciamento financei
 O projeto segue uma arquitetura moderna de aplicação web full-stack:
 
 ### Desenvolvimento (Local)
-```
-┌─────────────────────────────────────────────────────────┐
-│                      FRONTEND                           │
-│  React + TypeScript + Vite + Tailwind CSS               │
-│  http://localhost:5173                                  │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     │ HTTP/REST API
-                     │
-┌────────────────────▼────────────────────────────────────┐
-│                      BACKEND                            │
-│  Node.js + TypeScript + Hono + Prisma                   │
-│  http://localhost:3001                                  │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     │ Prisma ORM
-                     │
-┌────────────────────▼────────────────────────────────────┐
-│                    DATABASE                             │
-│  PostgreSQL 18                                          │
-│  localhost:5432                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    browser["Navegador"]
+    subgraph compose["Docker Compose de desenvolvimento"]
+        frontend["Frontend: React + Vite<br/>localhost:5173"]
+        backend["Backend: Node.js + Hono<br/>localhost:3001"]
+        database[("PostgreSQL 18<br/>localhost:5432")]
+        frontend -->|"Proxy /api: remove o prefixo"| backend
+        backend -->|"Prisma + adaptador PostgreSQL"| database
+    end
+    browser -->|"Interface e chamadas /api"| frontend
+    browser -.->|"Acesso direto à API"| backend
 ```
 
 ### Produção (2 VPS)
-```
-┌─────────────────────────────────────────────────────────┐
-│                       VPS 1                             │
-│                 PostgreSQL Database                     │
-│                     Port 5432                           │
-└─────────────────────────────────────────────────────────┘
-                           ▲
-                           │ Conexão TCP
-                           │
-┌──────────────────────────┴──────────────────────────────┐
-│                       VPS 2                             │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │              Nginx (Port 80/443)                 │   │
-│  │          Proxy Reverso + Frontend                │   │
-│  └────────────────────┬─────────────────────────────┘   │
-│                       │                                 │
-│  ┌────────────────────▼─────────────────────────────┐   │
-│  │              Backend (Port 3001)                 │   │
-│  │        Node.js + Hono + Prisma                   │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    browser["Navegador"]
+    subgraph appVps["VPS 2: aplicação"]
+        nginx["Nginx: porta 80<br/>Frontend React compilado"]
+        api["Backend: porta 3001<br/>Node.js + Hono + Prisma"]
+        nginx -->|"/api: remove o prefixo"| api
+    end
+    subgraph databaseVps["VPS 1: banco de dados"]
+        postgres[("PostgreSQL 18<br/>Porta 5432")]
+    end
+    browser -->|"HTTP; HTTPS exige configuração adicional"| nginx
+    api -->|"Conexão TCP com a VPS do banco"| postgres
 ```
 
 **Arquitetura de Produção:**
@@ -439,35 +421,24 @@ Para informações mais detalhadas sobre cada parte do projeto:
 
 ### Estrutura de Pastas
 
-```
-fincontrol/
-├── 📁 backend/                 # API REST + Banco de Dados
-│   ├── src/                    # Código-fonte TypeScript
-│   │   ├── routes/             # Endpoints da API
-│   │   ├── middleware/         # Autenticação e validações
-│   │   └── lib/                # Prisma client
-│   ├── prisma/                 # Schema e migrações
-│   └── README.md               # 📘 Documentação do backend
-│
-├── 📁 frontend/                # Interface React
-│   ├── src/
-│   │   ├── components/         # Componentes React
-│   │   ├── pages/              # Páginas da aplicação
-│   │   ├── context/            # Context API (Auth, Finance, Theme)
-│   │   ├── styles/             # Sistema visual e estilos do tutorial
-│   │   ├── test/               # Configuração e fixtures de testes
-│   │   ├── hooks/              # Custom hooks
-│   │   ├── services/           # Chamadas à API
-│   │   └── types/              # TypeScript types
-│   └── README.md               # 📗 Documentação do frontend
-│
-├── docker-compose.yml          # Desenvolvimento
-├── docker-compose.prod.yml     # Produção: aplicação
-├── docker-compose.prod.db.yml  # Produção: PostgreSQL
-├── docs/ui-verification.md     # Matriz de validação da interface
-├── teste_carga.js              # Teste de performance k6
-├── teste_login.js              # Teste de estresse k6
-└── README.md                   # 📖 Este arquivo
+```mermaid
+flowchart TB
+    root["fincontrol/"]
+    root --> backend["backend/"]
+    root --> frontend["frontend/"]
+    root --> infra["Infraestrutura"]
+    root --> docs["Documentação e validação"]
+    backend --> backendSrc["src/<br/>routes, middleware e lib"]
+    backend --> prisma["prisma/<br/>Schema e migrações"]
+    backend --> backendTests["tests/<br/>Testes de autenticação"]
+    frontend --> frontendSrc["src/<br/>components, pages, context e hooks"]
+    frontend --> frontendSupport["src/<br/>services, styles, types, utils e test"]
+    infra --> dev["docker-compose.yml<br/>Desenvolvimento"]
+    infra --> prod["docker-compose.prod.yml<br/>Aplicação em produção"]
+    infra --> db["docker-compose.prod.db.yml<br/>Banco em produção"]
+    docs --> readmes["README.md<br/>frontend/README.md<br/>backend/README.md"]
+    docs --> visual["docs/ui-verification.md"]
+    docs --> load["teste_carga.js e teste_login.js"]
 ```
 
 ---

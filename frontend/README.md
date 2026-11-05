@@ -100,25 +100,20 @@ Os endereços anteriores `/despesas-variaveis`, `/despesas-fixas`, `/rendas-vari
 
 ## Estrutura e estado
 
-```text
-src/
-├── App.tsx                 # Providers, rotas e páginas sob demanda
-├── index.tsx               # Entrada da aplicação
-├── components/
-│   ├── Auth/               # Layout de autenticação e proteção de rotas
-│   ├── Dashboard/          # Resumos e módulos do início
-│   ├── Expenses/           # Formulários de despesas
-│   ├── Income/             # Formulários de receitas
-│   ├── Layout/             # Navegação, conta e lançamento rápido
-│   └── Shared/             # Dialog, UI, formulários, listas e relatórios
-├── context/                # AuthContext, ThemeContext e FinanceContext
-├── hooks/                  # Consultas, mutações, tutorial e viewport
-├── pages/                  # Telas, central de lançamentos e relatórios
-├── services/               # Cliente Axios e serviços REST
-├── styles/                 # system.css e tutorial-custom.css
-├── test/                   # Setup e fixtures HTTP
-├── types/                  # Tipos de autenticação e finanças
-└── utils/                  # Datas, cálculos, relatório e layout do dashboard
+```mermaid
+flowchart TB
+    entry["src/index.tsx"] --> app["src/App.tsx<br/>Providers e rotas"]
+    app --> pages["pages/<br/>Telas e navegação"]
+    app --> contexts["context/<br/>AuthContext e ThemeContext"]
+    pages --> components["components/<br/>Auth, Dashboard, Expenses,<br/>Income, Layout e Shared"]
+    pages --> hooks["hooks/<br/>Dados, tutorial e viewport"]
+    hooks --> services["services/<br/>Axios e serviços REST"]
+    pages --> utils["utils/<br/>Datas, cálculos, relatórios e layout"]
+    components --> styles["styles/ e index.css<br/>Sistema visual"]
+    types["types/<br/>Tipos de autenticação e finanças"] -.-> pages
+    types -.-> services
+    tests["test/<br/>Setup e fixtures HTTP"] -.-> pages
+    tests -.-> hooks
 ```
 
 - **AuthContext:** restaura a sessão via `/auth/me`, gerencia entrada/saída e limpa o cache ao trocar de sessão. O JWT fica no cookie HttpOnly `auth_token`; o Axios usa `withCredentials: true`.
@@ -126,6 +121,19 @@ src/
 - **TanStack Query:** gerencia os dados financeiros. O investimento inclui usuário e versão de sessão nas chaves de cache para isolar respostas entre contas. `FinanceContext.tsx` permanece no código, mas não está montado na árvore atual de providers.
 - **TutorialProvider:** conduz o tutorial com Driver.js e persiste a conclusão por usuário pela API. A conta permite revê-lo.
 - **Sistema visual:** `src/styles/system.css`, `src/index.css` e `tailwind.config.js` definem os estilos. Componentes compartilhados incluem estados de carregamento, erro, vazio e diálogos.
+
+### Fluxo dos dados financeiros
+
+```mermaid
+flowchart LR
+    ui["Páginas e formulários"] -->|"Consulta ou mutação"| hooks["Hooks com TanStack Query"]
+    hooks -->|"Chamada HTTP"| services["Serviços Axios<br/>withCredentials: true"]
+    services --> api["API Hono"]
+    api -->|"Resposta"| cache["Cache de consultas"]
+    cache -->|"Dados e estado da consulta"| ui
+    hooks -.->|"Invalidação após mutações"| cache
+    auth["AuthContext"] -.->|"Limpa o cache ao trocar de sessão"| cache
+```
 
 O saldo usa receitas menos despesas. O planejamento do dashboard desconta compromissos e investimento para estimar o orçamento disponível. `utils/reportData.ts` combina valores fixos e variáveis sem contar novamente as transações usadas como variações de recorrências.
 

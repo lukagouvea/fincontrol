@@ -6,26 +6,24 @@ API REST de controle financeiro pessoal com Node.js, TypeScript, Hono, Prisma e 
 
 O Dockerfile usa Node.js 22 e os arquivos Compose usam PostgreSQL 18 Alpine. As dependências incluem Hono 4, Prisma 7, Zod 4, bcryptjs e o adaptador PostgreSQL do Prisma. Consulte [package.json](./package.json) e [package-lock.json](./package-lock.json) para as versões declaradas e instaladas.
 
-```text
-backend/
-├── src/
-│   ├── index.ts            # CORS e registro das rotas
-│   ├── generated/          # Cliente gerado por prisma generate
-│   ├── lib/prisma.ts       # Prisma com adaptador PostgreSQL
-│   ├── middleware/auth.ts  # Validação do cookie JWT
-│   └── routes/
-│       ├── auth.ts         # Cadastro, login, logout e perfil
-│       ├── categories.ts   # Categorias
-│       ├── transactions.ts # Transações e parcelamentos
-│       ├── recurring.ts    # Regras fixas e variações mensais
-│       ├── investment.ts   # Investimento padrão e por mês
-│       └── users.ts        # Status do tutorial
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-├── tests/auth.test.ts      # Regressões de autenticação
-├── prisma.config.ts       # Conexão e configuração de migrações
-└── Dockerfile             # Estágios dev, builder e runner
+```mermaid
+flowchart TB
+    entry["src/index.ts<br/>CORS e registro de rotas"]
+    entry --> auth["routes/auth.ts<br/>Cadastro, login, logout e perfil"]
+    entry --> middleware["middleware/auth.ts<br/>Validação do cookie JWT"]
+    middleware --> finance["routes/<br/>categories, transactions,<br/>recurring e investment"]
+    entry --> users["routes/users.ts<br/>Tutorial com validação do cookie"]
+    auth --> prisma["lib/prisma.ts<br/>Cliente com adaptador PostgreSQL"]
+    finance --> prisma
+    users --> prisma
+    schema["prisma/schema.prisma"] -->|"prisma generate"| generated["src/generated/<br/>Cliente Prisma"]
+    generated --> prisma
+    prisma --> db[("PostgreSQL")]
+    migrations["prisma/migrations/"] -->|"prisma migrate deploy"| db
+    config["prisma.config.ts<br/>Conexão e migrações"] -.-> migrations
+    tests["tests/auth.test.ts"] -.->|"Testa com Prisma substituído"| auth
+    tests -.-> middleware
+    tests -.-> users
 ```
 
 `src/routes/dashboard.ts` existe, mas não está registrado em `src/index.ts`. Os resumos e gráficos usados pela interface são calculados no frontend a partir dos dados financeiros.
@@ -98,6 +96,30 @@ O cookie atual usa `SameSite=Lax`, `path=/` e `secure: false`. A configuração 
 | Proxy Vite/Nginx | `/api` na origem do frontend | `/api/auth/login` |
 
 O backend registra rotas sem `/api`. Os proxies removem esse prefixo. Os caminhos abaixo são relativos ao backend; categorias, transações, recorrências, investimento, perfil e status do tutorial exigem sessão.
+
+### Fluxo de autenticação
+
+```mermaid
+sequenceDiagram
+    participant Browser as Navegador
+    participant API as API Hono
+    participant DB as PostgreSQL
+    Browser->>API: POST /auth/login com email e senha
+    API->>DB: Buscar usuário pelo email
+    DB-->>API: Usuário e hash da senha
+    API->>API: Comparar senha com bcryptjs
+    alt Credenciais válidas
+        API->>API: Assinar JWT com HS256
+        API-->>Browser: 200 com user e Set-Cookie auth_token HttpOnly
+        Browser->>API: Requisição protegida com cookie auth_token
+        API->>API: Verificar assinatura e expiração do JWT
+        API->>DB: Consultar dados do usuário autenticado
+        DB-->>API: Dados
+        API-->>Browser: Resposta JSON
+    else Credenciais inválidas
+        API-->>Browser: 401 com erro de credenciais
+    end
+```
 
 ### Autenticação
 
@@ -210,6 +232,77 @@ O [schema Prisma](./prisma/schema.prisma) define:
 | `InstallmentGroup` | Valor total e quantidade de parcelas; exclusão em cascata das parcelas |
 | `InvestmentSetting` | Investimento mensal padrão, único por usuário |
 | `InvestmentOverride` | Valor específico, único por usuário, ano e mês |
+
+### Relacionamentos
+
+```mermaid
+erDiagram
+    User ||--o{ Category : possui
+    User ||--o{ Transaction : registra
+    User ||--o{ RecurringRule : configura
+    User ||--o{ InstallmentGroup : possui
+    User ||--o| InvestmentSetting : configura
+    User ||--o{ InvestmentOverride : ajusta
+    Category |o--o{ Transaction : classifica
+    Category |o--o{ RecurringRule : classifica
+    RecurringRule |o--o{ Transaction : vincula_variacoes
+    InstallmentGroup |o--o{ Transaction : agrupa_parcelas
+
+    User {
+        uuid id PK
+        string email UK
+        string name
+        string passwordHash
+        boolean tutorialCompleted
+    }
+    Category {
+        uuid id PK
+        uuid userId FK
+        string name
+        string type
+        boolean active
+    }
+    Transaction {
+        uuid id PK
+        uuid userId FK
+        uuid categoryId FK
+        uuid recurringRuleId FK
+        uuid installmentGroupId FK
+        decimal amount
+        datetime date
+        string type
+        int installmentNumber
+    }
+    RecurringRule {
+        uuid id PK
+        uuid userId FK
+        uuid categoryId FK
+        decimal amount
+        int dayOfMonth
+        datetime startDate
+        datetime endDate
+    }
+    InstallmentGroup {
+        uuid id PK
+        uuid userId FK
+        decimal totalAmount
+        int totalInstallments
+    }
+    InvestmentSetting {
+        uuid id PK
+        uuid userId FK,UK
+        decimal defaultMonthlyAmount
+    }
+    InvestmentOverride {
+        uuid id PK
+        uuid userId FK
+        int year
+        int month
+        decimal amount
+    }
+```
+
+O diagrama mostra os principais campos. As relações opcionais de uma transação são categoria, recorrência e grupo de parcelas; o schema também define as restrições compostas por usuário, nome/tipo da categoria e ano/mês do investimento.
 
 Valores monetários são armazenados como `Decimal(12, 2)`. A API converte alguns retornos para número (como listagem de transações e investimento); os consumidores devem considerar a serialização dos demais retornos do Prisma.
 

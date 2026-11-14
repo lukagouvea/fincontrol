@@ -304,7 +304,7 @@ volumes:
   - ./backend:/app          # Código do backend (hot reload)
   - ./frontend:/app         # Código do frontend (hot reload)
   - /app/node_modules       # Protege dependências
-  - fincontrol-data-dev     # Dados do PostgreSQL
+  - ./.local-data/postgres  # Dados do PostgreSQL (bind mount, fora do git)
 ```
 
 **Produção:**

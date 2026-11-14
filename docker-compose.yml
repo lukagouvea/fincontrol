@@ -8,10 +8,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
+      # Postgres 18+ usa /var/lib/postgresql/18/docker por padrao; mantemos o layout antigo
+      PGDATA: /var/lib/postgresql/data
     ports:
       - '5432:5432'
     volumes:
-      - fincontrol-data-dev:/var/lib/postgresql/data
+      # Bind mount em ext4: o Postgres exige permissao 0700, que o NTFS nao suporta
+      - ./.local-data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
       interval: 10s
@@ -50,12 +53,9 @@ services:
       VITE_API_URL: ${VITE_API_URL:-/api}
     restart: always
     ports:
-      - '5173:5173' # Porta do Vite
+      - '${FRONTEND_PORT:-5173}:5173' # Porta do Vite (host configuravel via FRONTEND_PORT)
     volumes:
       - ./frontend:/app # Espelha sua pasta local
       - /app/node_modules
     depends_on:
       - backend
-
-volumes:
-  fincontrol-data-dev:

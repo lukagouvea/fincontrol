@@ -1,0 +1,73 @@
+name: Build das imagens Docker
+
+on:
+  workflow_call:
+    inputs:
+      push:
+        description: Publicar as imagens no Docker Hub
+        type: boolean
+        default: false
+      backend:
+        description: Construir a imagem do backend
+        type: boolean
+        default: true
+      frontend:
+        description: Construir a imagem do frontend
+        type: boolean
+        default: true
+    secrets:
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+
+jobs:
+  build:
+    name: Imagens
+    runs-on: ubuntu-latest
+    env:
+      # Sem secrets (ex.: PR de fork) usa um namespace fictício; só importa quando há push.
+      IMAGE_NAMESPACE: ${{ secrets.DOCKER_USERNAME || 'fincontrol' }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Login no Docker Hub
+        if: inputs.push
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend
+        if: inputs.backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          target: runner
+          push: ${{ inputs.push }}
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/fincontrol-backend:latest
+            ${{ env.IMAGE_NAMESPACE }}/fincontrol-backend:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build frontend
+        if: inputs.frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          target: runner
+          push: ${{ inputs.push }}
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/fincontrol-frontend:latest
+            ${{ env.IMAGE_NAMESPACE }}/fincontrol-frontend:${{ github.sha }}
+          build-args: |
+            VITE_API_URL=/api
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max

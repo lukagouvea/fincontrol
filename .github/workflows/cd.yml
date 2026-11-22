@@ -1,0 +1,59 @@
+name: CD
+
+# Push/merge na main: testa tudo, publica as imagens e faz o deploy na VPS.
+# Também pode ser disparado manualmente pela aba Actions.
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# Deploys entram em fila e nunca são interrompidos no meio.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test-backend:
+    uses: ./.github/workflows/_test-backend.yml
+
+  test-frontend:
+    uses: ./.github/workflows/_test-frontend.yml
+
+  build-and-push:
+    needs: [ test-backend, test-frontend ]
+    uses: ./.github/workflows/_docker-build.yml
+    with:
+      push: true
+      backend: true
+      frontend: true
+    secrets: inherit
+
+  deploy-vps:
+    name: Deploy na VPS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Copiar arquivo de Infra via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "/home/${{ secrets.VPS_USER }}/fincontrol"
+
+      - name: Executar Deploy Remoto
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            cd /home/${{ secrets.VPS_USER }}/fincontrol
+            mv docker-compose.prod.yml docker-compose.yml
+            docker compose pull
+            docker compose up -d
+            docker image prune -f

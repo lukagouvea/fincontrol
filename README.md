@@ -220,9 +220,14 @@ docker compose --env-file .env.dev up --build
 
 Ambiente otimizado para deploy em servidores com arquitetura de 2 VPS.
 
-#### 🚀 Deploy com GitHub Actions
+#### 🚀 CI/CD com GitHub Actions
 
-O workflow [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) constrói as imagens em pull requests para `main`. Em pushes para `main`, publica as imagens no Docker Hub e atualiza a VPS da aplicação por SSH.
+| Workflow | Quando roda | O que faz |
+|----------|-------------|-----------|
+| [`ci.yml`](./.github/workflows/ci.yml) | Pull request para `main` | Roda typecheck e testes e constrói as imagens sem publicar, só para a parte (backend/frontend) que mudou. O job `ci-ok` resume o resultado e é o check a exigir na proteção da `main`. |
+| [`cd.yml`](./.github/workflows/cd.yml) | Push/merge na `main` (ou manual) | Roda todos os testes, publica as imagens no Docker Hub (`:latest` e `:<sha do commit>`) e atualiza a VPS da aplicação por SSH. |
+
+Os passos compartilhados ficam nos workflows reutilizáveis `_test-backend.yml`, `_test-frontend.yml` e `_docker-build.yml`. A tag com o SHA permite rollback: troque `:latest` pela tag desejada no Compose da VPS e rode `docker compose up -d`.
 
 Configure os secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VPS_HOST`, `VPS_USER` e `VPS_KEY`. O Compose de produção aponta para imagens de `lukagouvea`; ajuste esse namespace se publicar em outra conta.
 

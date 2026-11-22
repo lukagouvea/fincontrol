@@ -1,0 +1,74 @@
+name: CI
+
+# Validação de pull requests para a main: testes + build das imagens (sem publicar).
+# Só roda o que foi afetado pela mudança. O deploy fica no cd.yml.
+on:
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# Um commit novo no PR cancela a execução anterior.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detectar mudanças
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Mudanças nos workflows testam tudo.
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+
+  test-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/_test-backend.yml
+
+  test-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/_test-frontend.yml
+
+  docker-build:
+    needs: [ changes, test-backend, test-frontend ]
+    # Roda mesmo se um dos testes foi pulado pelo filtro, mas não se algum falhou.
+    if: >-
+      always() && !failure() && !cancelled() &&
+      (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true')
+    uses: ./.github/workflows/_docker-build.yml
+    with:
+      push: false
+      backend: ${{ needs.changes.outputs.backend == 'true' }}
+      frontend: ${{ needs.changes.outputs.frontend == 'true' }}
+
+  # Único check a marcar como obrigatório na proteção da main.
+  # Jobs pulados pelo filtro contam como OK; falhas e cancelamentos não.
+  ci-ok:
+    name: ci-ok
+    needs: [ changes, test-backend, test-frontend, docker-build ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar resultado dos jobs
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "Algum job falhou ou foi cancelado."
+          exit 1
+      - run: echo "CI OK"

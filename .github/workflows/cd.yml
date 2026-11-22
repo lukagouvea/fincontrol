@@ -5,6 +5,14 @@ name: CD
 on:
   push:
     branches: [ "main" ]
+    # Mudanças só de documentação não geram build nem deploy.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.env*.example'
+      - 'teste_*.js'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/backup.yml'
   workflow_dispatch:
 
 # Deploys entram em fila e nunca são interrompidos no meio.
@@ -36,37 +44,29 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      # A VPS não aceita SSH direto da internet: a conexão passa pelo
-      # Cloudflare Tunnel e é autorizada no Cloudflare Access por um service token.
-      - name: Instalar cloudflared
-        run: |
-          sudo curl -fsSL -o /usr/local/bin/cloudflared \
-            https://github.com/cloudflare/cloudflared/releases/download/2026.11.1/cloudflared-linux-amd64
-          sudo chmod +x /usr/local/bin/cloudflared
+      - name: Configurar SSH da VPS
+        uses: ./.github/actions/vps-ssh
+        with:
+          ssh-key: ${{ secrets.VPS_KEY }}
+          known-hosts: ${{ secrets.VPS_KNOWN_HOSTS }}
+          user: ${{ secrets.VPS_USER }}
 
-      - name: Configurar SSH via Cloudflare Access
-        env:
-          SSH_KEY: ${{ secrets.VPS_KEY }}
-          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          cat > ~/.ssh/config <<EOF
-          Host vps
-            HostName ssh-app.luka.dev.br
-            User $VPS_USER
-            IdentityFile ~/.ssh/deploy
-            IdentitiesOnly yes
-            StrictHostKeyChecking yes
-            ProxyCommand cloudflared access ssh --hostname %h
-          EOF
-
-      - name: Executar Deploy Remoto
+      # O compose vai com outro nome e só substitui o atual depois que o pull e o
+      # backup derem certo (ver deploy/deploy.sh). Para rollback, rode de novo o job
+      # "Deploy na VPS" de uma execução antiga: ele usa o SHA daquele commit.
+      - name: Enviar arquivos de deploy
         env:
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
-          scp docker-compose.prod.yml vps:fincontrol/docker-compose.yml
-          ssh vps 'cd fincontrol && docker compose pull && docker compose up -d && docker image prune -f'
+          scp docker-compose.prod.yml vps:fincontrol/docker-compose.next.yml
+          scp deploy/deploy.sh deploy/backup-db.sh vps:fincontrol/
+
+      - name: Executar deploy (pull, backup, up, health check)
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        # O SHA expande aqui no runner, de propósito.
+        run: |
+          # shellcheck disable=SC2029
+          ssh vps "IMAGE_TAG=$GITHUB_SHA sh fincontrol/deploy.sh"

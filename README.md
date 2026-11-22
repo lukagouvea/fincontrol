@@ -225,13 +225,30 @@ Ambiente otimizado para deploy em servidores com arquitetura de 2 VPS.
 | Workflow | Quando roda | O que faz |
 |----------|-------------|-----------|
 | [`ci.yml`](./.github/workflows/ci.yml) | Pull request para `main` | Roda typecheck e testes e constrói as imagens sem publicar, só para a parte (backend/frontend) que mudou. O job `ci-ok` resume o resultado e é o check a exigir na proteção da `main`. |
-| [`cd.yml`](./.github/workflows/cd.yml) | Push/merge na `main` (ou manual) | Roda todos os testes, publica as imagens no Docker Hub (`:latest` e `:<sha do commit>`) e atualiza a VPS da aplicação por SSH. |
+| [`cd.yml`](./.github/workflows/cd.yml) | Push/merge na `main` (ou manual). Mudanças só de documentação não disparam | Roda todos os testes, publica as imagens no Docker Hub (`:latest` e `:<sha do commit>`) e faz o deploy na VPS da aplicação. |
+| [`backup.yml`](./.github/workflows/backup.yml) | Todo dia às 03:00 (Brasília) ou manual | Faz um dump do banco de produção e o guarda na VPS da aplicação. |
 
-Os passos compartilhados ficam nos workflows reutilizáveis `_test-backend.yml`, `_test-frontend.yml` e `_docker-build.yml`. A tag com o SHA permite rollback: troque `:latest` pela tag desejada no Compose da VPS e rode `docker compose up -d`.
+Os passos compartilhados ficam nos workflows reutilizáveis `_test-backend.yml`, `_test-frontend.yml` e `_docker-build.yml` e na action [`vps-ssh`](./.github/actions/vps-ssh/action.yml). Essa action instala o `cloudflared` com checksum verificado e configura o SSH pelo Cloudflare Tunnel.
 
-Configure os secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VPS_HOST`, `VPS_USER` e `VPS_KEY`. O Compose de produção aponta para imagens de `lukagouvea`; ajuste esse namespace se publicar em outra conta.
+**Deploy** ([`deploy/deploy.sh`](./deploy/deploy.sh), executado na VPS):
+1. Baixa as imagens do commit usando um compose temporário (`docker-compose.next.yml`). Se isso falhar, nada muda na VPS.
+2. Faz o backup do banco antes das migrações. Se o backup falhar, o deploy para e nada muda.
+3. Substitui o `docker-compose.yml` e sobe os containers. O backend roda `prisma migrate deploy` ao iniciar.
+4. Faz o health check: um login com credenciais inexistentes precisa responder `401` em até 3 minutos. Caso contrário, o job falha e mostra os logs do backend.
 
-O workflow copia somente o Compose da aplicação, renomeia-o para `docker-compose.yml` no servidor e executa `docker compose pull` e `docker compose up -d`. Prepare previamente o banco e um `.env` no diretório remoto com os valores de produção: o workflow não envia variáveis nem usa `--env-file .env.prod`.
+**Rollback:** na aba Actions, abra a execução do `CD` da versão desejada e use *Re-run* no job **Deploy na VPS**. Ele faz o deploy das imagens com o SHA daquele commit, sem rebuild.
+
+**Backups** ([`deploy/backup-db.sh`](./deploy/backup-db.sh)): ficam em `~/fincontrol/backups/` na VPS da aplicação. São mantidos os 14 mais recentes de cada tipo (`pre-deploy_*` e `daily_*`). Para restaurar (isso sobrescreve o banco):
+
+```bash
+cd ~/fincontrol
+docker compose run --rm -T db-backup \
+  sh -c 'pg_restore --clean --if-exists -d "$PGDATABASE"' < backups/<arquivo>.dump
+```
+
+Secrets necessários: `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VPS_USER`, `VPS_KEY`, `VPS_KNOWN_HOSTS`, `CF_ACCESS_CLIENT_ID` e `CF_ACCESS_CLIENT_SECRET`. O Compose de produção aponta para imagens de `lukagouvea`; ajuste esse namespace se publicar em outra conta.
+
+Prepare previamente o banco e um `.env` em `~/fincontrol/` na VPS com os valores de produção. O workflow não envia variáveis. `JWT_SECRET` e `POSTGRES_PASSWORD` são obrigatórios: sem eles o compose se recusa a subir. A VPS precisa ter `curl`, usado no health check.
 
 #### 🔧 Deploy Manual
 

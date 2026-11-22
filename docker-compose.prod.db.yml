@@ -11,7 +11,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fincontrol}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
       POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
     volumes:
       - fincontrol-data-prod:/var/lib/postgresql/data

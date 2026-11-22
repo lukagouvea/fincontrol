@@ -1,0 +1,34 @@
+name: Backup do banco
+
+# Dump diário do Postgres de produção, salvo na VPS da aplicação em
+# fincontrol/backups/ (fora da VPS do banco). Mantém os 14 mais recentes.
+on:
+  schedule:
+    - cron: "0 6 * * *" # 03:00 em Brasília
+  workflow_dispatch:
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Backup diário
+    runs-on: ubuntu-latest
+    env:
+      TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+      TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar SSH da VPS
+        uses: ./.github/actions/vps-ssh
+        with:
+          ssh-key: ${{ secrets.VPS_KEY }}
+          known-hosts: ${{ secrets.VPS_KNOWN_HOSTS }}
+          user: ${{ secrets.VPS_USER }}
+
+      # backup-db.sh é instalado na VPS a cada deploy (cd.yml).
+      - name: Executar backup
+        run: ssh vps "sh fincontrol/backup-db.sh daily"

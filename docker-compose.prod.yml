@@ -1,22 +1,25 @@
+# IMAGE_TAG: o deploy passa o SHA do commit; sem ela usa :latest.
+# JWT_SECRET e POSTGRES_PASSWORD são obrigatórios: sem eles o compose falha em vez de
+# subir com um segredo previsível.
 services:
   # --- BACKEND (Modo PROD - Código Compilado) ---
   backend:
-    image: lukagouvea/fincontrol-backend:latest
+    image: lukagouvea/fincontrol-backend:${IMAGE_TAG:-latest}
     pull_policy: always
     container_name: fincontrol-backend-prod
     restart: always
     environment:
       NODE_ENV: production
       PORT: ${BACKEND_PORT:-3001}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-fincontrol}:${POSTGRES_PASSWORD:-change-me}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fincontrol}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fincontrol}:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-fincontrol}?schema=public
       FRONTEND_URL: ${FRONTEND_URL:-https://app.seudominio.com}
-      JWT_SECRET: ${JWT_SECRET:-changeme}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
     expose:
       - '${BACKEND_PORT:-3001}'
 
   # --- FRONTEND (Modo PROD - Nginx) ---
   frontend:
-    image: lukagouvea/fincontrol-frontend:latest
+    image: lukagouvea/fincontrol-frontend:${IMAGE_TAG:-latest}
     pull_policy: always
     container_name: fincontrol-frontend-prod
     restart: always
@@ -24,3 +27,16 @@ services:
       - '127.0.0.1:80:80' # Só o cloudflared local acessa (entrada pública via Cloudflare Tunnel)
     depends_on:
       - backend
+
+  # --- BACKUP (só roda sob demanda: docker compose run --rm -T db-backup > arquivo.dump) ---
+  # Usado por backup-db.sh antes de cada deploy e no backup diário.
+  db-backup:
+    image: postgres:18-alpine
+    profiles: [ tools ]
+    environment:
+      PGHOST: ${POSTGRES_HOST:-db}
+      PGPORT: ${POSTGRES_PORT:-5432}
+      PGUSER: ${POSTGRES_USER:-fincontrol}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      PGDATABASE: ${POSTGRES_DB:-fincontrol}
+    command: [ "pg_dump", "--format=custom", "--no-owner" ]

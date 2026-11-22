@@ -1,0 +1,54 @@
+name: Configurar SSH da VPS
+description: >-
+  Instala o cloudflared (com verificação de checksum) e configura o host "vps"
+  no ~/.ssh/config. A VPS não aceita SSH direto da internet: a conexão passa pelo
+  Cloudflare Tunnel e é autorizada no Cloudflare Access por um service token.
+  O job que usar ssh/scp precisa das envs TUNNEL_SERVICE_TOKEN_ID e
+  TUNNEL_SERVICE_TOKEN_SECRET.
+
+inputs:
+  ssh-key:
+    description: Chave privada de deploy
+    required: true
+  known-hosts:
+    description: Linha(s) de known_hosts da VPS
+    required: true
+  user:
+    description: Usuário SSH na VPS
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Instalar cloudflared
+      shell: bash
+      env:
+        # Ao atualizar a versão, copie o sha256 de "cloudflared-linux-amd64" na página do release.
+        CLOUDFLARED_VERSION: 2026.11.1
+        CLOUDFLARED_SHA256: 97bb3b02d23a5980fc9c15a1a270e692da1923f103f920d5b16d4931d5ab55e7
+      run: |
+        bin="$RUNNER_TEMP/cloudflared"
+        curl -fsSL -o "$bin" \
+          "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64"
+        echo "${CLOUDFLARED_SHA256}  $bin" | sha256sum -c -
+        sudo install -m 755 "$bin" /usr/local/bin/cloudflared
+
+    - name: Configurar SSH via Cloudflare Access
+      shell: bash
+      env:
+        SSH_KEY: ${{ inputs.ssh-key }}
+        KNOWN_HOSTS: ${{ inputs.known-hosts }}
+        VPS_USER: ${{ inputs.user }}
+      run: |
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+        printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        cat > ~/.ssh/config <<CONFIG
+        Host vps
+          HostName ssh-app.luka.dev.br
+          User $VPS_USER
+          IdentityFile ~/.ssh/deploy
+          IdentitiesOnly yes
+          StrictHostKeyChecking yes
+          ProxyCommand cloudflared access ssh --hostname %h
+        CONFIG

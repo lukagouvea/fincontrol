@@ -7,7 +7,9 @@ services:
     command: postgres -c shared_buffers=256MB -c effective_cache_size=768MB -c maintenance_work_mem=64MB -c work_mem=4MB -c wal_buffers=16MB    
     container_name: fincontrol-db-prod
     ports:
-      - '5432:5432'
+      # Só no IP da rede privada entre as VPS. Publicar em 0.0.0.0 expõe o banco à
+      # internet, e o Docker ignora o ufw para portas publicadas.
+      - '${POSTGRES_BIND_IP:?defina POSTGRES_BIND_IP com o IP privado desta VPS}:5432:5432'
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fincontrol}

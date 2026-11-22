@@ -10,6 +10,10 @@ import transactionsRoute from './routes/transactions.js';
 import recurringRoute from './routes/recurring.js';
 import investmentRoute from './routes/investment.js';
 import usersRoute from './routes/users.js';
+import { getJwtSecret } from './lib/jwt.js';
+
+// Falha na inicialização se o segredo não estiver configurado.
+getJwtSecret();
 
 const app = new Hono();
 

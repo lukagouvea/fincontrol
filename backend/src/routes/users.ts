@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'hono/jwt';
 import { prisma } from '../lib/prisma.js';
+import { getJwtSecret } from '../lib/jwt.js';
 
 const app = new Hono();
 
@@ -28,7 +29,7 @@ app.patch(
     }
 
     try {
-      const secret = process.env.JWT_SECRET || 'segredo_padrao';
+      const secret = getJwtSecret();
       const payload = await verify(token, secret, 'HS256');
       const userId = payload.id as string;
 
@@ -69,7 +70,7 @@ app.get('/tutorial-status', async (c) => {
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'segredo_padrao';
+    const secret = getJwtSecret();
     const payload = await verify(token, secret, 'HS256');
     const userId = payload.id as string;
 

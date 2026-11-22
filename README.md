@@ -260,6 +260,8 @@ docker compose --env-file .env.prod -f docker-compose.prod.db.yml up -d
 docker compose --env-file .env.prod -f docker-compose.prod.db.yml logs -f db
 ```
 
+A porta 5432 é publicada só no IP privado definido em `POSTGRES_BIND_IP`, e o compose se recusa a subir sem ele. Na VPS 2, o `POSTGRES_HOST` precisa ser esse mesmo IP privado.
+
 **Na VPS 2 (Frontend + Backend):**
 
 Configure `.env.prod` com `POSTGRES_HOST` apontando para a VPS do banco e aguarde o PostgreSQL aceitar conexões.
@@ -283,7 +285,7 @@ O Nginx encaminha `/api/` para `backend:3001` e remove o prefixo. Mantenha `BACK
 **Portas:**
 - Aplicação completa: http://localhost (porta 80; HTTPS exige configuração adicional)
 - API acessível em: http://localhost/api
-- PostgreSQL (VPS 1): Port 5432
+- PostgreSQL (VPS 1): Port 5432, só na rede privada (`POSTGRES_BIND_IP`)
 
 ### Comandos Docker Úteis
 

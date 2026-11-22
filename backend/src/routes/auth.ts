@@ -5,6 +5,7 @@ import { hash, compare } from 'bcryptjs';
 import { sign, verify } from 'hono/jwt';
 import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
 import { prisma } from '../lib/prisma.js'; // Certifique-se que o caminho está certo
+import { getJwtSecret } from '../lib/jwt.js';
 
 const app = new Hono();
 
@@ -58,7 +59,7 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
   });
 
   // 4. Gera o Token JWT
-  const secret = process.env.JWT_SECRET || 'segredo_padrao';
+  const secret = getJwtSecret();
   const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret, 'HS256'); // 7 dias
 
   // 5. Define o Cookie HttpOnly (Segurança Máxima)
@@ -93,7 +94,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
   }
 
   // 3. Gera Token
-  const secret = process.env.JWT_SECRET || 'segredo_padrao';
+  const secret = getJwtSecret();
   const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret, 'HS256');
 
   // 4. Cookie
@@ -128,7 +129,7 @@ app.get('/me', async (c) => {
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'segredo_padrao';
+    const secret = getJwtSecret();
     const payload = await verify(token, secret, 'HS256');
     
     const user = await prisma.user.findUnique({

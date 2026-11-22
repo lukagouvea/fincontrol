@@ -1,6 +1,7 @@
 import { createMiddleware } from 'hono/factory';
 import { getCookie } from 'hono/cookie';
 import { verify } from 'hono/jwt';
+import { getJwtSecret } from '../lib/jwt.js';
 
 // Define o tipo da variável que vamos injetar no contexto
 type Env = {
@@ -17,7 +18,7 @@ export const authMiddleware = createMiddleware<Env>(async (c, next) => {
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'segredo_padrao';
+    const secret = getJwtSecret();
     const payload = await verify(token, secret, 'HS256');
 
     // Injeta o ID do usuário no contexto da requisição

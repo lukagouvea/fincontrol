@@ -11,7 +11,7 @@ on:
       - 'docs/**'
       - '.env*.example'
       - 'teste_*.js'
-      # Compose do banco: aplicado à mão na VPS do banco, o CD não o usa.
+      # Compose do banco (aplicado à mão na VPS do banco) e de dev: o CD não os usa.
       - 'docker-compose.prod.db.yml'
       - 'docker-compose.yml'
       - '.github/workflows/ci.yml'

@@ -21,6 +21,6 @@ services:
     container_name: fincontrol-frontend-prod
     restart: always
     ports:
-      - '80:80' # Acessa em localhost:80 (Nginx roda na 80 interna)
+      - '127.0.0.1:80:80' # Só o cloudflared local acessa (entrada pública via Cloudflare Tunnel)
     depends_on:
       - backend

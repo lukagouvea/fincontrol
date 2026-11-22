@@ -16,9 +16,13 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
       POSTGRES_DB: ${POSTGRES_DB:-fincontrol}
     volumes:
-      - fincontrol-data-prod:/var/lib/postgresql/data
+      # Postgres 18+ guarda os dados em /var/lib/postgresql/18/docker (PGDATA padrão da
+      # imagem) e declara o volume em /var/lib/postgresql. Montar em .../data só
+      # funcionava porque a imagem tem o symlink data -> . e deixava um volume anônimo
+      # inútil por baixo. Os dados existentes já estão em <volume>/18/docker.
+      - fincontrol-data-prod:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5

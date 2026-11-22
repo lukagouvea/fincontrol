@@ -254,11 +254,21 @@ Prepare previamente o banco e um `.env` em `~/fincontrol/` na VPS com os valores
 
 **Na VPS 1 (Banco de Dados):**
 
+A VPS do banco não precisa do repositório: só do compose e de um `.env`, em `~/fincontrol/`.
+
 ```bash
-# Configure .env.prod a partir de .env.prod.example
-docker compose --env-file .env.prod -f docker-compose.prod.db.yml up -d
-docker compose --env-file .env.prod -f docker-compose.prod.db.yml logs -f db
+# Nesta máquina: envie o compose do banco
+scp docker-compose.prod.db.yml <vps-do-banco>:fincontrol/docker-compose.yml
+
+# Na VPS do banco: crie ~/fincontrol/.env (chmod 600) com POSTGRES_USER, POSTGRES_PASSWORD,
+# POSTGRES_DB, POSTGRES_BIND_IP e COMPOSE_PROJECT_NAME=fincontrol
+cd ~/fincontrol
+docker compose config        # confira host_ip e o nome do volume antes de subir
+docker compose up -d db
+docker compose logs -f db
 ```
+
+`COMPOSE_PROJECT_NAME` fixa o nome do volume (`fincontrol_fincontrol-data-prod`). Se esse nome mudar, o Docker cria um volume novo e vazio.
 
 A porta 5432 é publicada só no IP privado definido em `POSTGRES_BIND_IP`, e o compose se recusa a subir sem ele. Na VPS 2, o `POSTGRES_HOST` precisa ser esse mesmo IP privado.
 

@@ -2,6 +2,11 @@ import './index.css';
 import React from "react";
 import { createRoot } from "react-dom/client"; // 1. Mude a importação
 import { App } from "./App";
+import { registerSW } from "virtual:pwa-register";
+
+// Service worker do PWA: instalação no celular e carregamento do app sem rede.
+// Com registerType "autoUpdate", uma versão nova assume sozinha após o deploy.
+registerSW({ immediate: true });
 
 // 2. Encontre o elemento no DOM
 const container = document.getElementById("root");

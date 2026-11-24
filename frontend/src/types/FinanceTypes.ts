@@ -21,10 +21,21 @@ export interface VariableTransaction extends TransactionBase {
   date: string; // ISO UTC
 }
 
+/** Valores de um item fixo com vigência a partir de um mês. */
+export interface FixedVersion {
+  id?: string;
+  effectiveFrom: string; // 'YYYY-MM-01'
+  amount: number;
+  categoryId: string | null;
+  day: number;
+}
+
 export interface FixedTransaction extends TransactionBase {
   day: number;
   startDate: string; // ISO UTC
   endDate?: string | null;  // ISO UTC
+  /** Histórico de valores/categoria/dia, em ordem de vigência. */
+  versions?: FixedVersion[];
 }
 
 export interface VariableIncome extends VariableTransaction {}

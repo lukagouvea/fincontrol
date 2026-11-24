@@ -179,10 +179,13 @@ export function MonthPicker({
   month,
   year,
   onChange,
+  idPrefix = "period",
 }: {
   month: number;
   year: number;
   onChange: (month: number, year: number) => void;
+  /** Prefixo dos ids dos selects, para usar mais de um seletor na mesma página. */
+  idPrefix?: string;
 }) {
   const now = new Date().getFullYear();
   const years = Array.from(
@@ -190,11 +193,11 @@ export function MonthPicker({
   ).sort((a, b) => b - a);
   return (
     <div className="month-picker">
-      <label className="sr-only" htmlFor="period-month">
+      <label className="sr-only" htmlFor={idPrefix + "-month"}>
         Mês
       </label>
       <select
-        id="period-month"
+        id={idPrefix + "-month"}
         value={month}
         onChange={(e) => onChange(Number(e.target.value), year)}
       >
@@ -204,11 +207,11 @@ export function MonthPicker({
           </option>
         ))}
       </select>
-      <label className="sr-only" htmlFor="period-year">
+      <label className="sr-only" htmlFor={idPrefix + "-year"}>
         Ano
       </label>
       <select
-        id="period-year"
+        id={idPrefix + "-year"}
         value={year}
         onChange={(e) => onChange(month, Number(e.target.value))}
       >

@@ -3,10 +3,7 @@ import React, { useMemo } from "react";
 import { EmptyState, Money } from "../Shared/UI";
 // 1. Importe os ícones necessários
 import { CreditCard, ArrowDownCircle } from "lucide-react";
-import {
-  isItemActiveInMonth,
-  getActualFixedItemAmount,
-} from "../../utils/financeUtils";
+import { resolveFixedItemForMonth } from "../../utils/financeUtils";
 import {
   FixedExpense,
   Transaction,
@@ -40,23 +37,28 @@ export const UpcomingBills: React.FC<UpcomingBillsProps> = ({
     const currentYear = date.getFullYear();
 
     // Pega as despesas fixas ativas para o mês
-    const activeFixedExpenses: UpcomingBill[] = fixedExpenses
-      .filter((expense) => isItemActiveInMonth(expense, date))
-      .map((expense) => ({
-        id: `fixed-${expense.id}`,
-        description: expense.description,
-        // Importante: usar o valor real do mês (pode haver variação mensal)
-        amount: getActualFixedItemAmount(
-          expense.id,
+    const activeFixedExpenses: UpcomingBill[] = fixedExpenses.flatMap(
+      (expense) => {
+        // Valor e dia da versão vigente no mês (com variação mensal, se houver)
+        const r = resolveFixedItemForMonth(
+          expense,
           "expense",
           currentYear,
           currentMonth,
-          expense.amount,
           monthlyVariations,
-        ),
-        dueDate: expense.day,
-        type: "fixed", // Adiciona o tipo 'fixed'
-      }));
+        );
+        if (!r) return [];
+        return [
+          {
+            id: `fixed-${expense.id}`,
+            description: expense.description,
+            amount: r.actualAmount,
+            dueDate: r.occurrenceDay,
+            type: "fixed" as const,
+          },
+        ];
+      },
+    );
 
     // Pega as parcelas que vencem no mês
     const monthlyInstallments: UpcomingBill[] = transactions

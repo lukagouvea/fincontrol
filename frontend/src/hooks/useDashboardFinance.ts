@@ -4,10 +4,7 @@ import { useFixedExpenses, useFixedIncomes } from "./useFixedTransactions";
 import { useMonthlyVariations } from "./useMonthlyVariations";
 import { useCategories } from "./useCategories";
 import { parseDateInputToLocal } from "../utils/dateUtils";
-import {
-  isItemActiveInMonth,
-  getActualFixedItemAmount,
-} from "../utils/financeUtils";
+import { resolveFixedItemForMonth } from "../utils/financeUtils";
 import {
   Transaction,
   FixedExpense,
@@ -81,41 +78,31 @@ export const useDashboardFinance = () => {
       0,
     );
 
-    const monthlyFixedIncome = (fixedIncomes as FixedIncome[])
-      .filter((income: FixedIncome) =>
-        isItemActiveInMonth(income, selectedDateObject),
-      )
-      .reduce(
-        (sum: number, income: FixedIncome) =>
-          sum +
-          getActualFixedItemAmount(
-            income.id,
-            "income",
-            anoAtual,
-            mesAtual,
-            income.amount,
-            monthlyVariations as MonthlyVariation[],
-          ),
-        0,
-      );
+    const monthlyFixedIncome = (fixedIncomes as FixedIncome[]).reduce(
+      (sum: number, income: FixedIncome) =>
+        sum +
+        (resolveFixedItemForMonth(
+          income,
+          "income",
+          anoAtual,
+          mesAtual,
+          monthlyVariations as MonthlyVariation[],
+        )?.actualAmount ?? 0),
+      0,
+    );
 
-    const monthlyFixedExpense = (fixedExpenses as FixedExpense[])
-      .filter((expense: FixedExpense) =>
-        isItemActiveInMonth(expense, selectedDateObject),
-      )
-      .reduce(
-        (sum: number, expense: FixedExpense) =>
-          sum +
-          getActualFixedItemAmount(
-            expense.id,
-            "expense",
-            anoAtual,
-            mesAtual,
-            expense.amount,
-            monthlyVariations as MonthlyVariation[],
-          ),
-        0,
-      );
+    const monthlyFixedExpense = (fixedExpenses as FixedExpense[]).reduce(
+      (sum: number, expense: FixedExpense) =>
+        sum +
+        (resolveFixedItemForMonth(
+          expense,
+          "expense",
+          anoAtual,
+          mesAtual,
+          monthlyVariations as MonthlyVariation[],
+        )?.actualAmount ?? 0),
+      0,
+    );
 
     const monthlyInstallmentExpense = (transactions as Transaction[])
       .filter(

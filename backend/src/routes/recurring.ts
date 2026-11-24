@@ -3,6 +3,17 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
+import {
+  type Version,
+  dateOfMonthIndex,
+  formatMonthKey,
+  monthIndex,
+  monthIndexOfDate,
+  occurrenceDate,
+  parseMonthKey,
+  planVersions,
+  versionForMonth,
+} from '../lib/recurrence.js';
 
 const app = new Hono<{ Variables: { userId: string } }>();
 
@@ -20,12 +31,157 @@ const recurringSchema = z.object({
   endDate: z.iso.datetime().optional().or(z.literal('')).nullable(), // Pode vir vazio
 });
 
+const updateSchema = recurringSchema.partial().extend({
+  // 'from': valor/categoria/dia valem a partir de `effectiveFrom`.
+  // 'all': corrige todo o histórico.
+  scope: z.enum(['from', 'all']).default('from'),
+  effectiveFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM').optional(),
+});
+
 const variationSchema = z.object({
   year: z.number(),
-  month: z.number(), // 0-11
+  month: z.number().min(0).max(11), // 0-11
   amount: z.number(),
   type: z.enum(['income', 'expense']),
 });
+
+// --- HELPERS ---
+
+type DbVersion = {
+  id: string;
+  effectiveFrom: Date;
+  amount: unknown;
+  categoryId: string | null;
+  dayOfMonth: number;
+  category?: { id: string; name: string; color: string | null } | null;
+};
+
+type RuleWithVersions = {
+  id: string;
+  description: string;
+  type: string;
+  amount: unknown;
+  categoryId: string | null;
+  dayOfMonth: number;
+  startDate: Date;
+  endDate: Date | null;
+  versions: DbVersion[];
+  category?: { id: string; name: string; color: string | null } | null;
+};
+
+const toVersion = (v: DbVersion): Version & { id?: string; category?: DbVersion['category'] } => ({
+  id: v.id,
+  effectiveFrom: monthIndexOfDate(v.effectiveFrom),
+  amount: Number(v.amount),
+  categoryId: v.categoryId,
+  dayOfMonth: v.dayOfMonth,
+  category: v.category,
+});
+
+/** Versões da regra; regras sem versão (criadas antes da migração) usam as colunas da regra. */
+const versionsOf = (rule: RuleWithVersions) =>
+  rule.versions.length
+    ? rule.versions.map(toVersion)
+    : [{
+        effectiveFrom: monthIndexOfDate(rule.startDate),
+        amount: Number(rule.amount),
+        categoryId: rule.categoryId,
+        dayOfMonth: rule.dayOfMonth,
+        category: rule.category,
+      }];
+
+const currentMonthIndex = () => monthIndexOfDate(new Date());
+
+/** Mês de referência para os campos de topo: o atual, ou o último mês de uma regra encerrada. */
+const referenceMonth = (rule: { endDate: Date | null }) => {
+  const now = currentMonthIndex();
+  return rule.endDate ? Math.min(now, monthIndexOfDate(rule.endDate)) : now;
+};
+
+const versionInclude = {
+  orderBy: { effectiveFrom: 'asc' as const },
+  include: { category: { select: { id: true, name: true, color: true } } },
+};
+
+// ADAPTER: Converte do formato do Banco para o formato do Front.
+// amount/day/categoryId de topo são os da versão vigente no mês de referência.
+const formatRule = (rule: RuleWithVersions) => {
+  const versions = versionsOf(rule);
+  const current = versionForMonth(versions, referenceMonth(rule));
+  return {
+    id: rule.id,
+    description: rule.description,
+    amount: current.amount,
+    type: rule.type,
+    day: current.dayOfMonth, // Banco (day_of_month) -> Front (day)
+    startDate: rule.startDate.toISOString(),
+    endDate: rule.endDate?.toISOString(),
+    categoryId: current.categoryId,
+    category: current.category ?? null,
+    versions: versions.map((v) => ({
+      id: v.id,
+      effectiveFrom: formatMonthKey(v.effectiveFrom) + '-01',
+      amount: v.amount,
+      categoryId: v.categoryId,
+      day: v.dayOfMonth,
+    })),
+  };
+};
+
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/** Substitui as versões da regra pela lista desejada. */
+async function writeVersions(tx: Tx, ruleId: string, desired: Version[]) {
+  await tx.recurringRuleVersion.deleteMany({
+    where: {
+      ruleId,
+      effectiveFrom: { notIn: desired.map((v) => dateOfMonthIndex(v.effectiveFrom)) },
+    },
+  });
+  for (const v of desired) {
+    const values = {
+      amount: v.amount,
+      categoryId: v.categoryId,
+      dayOfMonth: v.dayOfMonth,
+    };
+    await tx.recurringRuleVersion.upsert({
+      where: {
+        ruleId_effectiveFrom: { ruleId, effectiveFrom: dateOfMonthIndex(v.effectiveFrom) },
+      },
+      update: values,
+      create: { ruleId, effectiveFrom: dateOfMonthIndex(v.effectiveFrom), ...values },
+    });
+  }
+}
+
+/**
+ * Mantém as transações de variação coerentes com as versões: data (dia da
+ * versão do mês), categoria e descrição.
+ */
+async function syncVariations(
+  tx: Tx,
+  ruleId: string,
+  description: string,
+  versions: Version[],
+) {
+  const variations = await tx.transaction.findMany({ where: { recurringRuleId: ruleId } });
+  for (const t of variations) {
+    const index = monthIndexOfDate(t.occurrenceMonth ?? t.date);
+    const version = versionForMonth(versions, index);
+    const date = occurrenceDate(index, version.dayOfMonth);
+    const occurrenceMonth = dateOfMonthIndex(index);
+    if (
+      t.date.getTime() === date.getTime() &&
+      t.categoryId === version.categoryId &&
+      t.description === description &&
+      t.occurrenceMonth?.getTime() === occurrenceMonth.getTime()
+    ) continue;
+    await tx.transaction.update({
+      where: { id: t.id },
+      data: { date, categoryId: version.categoryId, description, occurrenceMonth },
+    });
+  }
+}
 
 // --- ROTAS ---
 
@@ -42,30 +198,15 @@ app.get('/', async (c) => {
         ...(type && { type: type as 'income' | 'expense' })
       },
       include: {
-        // Se o DB Pull chamou de 'category', usamos esse nome. Se for 'Category', ajuste.
-        category: {
-          select: { id: true, name: true, color: true }
-        }
+        category: { select: { id: true, name: true, color: true } },
+        versions: versionInclude,
       },
       orderBy: {
         dayOfMonth: 'asc'
       }
     });
 
-    // ADAPTER: Converte do formato do Banco para o formato do Front
-    const formattedRules = rules.map(rule => ({
-      id: rule.id,
-      description: rule.description,
-      amount: Number(rule.amount),
-      type: rule.type,
-      day: rule.dayOfMonth, // Banco (day_of_month) -> Front (day)
-      startDate: rule.startDate.toISOString(),
-      endDate: rule.endDate?.toISOString(),
-      categoryId: rule.categoryId,
-      category: rule.category, // Objeto categoria completo para exibir cor/nome
-    }));
-
-    return c.json(formattedRules);
+    return c.json(rules.map(formatRule));
 
   } catch (error) {
     console.error(error);
@@ -83,19 +224,20 @@ app.get('/variations', async (c) => {
       where: {
         userId: userId,
         // Filtra transações que têm recurring_rule_id (ou seja, vieram de regras fixas)
-        recurringRuleId: { not: null } 
+        recurringRuleId: { not: null }
       }
     });
 
     const formattedVariations = variationTransactions.map(t => {
-      const date = new Date(t.date);
+      // O mês vem de occurrence_month (UTC), não do fuso do servidor.
+      const date = t.occurrenceMonth ?? t.date;
       return {
         id: t.id, // ID da transação
         fixedItemId: t.recurringRuleId, // ID da regra pai
         type: t.type,
         amount: Number(t.amount),
-        year: date.getFullYear(),
-        month: date.getMonth(), // JS Month (0-11)
+        year: date.getUTCFullYear(),
+        month: date.getUTCMonth(), // JS Month (0-11)
       };
     });
 
@@ -113,59 +255,47 @@ app.post('/:id/variation', zValidator('json', variationSchema), async (c) => {
   const body = c.req.valid('json');
 
   try {
-    // 1. Buscar a regra original para pegar descrição e categoria
     const rule = await prisma.recurringRule.findFirst({
-      where: {
-        id: ruleId,
-        userId: userId
-      }
+      where: { id: ruleId, userId: userId },
+      include: { versions: versionInclude },
     });
 
     if (!rule) return c.json({ error: 'Regra não encontrada' }, 404);
 
-    // 2. Calcular a data exata da transação (Ano/Mês/Dia da Regra)
-    // Cuidado com fusos: Criamos a data como string YYYY-MM-DD para o banco
-    const targetDate = new Date(body.year, body.month, rule.dayOfMonth);
-    
-    // IMPORTANTE: Prisma com tipo DateTime pode exigir objeto Date
-    // Mas se o campo no banco for DATE puro, ele ignora a hora. 
-    // Vamos passar o objeto Date configurado.
+    // A variação é identificada pelo mês da ocorrência; dia e categoria vêm
+    // da versão vigente naquele mês.
+    const index = monthIndex(body.year, body.month);
+    const version = versionForMonth(versionsOf(rule), index);
+    const occurrenceMonth = dateOfMonthIndex(index);
+    const data = {
+      amount: body.amount,
+      date: occurrenceDate(index, version.dayOfMonth),
+      categoryId: version.categoryId,
+      description: rule.description,
+    };
 
-    // 3. Verificar se já existe transação para esta regra neste mês
     const existingTransaction = await prisma.transaction.findFirst({
-      where: {
-        recurringRuleId: ruleId,
-        // A comparação de data exata no Prisma pode ser chata. 
-        // Vamos buscar pelo intervalo do dia para garantir.
-        date: {
-            gte: new Date(body.year, body.month, rule.dayOfMonth, 0, 0, 0),
-            lt: new Date(body.year, body.month, rule.dayOfMonth + 1, 0, 0, 0)
-        }
-      }
+      where: { recurringRuleId: ruleId, occurrenceMonth },
     });
 
     if (existingTransaction) {
-      // ATUALIZAR: Se já existe, atualiza o valor
       await prisma.transaction.update({
         where: { id: existingTransaction.id },
-        data: { amount: body.amount }
+        data,
       });
       return c.json({ message: 'Variação atualizada' });
-    } else {
-      // CRIAR: Cria uma nova transação vinculada à regra
-      await prisma.transaction.create({
-        data: {
-          userId: userId,
-          description: rule.description,
-          amount: body.amount,
-          type: body.type,
-          date: targetDate,
-          categoryId: rule.categoryId,
-          recurringRuleId: rule.id,
-        }
-      });
-      return c.json({ message: 'Variação criada' });
     }
+
+    await prisma.transaction.create({
+      data: {
+        ...data,
+        userId: userId,
+        type: rule.type,
+        recurringRuleId: rule.id,
+        occurrenceMonth,
+      }
+    });
+    return c.json({ message: 'Variação criada' });
   } catch (error) {
     console.error("Erro ao criar variação:", error);
     return c.json({ error: 'Erro ao processar variação' }, 500);
@@ -176,6 +306,8 @@ app.post('/:id/variation', zValidator('json', variationSchema), async (c) => {
 app.post('/', zValidator('json', recurringSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
+  const startDate = new Date(body.startDate);
+  const categoryId = body.categoryId || null;
 
   try {
     const rule = await prisma.recurringRule.create({
@@ -185,14 +317,25 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
         amount: body.amount,
         type: body.type,
         dayOfMonth: body.day, // Front (day) -> Banco (day_of_month)
-        startDate: new Date(body.startDate),
+        startDate,
         endDate: body.endDate ? new Date(body.endDate) : null,
-        // Se categoryId vier vazio ou string vazia, manda null pro banco
-        categoryId: body.categoryId || null,
-      }
+        categoryId,
+        versions: {
+          create: {
+            effectiveFrom: dateOfMonthIndex(monthIndexOfDate(startDate)),
+            amount: body.amount,
+            categoryId,
+            dayOfMonth: body.day,
+          },
+        },
+      },
+      include: {
+        category: { select: { id: true, name: true, color: true } },
+        versions: versionInclude,
+      },
     });
 
-    return c.json(rule, 201);
+    return c.json(formatRule(rule), 201);
 
   } catch (error) {
     console.error(error);
@@ -201,34 +344,68 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
 });
 
 // 5. ATUALIZAR REGRA (PUT /recurring/:id)
-app.put('/:id', zValidator('json', recurringSchema.partial()), async (c) => {
+// Descrição, início e fim são globais. Valor, categoria e dia são versionados:
+// com scope 'from' valem a partir de `effectiveFrom` (padrão: mês atual);
+// com scope 'all' corrigem todo o histórico.
+app.put('/:id', zValidator('json', updateSchema), async (c) => {
   const userId = c.var.userId;
   const id = c.req.param('id');
   const body = c.req.valid('json');
 
-  // Verifica propriedade
   const existing = await prisma.recurringRule.findFirst({
-    where: { id, userId: userId }
+    where: { id, userId: userId },
+    include: { category: { select: { id: true, name: true, color: true } }, versions: versionInclude },
   });
 
   if (!existing) return c.json({ error: 'Regra não encontrada' }, 404);
 
+  const startDate = body.startDate ? new Date(body.startDate) : existing.startDate;
+  const endDate = body.endDate
+    ? new Date(body.endDate)
+    : body.endDate === null || body.endDate === ''
+      ? null
+      : existing.endDate;
+  const description = body.description ?? existing.description;
+
+  const versions = planVersions(
+    versionsOf(existing),
+    {
+      amount: body.amount,
+      categoryId: body.categoryId === '' ? null : body.categoryId,
+      dayOfMonth: body.day,
+    },
+    body.scope,
+    body.effectiveFrom ? parseMonthKey(body.effectiveFrom) : currentMonthIndex(),
+    monthIndexOfDate(startDate),
+  );
+  // Colunas da regra espelham a versão vigente hoje (compatibilidade com rollback).
+  const current = versionForMonth(versions, currentMonthIndex());
+
   try {
-    const updated = await prisma.recurringRule.update({
-      where: { id },
-      data: {
-        description: body.description,
-        amount: body.amount,
-        dayOfMonth: body.day,
-        startDate: body.startDate ? new Date(body.startDate) : undefined,
-        endDate: body.endDate ? new Date(body.endDate) : (body.endDate === null || body.endDate === '' ? null : undefined), // Aceita undefined para não mudar, ou null para limpar
-        categoryId: body.categoryId === '' ? null : body.categoryId,
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.recurringRule.update({
+        where: { id },
+        data: {
+          description,
+          startDate,
+          endDate,
+          amount: current.amount,
+          categoryId: current.categoryId,
+          dayOfMonth: current.dayOfMonth,
+        },
+      });
+      await writeVersions(tx, id, versions);
+      await syncVariations(tx, id, description, versions);
+      return tx.recurringRule.findUniqueOrThrow({
+        where: { id },
+        include: { category: { select: { id: true, name: true, color: true } }, versions: versionInclude },
+      });
     });
 
-    return c.json(updated);
+    return c.json(formatRule(updated));
 
   } catch (error) {
+    console.error(error);
     return c.json({ error: 'Erro ao atualizar regra' }, 500);
   }
 });

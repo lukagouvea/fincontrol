@@ -6,7 +6,7 @@ import type {
   Category,
 } from "../types/FinanceTypes";
 import { parseDateInputToLocal } from "./dateUtils";
-import { isItemActiveInMonth, getActualFixedItemAmount } from "./financeUtils";
+import { resolveFixedItemForMonth } from "./financeUtils";
 
 // Calculations extracted unchanged from main's monthly report.
 export function buildMonthlyReport(
@@ -38,21 +38,28 @@ export function buildMonthlyReport(
     return isSameMonth && isIncome && isNotFixedVariation;
   });
 
-  const fixedIncomesList = fixedIncomes
-    .filter((income) => isItemActiveInMonth(income, selectedDateObject))
-    .map((income) => ({
-      ...income,
-      date: getFixedItemDate(income.day),
-      actualAmount: getActualFixedItemAmount(
-        income.id,
-        "income",
-        anoAtual,
-        mesAtual,
-        income.amount,
-        monthlyVariations,
-      ),
-      type: "income" as const,
-    }));
+  // Valor, categoria e dia vêm da versão vigente neste mês.
+  const fixedIncomesList = fixedIncomes.flatMap((income) => {
+    const r = resolveFixedItemForMonth(
+      income,
+      "income",
+      anoAtual,
+      mesAtual,
+      monthlyVariations,
+    );
+    if (!r) return [];
+    return [
+      {
+        ...income,
+        amount: r.amount,
+        categoryId: r.categoryId ?? "",
+        day: r.day,
+        date: getFixedItemDate(r.occurrenceDay),
+        actualAmount: r.actualAmount,
+        type: "income" as const,
+      },
+    ];
+  });
 
   const totalVariableIncome = variableIncomes.reduce(
     (sum, t) => sum + Number(t.amount),
@@ -106,21 +113,28 @@ export function buildMonthlyReport(
     return isSameMonth && isExpense && isNotFixedVariation;
   });
 
-  const fixedExpensesList = fixedExpenses
-    .filter((expense) => isItemActiveInMonth(expense, selectedDateObject))
-    .map((expense) => ({
-      ...expense,
-      date: getFixedItemDate(expense.day),
-      actualAmount: getActualFixedItemAmount(
-        expense.id,
-        "expense",
-        anoAtual,
-        mesAtual,
-        expense.amount,
-        monthlyVariations,
-      ),
-      type: "expense" as const,
-    }));
+  // Valor, categoria e dia vêm da versão vigente neste mês.
+  const fixedExpensesList = fixedExpenses.flatMap((expense) => {
+    const r = resolveFixedItemForMonth(
+      expense,
+      "expense",
+      anoAtual,
+      mesAtual,
+      monthlyVariations,
+    );
+    if (!r) return [];
+    return [
+      {
+        ...expense,
+        amount: r.amount,
+        categoryId: r.categoryId ?? "",
+        day: r.day,
+        date: getFixedItemDate(r.occurrenceDay),
+        actualAmount: r.actualAmount,
+        type: "expense" as const,
+      },
+    ];
+  });
 
   const totalVariableExpense = variableExpenses.reduce(
     (sum, t) => sum + Number(t.amount),

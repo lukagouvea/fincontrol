@@ -8,7 +8,7 @@ import type {
   VariableExpense,
 } from "../../types/FinanceTypes";
 import { Dialog } from "./Dialog";
-import { Button, ErrorState } from "./UI";
+import { Button, ErrorState, MonthPicker } from "./UI";
 
 export type TransactionFormValues = {
   description: string;
@@ -20,6 +20,12 @@ export type TransactionFormValues = {
   day: number;
   startDate: string;
   endDate?: string;
+  /**
+   * Só em edição de fixas, quando valor, categoria ou dia mudam:
+   * 'from' aplica a partir de `effectiveFrom` ('YYYY-MM'); 'all' corrige o histórico.
+   */
+  scope?: "from" | "all";
+  effectiveFrom?: string;
 };
 export type TransactionFormProps = {
   isOpen: boolean;
@@ -58,6 +64,9 @@ export function TransactionForm({
   const [end, setEnd] = useState("");
   const [installment, setInstallment] = useState(false);
   const [count, setCount] = useState("2");
+  const [scope, setScope] = useState<"from" | "all">("from");
+  const [fromMonth, setFromMonth] = useState(new Date().getMonth());
+  const [fromYear, setFromYear] = useState(new Date().getFullYear());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +88,9 @@ export function TransactionForm({
     setEnd(initialData?.endDate?.split("T")[0] || "");
     setInstallment(false);
     setCount("2");
+    setScope("from");
+    setFromMonth(new Date().getMonth());
+    setFromYear(new Date().getFullYear());
     setErrors({});
     setError("");
     setSubmitting(false);
@@ -89,6 +101,17 @@ export function TransactionForm({
     if (isOpen && !categoryId && categories[0]) setCategoryId(categories[0].id);
   }, [isOpen, categoryId, categories]);
   const busy = submitting || isLoading;
+  // Em edição de fixas, valor, categoria e dia têm histórico: pergunta a partir de quando valem.
+  const versionedChanged =
+    recurring &&
+    !!initialData &&
+    (numeric !== (initialData.amount ?? null) ||
+      categoryId !== (initialData.categoryId || "") ||
+      Number(day) !== initialData.day);
+  // Corrigir o valor em todo o histórico apaga os reajustes; dia e categoria não.
+  const replacesAdjustments =
+    (initialData?.versions?.length ?? 0) > 1 &&
+    numeric !== (initialData?.amount ?? null);
   const label = kind === "income" ? "receita" : "despesa";
   const title =
     (initialData ? "Editar " : "Nova ") + label + (recurring ? " fixa" : "");
@@ -136,6 +159,11 @@ export function TransactionForm({
         endDate: end || undefined,
         isInstallment: installment,
         installmentCount: Number(count),
+        ...(versionedChanged && {
+          scope,
+          effectiveFrom:
+            fromYear + "-" + String(fromMonth + 1).padStart(2, "0"),
+        }),
       });
     } catch {
       setError(
@@ -290,6 +318,47 @@ export function TransactionForm({
                 {fieldError("end")}
               </div>
             </div>
+            {versionedChanged && (
+              <fieldset className="field scope-field">
+                <legend>Aplicar alteração</legend>
+                <label className="check-field">
+                  <input
+                    type="radio"
+                    name={id + "-scope"}
+                    checked={scope === "from"}
+                    onChange={() => setScope("from")}
+                  />
+                  A partir de
+                </label>
+                {scope === "from" && (
+                  <MonthPicker
+                    idPrefix={id + "-from"}
+                    month={fromMonth}
+                    year={fromYear}
+                    onChange={(m, y) => {
+                      setFromMonth(m);
+                      setFromYear(y);
+                    }}
+                  />
+                )}
+                <label className="check-field">
+                  <input
+                    type="radio"
+                    name={id + "-scope"}
+                    checked={scope === "all"}
+                    onChange={() => setScope("all")}
+                  />
+                  Corrigir todo o histórico
+                </label>
+                <p className="field-hint">
+                  {scope === "from"
+                    ? "Os meses anteriores mantêm os valores atuais."
+                    : replacesAdjustments
+                      ? "Substitui os reajustes anteriores: todos os meses passam a usar o novo valor."
+                      : "Todos os meses, inclusive os passados, passam a usar os novos dados."}
+                </p>
+              </fieldset>
+            )}
           </>
         ) : (
           <div className="field">

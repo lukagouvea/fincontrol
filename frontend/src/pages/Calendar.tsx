@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
-import { Transaction, VariableExpense } from "../types/FinanceTypes";
+import {
+  FixedTransaction,
+  Transaction,
+  VariableExpense,
+} from "../types/FinanceTypes";
 import {
   ExpenseFormData,
   ExpenseModal,
@@ -12,7 +16,7 @@ import {
   formatDateToYYYYMMDD,
   parseDateInputToLocal,
 } from "../utils/dateUtils";
-import { getActualFixedItemAmount } from "../utils/financeUtils";
+import { resolveFixedItemForMonth } from "../utils/financeUtils";
 import { useCategories } from "../hooks/useCategories";
 import { useMonthlyVariations } from "../hooks/useMonthlyVariations";
 import {
@@ -214,76 +218,65 @@ export const Calendar: React.FC = () => {
       });
   };
 
-  const getFixedExpensesForDate = (date: Date) => {
+  // Ocorrências de itens fixos em um dia, com valor, categoria e dia da
+  // versão vigente naquele mês.
+  const getFixedOccurrencesForDate = (
+    items: FixedTransaction[],
+    type: "income" | "expense",
+    date: Date,
+  ) => {
     const day = date.getDate();
     const month = date.getMonth();
     const year = date.getFullYear();
-    return fixedExpenses
-      .filter((expense) => {
-        const startDate = new Date(expense.startDate);
-        const endDate = expense.endDate ? new Date(expense.endDate) : null;
-        if (endDate && date > endDate) return false;
-        if (date < startDate) return false;
-        return expense.day === day;
-      })
-      .map((expense) => {
-        const category = categories.find((c) => c.id === expense.categoryId);
-        const actualAmount = getActualFixedItemAmount(
-          expense.id,
-          "expense",
-          year,
-          month,
-          expense.amount,
-          monthlyVariations,
-        );
+    return items.flatMap((item) => {
+      const startDate = new Date(item.startDate);
+      const endDate = item.endDate ? new Date(item.endDate) : null;
+      if (endDate && date > endDate) return [];
+      if (date < startDate) return [];
+      const r = resolveFixedItemForMonth(
+        item,
+        type,
+        year,
+        month,
+        monthlyVariations,
+      );
+      if (!r || r.occurrenceDay !== day) return [];
+      return [{ item, r }];
+    });
+  };
+
+  const getFixedExpensesForDate = (date: Date) =>
+    getFixedOccurrencesForDate(fixedExpenses, "expense", date).map(
+      ({ item, r }) => {
+        const category = categories.find((c) => c.id === r.categoryId);
         return {
-          id: expense.id,
-          description: expense.description,
-          amount: actualAmount,
+          id: item.id,
+          description: item.description,
+          amount: r.actualAmount,
           isExpense: true,
           category: category?.name || "Sem categoria",
           categoryColor: category?.color || "#999",
           isFixed: true,
-          hasVariation: actualAmount !== expense.amount,
-          standardAmount: expense.amount,
+          hasVariation: r.actualAmount !== r.amount,
+          standardAmount: r.amount,
         };
-      });
-  };
+      },
+    );
 
-  const getFixedIncomesForDate = (date: Date) => {
-    const day = date.getDate();
-    const month = date.getMonth();
-    const year = date.getFullYear();
-    return fixedIncomes
-      .filter((income) => {
-        const startDate = new Date(income.startDate);
-        const endDate = income.endDate ? new Date(income.endDate) : null;
-        if (endDate && date > endDate) return false;
-        if (date < startDate) return false;
-        return income.day === day;
-      })
-      .map((income) => {
-        const actualAmount = getActualFixedItemAmount(
-          income.id,
-          "income",
-          year,
-          month,
-          income.amount,
-          monthlyVariations,
-        );
-        return {
-          id: income.id,
-          description: income.description,
-          amount: actualAmount,
-          isExpense: false,
-          category: "Renda Fixa",
-          categoryColor: "#4CAF50",
-          isFixed: true,
-          hasVariation: actualAmount !== income.amount,
-          standardAmount: income.amount,
-        };
-      });
-  };
+  const getFixedIncomesForDate = (date: Date) =>
+    getFixedOccurrencesForDate(fixedIncomes, "income", date).map(
+      ({ item, r }) => ({
+        id: item.id,
+        description: item.description,
+        amount: r.actualAmount,
+        isExpense: false,
+        category: "Renda Fixa",
+        categoryColor: "#4CAF50",
+        isFixed: true,
+        hasVariation: r.actualAmount !== r.amount,
+        standardAmount: r.amount,
+      }),
+    );
 
   const getEventsForDate = (date: Date) => {
     const transactions = getTransactionsForDate(date);

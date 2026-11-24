@@ -13,7 +13,8 @@ type Props = {
     amount: number;
   }) => void | Promise<void>;
   itemDescription: string;
-  defaultAmount: number;
+  /** Valor padrão do item no mês (versão vigente naquele mês). */
+  getDefaultAmount: (month: number, year: number) => number;
   existingVariations: MonthlyVariation[];
   formatValue: (amount: number) => string;
   formatMonthYear: (month: number, year: number) => string;
@@ -23,7 +24,7 @@ export function VariationModal({
   onClose,
   onSubmit,
   itemDescription,
-  defaultAmount,
+  getDefaultAmount,
   existingVariations,
   formatValue,
   formatMonthYear,
@@ -35,6 +36,7 @@ export function VariationModal({
   const [numeric, setNumeric] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const defaultAmount = getDefaultAmount(month, year);
   useEffect(() => {
     if (isOpen) {
       setMonth(new Date().getMonth());

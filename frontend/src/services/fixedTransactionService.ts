@@ -1,6 +1,12 @@
 import { api } from './api';
 import { FixedExpense, FixedIncome, MonthlyVariation } from '../types/FinanceTypes';
 
+/**
+ * Escopo de uma edição de fixa: 'from' aplica valor/categoria/dia a partir de
+ * `effectiveFrom` ('YYYY-MM'); 'all' corrige todo o histórico.
+ */
+export type FixedUpdateScope = { scope?: 'from' | 'all'; effectiveFrom?: string };
+
 export const fixedTransactionService = {
   // --- LEITURA ---
   getIncomes: async (): Promise<FixedIncome[]> => {
@@ -55,14 +61,14 @@ export const fixedTransactionService = {
   },
 
   // --- UPDATE/DELETE REGRAS ---
-  updateIncome: async (id: string, data: Partial<FixedIncome>): Promise<FixedIncome> => {
+  updateIncome: async (id: string, data: Partial<FixedIncome> & FixedUpdateScope): Promise<FixedIncome> => {
     const { data: updated } = await api.put(`/recurring/${id}`, data);
     return updated;
   },
   deleteIncome: async (id: string): Promise<void> => {
     await api.delete(`/recurring/${id}`);
   },
-  updateExpense: async (id: string, data: Partial<FixedExpense>): Promise<FixedExpense> => {
+  updateExpense: async (id: string, data: Partial<FixedExpense> & FixedUpdateScope): Promise<FixedExpense> => {
     const { data: updated } = await api.put(`/recurring/${id}`, data);
     return updated;
   },

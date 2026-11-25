@@ -107,3 +107,124 @@ it("permite variação zero em outro mês e mantém edição de uma fixa arquiva
     "2026-10-01",
   );
 });
+it("edita o valor de uma fixa a partir de um mês, sem reescrever o histórico", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 10, 3, 12));
+  installApiFixture({
+    "/recurring?type=expense": [
+      {
+        id: "rent",
+        type: "expense",
+        description: "Aluguel",
+        amount: 1500,
+        day: 10,
+        startDate: "2026-01-01T12:00:00Z",
+        categoryId: "food",
+        versions: [
+          {
+            effectiveFrom: "2026-01-01",
+            amount: 1400,
+            categoryId: "food",
+            day: 10,
+          },
+          {
+            effectiveFrom: "2026-06-01",
+            amount: 1500,
+            categoryId: "food",
+            day: 10,
+          },
+        ],
+      },
+    ],
+  });
+  window.history.replaceState({}, "", "/lancamentos?tipo=despesa&grupo=fixas");
+  render(<App />);
+  const user = userEvent.setup();
+  expect(await screen.findByText("Histórico de valores")).toBeInTheDocument();
+  expect(screen.getByText(/1\.400,00 desde jan\/2026/)).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Editar Aluguel" }));
+  const form = screen.getByRole("dialog", { name: "Editar despesa fixa" });
+  // Sem mudança em valor/categoria/dia, não há escolha de escopo.
+  expect(within(form).queryByText("Aplicar alteração")).not.toBeInTheDocument();
+
+  await user.clear(within(form).getByLabelText("Valor (R$)"));
+  await user.type(within(form).getByLabelText("Valor (R$)"), "1650");
+  expect(within(form).getByText("Aplicar alteração")).toBeInTheDocument();
+  expect(within(form).getByLabelText("A partir de")).toBeChecked();
+  await user.selectOptions(within(form).getByLabelText("Mês"), "11");
+  await user.click(within(form).getByRole("button", { name: "Salvar" }));
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  const put = requests.find(
+    (r) => r.method === "put" && r.url === "/recurring/rent",
+  );
+  expect(put?.data).toMatchObject({
+    amount: 1650,
+    scope: "from",
+    effectiveFrom: "2026-12",
+  });
+  // Campos versionados que não mudaram não são enviados.
+  expect(put?.data).not.toHaveProperty("categoryId");
+  expect(put?.data).not.toHaveProperty("day");
+});
+it("corrige todo o histórico de uma fixa e só avisa sobre reajustes quando o valor muda", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 10, 3, 12));
+  installApiFixture({
+    "/recurring?type=expense": [
+      {
+        id: "rent",
+        type: "expense",
+        description: "Aluguel",
+        amount: 1500,
+        day: 10,
+        startDate: "2026-01-01T12:00:00Z",
+        categoryId: "food",
+        versions: [
+          {
+            effectiveFrom: "2026-01-01",
+            amount: 1400,
+            categoryId: "food",
+            day: 10,
+          },
+          {
+            effectiveFrom: "2026-06-01",
+            amount: 1500,
+            categoryId: "food",
+            day: 10,
+          },
+        ],
+      },
+    ],
+  });
+  window.history.replaceState({}, "", "/lancamentos?tipo=despesa&grupo=fixas");
+  render(<App />);
+  const user = userEvent.setup();
+  await user.click(
+    await screen.findByRole("button", { name: "Editar Aluguel" }),
+  );
+  const form = screen.getByRole("dialog", { name: "Editar despesa fixa" });
+  await user.clear(within(form).getByLabelText("Dia do vencimento"));
+  await user.type(within(form).getByLabelText("Dia do vencimento"), "15");
+  await user.click(within(form).getByLabelText("Corrigir todo o histórico"));
+  // Corrigir o dia mantém os reajustes de valor: sem aviso.
+  expect(
+    within(form).queryByText(/Substitui os reajustes/),
+  ).not.toBeInTheDocument();
+  await user.clear(within(form).getByLabelText("Valor (R$)"));
+  await user.type(within(form).getByLabelText("Valor (R$)"), "1550");
+  expect(
+    within(form).getByText(/Substitui os reajustes anteriores/),
+  ).toBeInTheDocument();
+  await user.click(within(form).getByRole("button", { name: "Salvar" }));
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  const put = requests.find(
+    (r) => r.method === "put" && r.url === "/recurring/rent",
+  );
+  expect(put?.data).toMatchObject({ day: 15, amount: 1550, scope: "all" });
+  expect(put?.data).not.toHaveProperty("categoryId");
+});

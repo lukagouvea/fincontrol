@@ -22,10 +22,7 @@ import {
   useAddTransaction,
   useAddCompraParcelada,
 } from "../hooks/useTransactions";
-import {
-  getActualFixedItemAmount,
-  isItemActiveInMonth,
-} from "../utils/financeUtils";
+import { resolveFixedItemForMonth } from "../utils/financeUtils";
 import {
   restoreDashboardLayout,
   type DashboardWidget,
@@ -81,21 +78,18 @@ export function Dashboard() {
   const budget = useMemo(() => {
     const year = selectedDateObject.getFullYear(),
       month = selectedDateObject.getMonth();
-    const fixed = fixedExpenses
-      .filter((item) => isItemActiveInMonth(item, selectedDateObject))
-      .reduce(
-        (sum, item) =>
-          sum +
-          getActualFixedItemAmount(
-            item.id,
-            "expense",
-            year,
-            month,
-            item.amount,
-            monthlyVariations,
-          ),
-        0,
-      );
+    const fixed = fixedExpenses.reduce(
+      (sum, item) =>
+        sum +
+        (resolveFixedItemForMonth(
+          item,
+          "expense",
+          year,
+          month,
+          monthlyVariations,
+        )?.actualAmount ?? 0),
+      0,
+    );
     const installments = transactions
       .filter((t) => "installmentInfo" in t && !!t.installmentInfo)
       .filter((t) => {

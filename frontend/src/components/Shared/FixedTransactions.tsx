@@ -8,7 +8,10 @@ import {
   useAddMonthlyVariation,
   useDeleteMonthlyVariation,
 } from "../../hooks/useMonthlyVariations";
-import { getActualFixedItemAmount } from "../../utils/financeUtils";
+import {
+  getActualFixedItemAmount,
+  getFixedItemVersion,
+} from "../../utils/financeUtils";
 import {
   formatUTCToDDMMAAAA,
   convertDateToUTCISOString,
@@ -28,6 +31,15 @@ import {
   formatMoney,
 } from "./UI";
 
+/** 'YYYY-MM-01' -> "dez/2026" */
+const formatVersionMonth = (effectiveFrom: string) => {
+  const [y, m] = effectiveFrom.split("-").map(Number);
+  return new Date(y, m - 1, 1)
+    .toLocaleDateString("pt-BR", { month: "short", year: "numeric" })
+    .replace(". de ", "/")
+    .replace(" de ", "/");
+};
+
 export function FixedTransactions({ type }: { type: "income" | "expense" }) {
   const client = useQueryClient();
   const income = type === "income";
@@ -46,7 +58,12 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
   const [editing, setEditing] = useState<FixedTransaction | null>(null);
   const [deleting, setDeleting] = useState<FixedTransaction | null>(null);
   const [varying, setVarying] = useState<FixedTransaction | null>(null);
-  const invalidate = () => client.invalidateQueries({ queryKey: [key] });
+  const invalidate = () => {
+    void client.invalidateQueries({ queryKey: [key] });
+    // Editar uma fixa pode ajustar data/categoria das variações (transações).
+    void client.invalidateQueries({ queryKey: ["monthly-variations"] });
+    void client.invalidateQueries({ queryKey: ["transactions"] });
+  };
   const save = useMutation({
     mutationFn: async (data: TransactionFormValues) => {
       const values = {
@@ -62,12 +79,23 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
           ? convertDateToUTCISOString(parseDateInputToLocal(data.endDate))
           : null,
       };
-      if (editing)
+      if (editing) {
+        // Valor, categoria e dia têm histórico: envia só os que mudaram, para
+        // não sobrescrever os outros nos meses afetados.
+        const { amount, categoryId, day, ...rest } = values;
         return (
           income
             ? fixedTransactionService.updateIncome
             : fixedTransactionService.updateExpense
-        )(editing.id, values);
+        )(editing.id, {
+          ...rest,
+          ...(amount !== editing.amount && { amount }),
+          ...(categoryId !== editing.categoryId && { categoryId }),
+          ...(day !== editing.day && { day }),
+          scope: data.scope,
+          effectiveFrom: data.effectiveFrom,
+        });
+      }
       return (
         income
           ? fixedTransactionService.createIncome
@@ -107,6 +135,7 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
     amount: number;
   }) => {
     if (!varying) return;
+    const standard = getFixedItemVersion(varying, data.year, data.month).amount;
     const existing = variations.data?.find(
       (v) =>
         v.fixedItemId === varying.id &&
@@ -114,7 +143,7 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
         v.year === data.year &&
         v.month === data.month,
     );
-    if (data.amount === varying.amount) {
+    if (data.amount === standard) {
       if (existing) await deleteVariation.mutateAsync(existing.id);
     } else
       await addVariation.mutateAsync({
@@ -182,13 +211,13 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
             <tbody>
               {items.map((item) => {
                 const current = getActualFixedItemAmount(
-                  item.id,
+                  item,
                   type,
                   now.getFullYear(),
                   now.getMonth(),
-                  item.amount,
                   variations.data || [],
                 );
+                const history = [...(item.versions || [])].reverse();
                 const category = categories.data?.find(
                   (c) => c.id === item.categoryId,
                 );
@@ -220,8 +249,26 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
                         <summary>Detalhes da recorrência</summary>
                         <dl>
                           <div>
-                            <dt>Valor padrão</dt>
-                            <dd>{formatMoney(item.amount)}</dd>
+                            <dt>
+                              {history.length > 1
+                                ? "Histórico de valores"
+                                : "Valor padrão"}
+                            </dt>
+                            <dd>
+                              {history.length > 1 ? (
+                                <ul className="version-history">
+                                  {history.map((v) => (
+                                    <li key={v.effectiveFrom}>
+                                      {formatMoney(v.amount)} desde{" "}
+                                      {formatVersionMonth(v.effectiveFrom)}
+                                      {v.day !== item.day && " · dia " + v.day}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                formatMoney(item.amount)
+                              )}
+                            </dd>
                           </div>
                           <div>
                             <dt>Vigência</dt>
@@ -334,7 +381,7 @@ export function FixedTransactions({ type }: { type: "income" | "expense" }) {
           onClose={() => setVarying(null)}
           onSubmit={submitVariation}
           itemDescription={varying.description}
-          defaultAmount={varying.amount}
+          getDefaultAmount={(m, y) => getFixedItemVersion(varying, y, m).amount}
           existingVariations={(variations.data || []).filter(
             (v) => v.fixedItemId === varying.id && v.type === type,
           )}

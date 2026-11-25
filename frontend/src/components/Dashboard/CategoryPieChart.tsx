@@ -2,7 +2,6 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 import React from "react";
 import { CategoryLabel, EmptyState, Money } from "../Shared/UI";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { getActualFixedItemAmount } from "../../utils/financeUtils";
 import {
   Transaction,
   Category,
@@ -17,7 +16,6 @@ type CategoryPieChartProps = {
 export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   transactions,
   categories,
-  monthlyVariations,
   date,
 }) => {
   const compact = useMediaQuery("(max-width: 767px)");
@@ -46,26 +44,13 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, "0")}`; // Ex: "2025-10"
 
   // Filtrar apenas despesas
-  const expenses = transactions
-    .filter(
-      (t) =>
-        !t.recurringRuleId &&
-        t.type == "expense" &&
-        t.date.startsWith(anoMesAtualString),
-    )
-    .map((expense) => ({
-      ...expense,
-      amount: !expense.recurringRuleId
-        ? expense.amount
-        : getActualFixedItemAmount(
-            expense.id,
-            "expense",
-            anoAtual,
-            mesAtual - 1,
-            expense.amount,
-            monthlyVariations,
-          ),
-    }));
+  const expenses = transactions.filter(
+    (t) =>
+      !t.recurringRuleId &&
+      t.type == "expense" &&
+      t.date.startsWith(anoMesAtualString),
+  );
+
   // Calcular o total por categoria
   const categoryTotals = categories
     .filter((cat) => cat.type === "expense")

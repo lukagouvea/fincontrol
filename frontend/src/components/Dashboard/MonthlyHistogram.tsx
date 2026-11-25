@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { getActualFixedItemAmount } from "../../utils/financeUtils";
+import { resolveFixedItemForMonth } from "../../utils/financeUtils";
 import { parseDateInputToLocal } from "../../utils/dateUtils";
 import {
   Transaction,
@@ -19,7 +19,6 @@ import {
   Category,
   MonthlyVariation,
 } from "../../types/FinanceTypes";
-import { isItemActiveInMonth } from "../../utils/financeUtils";
 type MonthlyHistogramProps = {
   transactions: Transaction[];
   categories: Category[];
@@ -87,23 +86,20 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     // Rendas fixas do mês atual
-    const monthlyFixedIncome = fixedIncomes
-      .filter((income) => isItemActiveInMonth(income, dateObj))
-      .reduce(
-        (sum, income) =>
-          sum +
-          Number(
-            getActualFixedItemAmount(
-              income.id,
-              "income",
-              anoObj,
-              mesObj,
-              income.amount,
-              monthlyVariations,
-            ),
-          ),
-        0,
-      );
+    const monthlyFixedIncome = fixedIncomes.reduce(
+      (sum, income) =>
+        sum +
+        Number(
+          resolveFixedItemForMonth(
+            income,
+            "income",
+            anoObj,
+            mesObj,
+            monthlyVariations,
+          )?.actualAmount ?? 0,
+        ),
+      0,
+    );
     // Total de rendas (fixas + variáveis)
     const monthlyIncome = monthlyVariableIncome + monthlyFixedIncome;
 
@@ -121,23 +117,20 @@ export const MonthlyHistogram: React.FC<MonthlyHistogramProps> = ({
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     // Despesas fixas do mês atual
-    const monthlyFixedExpense = fixedExpenses
-      .filter((expense) => isItemActiveInMonth(expense, dateObj))
-      .reduce(
-        (sum, expense) =>
-          sum +
-          Number(
-            getActualFixedItemAmount(
-              expense.id,
-              "expense",
-              anoObj,
-              mesObj,
-              expense.amount,
-              monthlyVariations,
-            ),
-          ),
-        0,
-      );
+    const monthlyFixedExpense = fixedExpenses.reduce(
+      (sum, expense) =>
+        sum +
+        Number(
+          resolveFixedItemForMonth(
+            expense,
+            "expense",
+            anoObj,
+            mesObj,
+            monthlyVariations,
+          )?.actualAmount ?? 0,
+        ),
+      0,
+    );
 
     // Total de despesas (fixas + variáveis)
     const monthlyExpense = monthlyVariableExpense + monthlyFixedExpense;

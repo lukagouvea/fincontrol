@@ -4,10 +4,7 @@ import {
   MonthlyVariation,
   Transaction,
 } from "../../types/FinanceTypes";
-import {
-  getActualFixedItemAmount,
-  isItemActiveInMonth,
-} from "../../utils/financeUtils";
+import { resolveFixedItemForMonth } from "../../utils/financeUtils";
 
 type MonthlyManagementCardProps = {
   date: Date;
@@ -114,21 +111,18 @@ const MonthlyManagementCardComponent: React.FC<MonthlyManagementCardProps> = ({
       const year = date.getFullYear();
       const month = date.getMonth();
 
-      const committedFixed = fixedExpenses
-        .filter((expense) => isItemActiveInMonth(expense, date))
-        .reduce(
-          (sum, expense) =>
-            sum +
-            getActualFixedItemAmount(
-              expense.id,
-              "expense",
-              year,
-              month,
-              expense.amount,
-              monthlyVariations,
-            ),
-          0,
-        );
+      const committedFixed = fixedExpenses.reduce(
+        (sum, expense) =>
+          sum +
+          (resolveFixedItemForMonth(
+            expense,
+            "expense",
+            year,
+            month,
+            monthlyVariations,
+          )?.actualAmount ?? 0),
+        0,
+      );
 
       const committedInstallmentsValue = transactions
         .filter((t) => "installmentInfo" in t && !!t.installmentInfo)

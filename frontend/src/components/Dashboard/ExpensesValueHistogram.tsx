@@ -9,7 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { getActualFixedItemAmount } from "../../utils/financeUtils";
 import { Transaction, MonthlyVariation } from "../../types/FinanceTypes";
 
 type ExpensesValueHistogramProps = {
@@ -32,7 +31,6 @@ const getQuantile = (array: number[], quantile: number) => {
 
 export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   transactions,
-  monthlyVariations,
   date,
 }) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -52,26 +50,12 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
   const mesAtual = hoje.getMonth() + 1;
   const anoMesAtualString = `${anoAtual}-${String(mesAtual).padStart(2, "0")}`;
 
-  const expenses = transactions
-    .filter(
-      (t) =>
-        t.type === "expense" &&
-        !t.recurringRuleId &&
-        t.date.startsWith(anoMesAtualString),
-    )
-    .map((expense) => ({
-      ...expense,
-      amount: !expense.recurringRuleId
-        ? expense.amount
-        : getActualFixedItemAmount(
-            expense.id,
-            "expense",
-            anoAtual,
-            mesAtual - 1,
-            expense.amount,
-            monthlyVariations,
-          ),
-    }));
+  const expenses = transactions.filter(
+    (t) =>
+      t.type === "expense" &&
+      !t.recurringRuleId &&
+      t.date.startsWith(anoMesAtualString),
+  );
 
   const generateHistogramData = (data: typeof expenses) => {
     if (data.length === 0) return [];

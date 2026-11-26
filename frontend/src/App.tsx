@@ -10,11 +10,11 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
+import { ProtectedRoute } from "./app/ProtectedRoute";
 import { TransactionEditorProvider } from "./app/TransactionEditor";
 import { PendingDeletesProvider } from "./app/PendingDeletes";
 import { MonthProvider } from "./app/MonthContext";
-import { ErrorBoundary } from "./components/Shared/ErrorBoundary";
+import { ErrorBoundary } from "./app/ErrorBoundary";
 import { useViewport } from "./hooks/useViewport";
 import { AppShell } from "./app/AppShell";
 import { ToastProvider } from "./ui/Toast";
@@ -30,7 +30,6 @@ const Home = named(() => import("./pages/Home"), "Home");
 const Transactions = named(() => import("./pages/Transactions"), "Transactions");
 const Recurring = named(() => import("./pages/Recurring"), "Recurring");
 const Reports = named(() => import("./pages/Reports"), "Reports");
-const Calendar = named(() => import("./pages/Calendar"), "Calendar");
 const Categories = named(() => import("./pages/Categories"), "Categories");
 const Settings = named(() => import("./pages/Settings"), "Settings");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
@@ -137,11 +136,10 @@ export function App() {
                           <Route path="/orcamento" element={<ComingSoon title="Orçamento" description={soon.orcamento} />} />
                           <Route path="/metas" element={<ComingSoon title="Metas" description={soon.metas} />} />
                           <Route path="/alertas" element={<ComingSoon title="Alertas" description={soon.alertas} />} />
-                          {/* Sai na Fase 2 (fora do design). */}
-                          <Route path="/calendario" element={<Calendar />} />
                         </Route>
                         {/* Endereços antigos */}
                         <Route path="/lancamentos" element={<LegacyEntries />} />
+                        <Route path="/calendario" element={<Navigate replace to="/transacoes" />} />
                         <Route path="/relatorio-mensal" element={<RedirectKeepingSearch to="/relatorios" />} />
                         <Route path="/despesas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=despesa" />} />
                         <Route path="/despesas-fixas" element={<RedirectKeepingSearch to="/recorrentes" extra="tipo=despesa" />} />

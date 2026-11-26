@@ -39,16 +39,6 @@ export default {
         "chart-4": v("chart-4"),
         "chart-5": v("chart-5"),
         "chart-6": v("chart-6"),
-        // Legado (páginas antigas, até o fim da Fase 2).
-        canvas: v("canvas"),
-        "surface-muted": v("surface-muted"),
-        control: v("control"),
-        secondary: v("secondary"),
-        line: v("line"),
-        accent: v("accent"),
-        negative: v("negative"),
-        "negative-soft": v("negative-soft"),
-        warning: v("warning"),
       },
       borderRadius: {
         card: v("radius-card"),

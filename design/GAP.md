@@ -130,3 +130,17 @@ Fase = fase do plano em que a tela entra (ver final do documento).
 2. Restyle do que já existe, sem schema.
 3. Funcionalidades: a cartões/fatura · b categorias+ · c orçamento/semana/burndown · d metas · e primeiro uso · f histórico/virada · g filtros/lote · h importar · i alertas/dados.
 4. PWA: atalhos, gasto rápido e fila offline.
+
+## 5. Andamento
+
+### Fase 2 — concluída (branch `feat/redesign`)
+Telas refeitas sem mudança de schema: Início, Transações (lista, detalhe, nova/editar, excluir com desfazer), Recorrentes, Categorias, Relatórios, Entrar/Criar conta e Ajustes (com Aparência). Saíram Calendário, os módulos reordenáveis do Início, o investimento mensal (só no frontend), o tutorial driver.js e o `system.css` legado.
+
+Pontos que ficaram para as próximas fases ou que divergem do design:
+- **Categorias arquivadas somem do histórico:** `GET /categories` só devolve as ativas, então lançamentos de uma categoria arquivada aparecem como "Sem categoria". Já era assim antes. Correção prevista na fase 3b: a API passa a devolver as arquivadas com `active=false`.
+- **Senha mínima de 6 caracteres:** o design pede 8, mas o backend valida 6. Mantido 6 para não travar quem já tem conta; aumentar é decisão do dono.
+- **Termos de uso:** a caixa de aceite do Criar conta não foi incluída, porque não há página de termos ou de política.
+- **Confirmar senha:** o campo saiu, como no design; no lugar há o botão "Mostrar senha".
+- **Toast no escuro:** o "Desfazer" usa o verde-escuro, já que o verde-claro da referência não tinha contraste.
+- **Ícone da categoria:** por enquanto é deduzido do nome. Na fase 3b vira o padrão para categorias sem ícone salvo.
+- **Início sem orçamento:** o cartão "Restam do orçamento" virou "Sobrou"/"A pagar no mês" até a fase 3c, e "Faturas abertas" depende da 3a.

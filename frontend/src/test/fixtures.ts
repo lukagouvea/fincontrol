@@ -36,12 +36,6 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
       "/recurring?type=income": [],
       "/recurring?type=expense": [],
       "/recurring/variations": [],
-      "/investment": { defaultMonthlyAmount: 200 },
-      "/investment/effective": {
-        defaultMonthlyAmount: 200,
-        overrideMonthlyAmount: null,
-        effectiveMonthlyAmount: 200,
-      },
       "/users/tutorial-status": { tutorialCompleted: true },
       ...overrides,
     };

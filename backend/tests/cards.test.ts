@@ -103,6 +103,7 @@ test('transação com cartão de outro usuário é recusada', async () => {
 
 test('compra parcelada leva o cartão para o grupo e todas as parcelas', async () => {
   mock(prisma.card, 'findFirst', (async () => ({ id: card.id })) as AnyFn);
+  mock(prisma.category, 'findFirst', (async () => ({ id: 'cat' })) as AnyFn);
   let group: Record<string, unknown> | undefined;
   let parcels: Array<Record<string, unknown>> = [];
   const tx = {

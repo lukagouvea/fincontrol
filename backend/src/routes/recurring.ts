@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { isOwnCard } from '../lib/cards.js';
+import { CATEGORY_NOT_FOUND, isOwnCategory } from '../lib/categories.js';
 import {
   type Version,
   dateOfMonthIndex,
@@ -314,6 +315,7 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
   const startDate = new Date(body.startDate);
   const categoryId = body.categoryId || null;
   if (!(await isOwnCard(userId, body.cardId))) return c.json({ error: 'Cartão não encontrado' }, 404);
+  if (!(await isOwnCategory(userId, categoryId, body.type))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   try {
     const rule = await prisma.recurringRule.create({
@@ -366,6 +368,7 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
 
   if (!existing) return c.json({ error: 'Regra não encontrada' }, 404);
   if (!(await isOwnCard(userId, body.cardId))) return c.json({ error: 'Cartão não encontrado' }, 404);
+  if (!(await isOwnCategory(userId, body.categoryId, existing.type))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   const startDate = body.startDate ? new Date(body.startDate) : existing.startDate;
   const endDate = body.endDate

@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { addMonthsClamped, isOwnCard } from '../lib/cards.js';
+import { CATEGORY_NOT_FOUND, isOwnCategory } from '../lib/categories.js';
 
 const app = new Hono<{ Variables: { userId: string } }>();
 
@@ -135,6 +136,7 @@ app.post('/', zValidator('json', transactionSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
   if (!(await isOwnCard(userId, body.cardId))) return c.json(CARD_NOT_FOUND, 404);
+  if (!(await isOwnCategory(userId, body.categoryId, body.type))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   try {
     const transaction = await prisma.transaction.create({
@@ -162,6 +164,7 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
   if (!(await isOwnCard(userId, body.cardId))) return c.json(CARD_NOT_FOUND, 404);
+  if (!(await isOwnCategory(userId, body.categoryId, 'expense'))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   try {
     // Usamos transaction interativa do Prisma para garantir integridade
@@ -234,6 +237,7 @@ app.put('/:id', zValidator('json', transactionSchema.partial()), async (c) => {
   const existing = await prisma.transaction.findFirst({ where: { id, userId: userId } });
   if (!existing) return c.json({ error: 'Transação não encontrada' }, 404);
   if (!(await isOwnCard(userId, body.cardId))) return c.json(CARD_NOT_FOUND, 404);
+  if (!(await isOwnCategory(userId, body.categoryId, body.type ?? existing.type))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   // Trocar o cartão de uma parcela troca o da compra inteira.
   if (existing.installmentGroupId && body.cardId !== undefined && body.cardId !== existing.cardId) {

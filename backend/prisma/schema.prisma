@@ -36,6 +36,8 @@ model Category {
   description    String?         @db.VarChar(255)
   type           String          @db.VarChar(20)
   color          String?         @default("#888888") @db.VarChar(20)
+  // Chave do ícone (ex.: "utensils"); null = deduzido do nome no cliente.
+  icon           String?         @db.VarChar(40)
   active         Boolean?        @default(true)
   createdAt      DateTime?       @default(now()) @map("created_at") @db.Timestamp(6)
 

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { isOwnCard } from '../lib/cards.js';
 import {
   type Version,
   dateOfMonthIndex,
@@ -29,6 +30,8 @@ const recurringSchema = z.object({
   categoryId: z.uuid().optional().or(z.literal('')), // Pode vir vazio
   startDate: z.iso.datetime(), // Front manda ISO
   endDate: z.iso.datetime().optional().or(z.literal('')).nullable(), // Pode vir vazio
+  // Forma de pagamento da regra inteira (não versionada). null = À vista.
+  cardId: z.uuid().nullable().optional(),
 });
 
 const updateSchema = recurringSchema.partial().extend({
@@ -65,6 +68,7 @@ type RuleWithVersions = {
   dayOfMonth: number;
   startDate: Date;
   endDate: Date | null;
+  cardId: string | null;
   versions: DbVersion[];
   category?: { id: string; name: string; color: string | null } | null;
 };
@@ -116,6 +120,7 @@ const formatRule = (rule: RuleWithVersions) => {
     day: current.dayOfMonth, // Banco (day_of_month) -> Front (day)
     startDate: rule.startDate.toISOString(),
     endDate: rule.endDate?.toISOString(),
+    cardId: rule.cardId,
     categoryId: current.categoryId,
     category: current.category ?? null,
     versions: versions.map((v) => ({
@@ -308,6 +313,7 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
   const body = c.req.valid('json');
   const startDate = new Date(body.startDate);
   const categoryId = body.categoryId || null;
+  if (!(await isOwnCard(userId, body.cardId))) return c.json({ error: 'Cartão não encontrado' }, 404);
 
   try {
     const rule = await prisma.recurringRule.create({
@@ -320,6 +326,7 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
         startDate,
         endDate: body.endDate ? new Date(body.endDate) : null,
         categoryId,
+        cardId: body.cardId ?? null,
         versions: {
           create: {
             effectiveFrom: dateOfMonthIndex(monthIndexOfDate(startDate)),
@@ -358,6 +365,7 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
   });
 
   if (!existing) return c.json({ error: 'Regra não encontrada' }, 404);
+  if (!(await isOwnCard(userId, body.cardId))) return c.json({ error: 'Cartão não encontrado' }, 404);
 
   const startDate = body.startDate ? new Date(body.startDate) : existing.startDate;
   const endDate = body.endDate
@@ -389,6 +397,7 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
           description,
           startDate,
           endDate,
+          cardId: body.cardId,
           amount: current.amount,
           categoryId: current.categoryId,
           dayOfMonth: current.dayOfMonth,

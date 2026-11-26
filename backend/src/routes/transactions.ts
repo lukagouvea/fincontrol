@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { addMonthsClamped, isOwnCard } from '../lib/cards.js';
 
 const app = new Hono<{ Variables: { userId: string } }>();
 
@@ -19,6 +20,8 @@ const transactionSchema = z.object({
   type: z.enum(['income', 'expense']),
   categoryId: z.uuid("ID de categoria inválido"),
   isPaid: z.boolean().optional().default(false), // Novo campo que adicionamos no schema
+  // Forma de pagamento: id do cartão ou null = À vista.
+  cardId: z.uuid().nullable().optional(),
 });
 
 // 2. Para Compra Parcelada
@@ -28,9 +31,63 @@ const installmentSchema = z.object({
   totalInstallments: z.number().min(2, "Mínimo de 2 parcelas").max(60),
   date: z.iso.datetime(), // Data da compra (1ª parcela)
   categoryId: z.uuid(),
+  cardId: z.uuid().nullable().optional(),
 });
 
+const CARD_NOT_FOUND = { error: 'Cartão não encontrado' };
+
 // --- ROTAS ---
+
+const listInclude = {
+  category: { select: { id: true, name: true, color: true, type: true } },
+  installmentGroup: { select: { totalInstallments: true } },
+} as const;
+
+type ListedTransaction = Awaited<ReturnType<typeof prisma.transaction.findMany<{ include: typeof listInclude }>>>[number];
+
+const formatListed = (t: ListedTransaction) => ({
+  ...t,
+  amount: Number(t.amount),
+  installmentInfo: t.installmentGroupId
+    ? { current: t.installmentNumber, total: t.installmentGroup?.totalInstallments }
+    : null,
+});
+
+// Todas as transações de um cartão (fatura e limite usado). Lista pequena por
+// cartão; o cliente agrupa por fatura.
+app.get('/by-card/:cardId', async (c) => {
+  const userId = c.var.userId;
+  const cardId = c.req.param('cardId');
+  if (!(await isOwnCard(userId, cardId))) return c.json(CARD_NOT_FOUND, 404);
+  const transactions = await prisma.transaction.findMany({
+    where: { userId, cardId },
+    include: listInclude,
+    orderBy: { date: 'desc' },
+  });
+  return c.json(transactions.map(formatListed));
+});
+
+// Compras parceladas que ainda têm parcelas deste mês em diante (Compromissos).
+// Devolve todas as parcelas desses grupos, inclusive as já passadas, para
+// mostrar o progresso "parcela 4 de 10".
+app.get('/installments/active', async (c) => {
+  const userId = c.var.userId;
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const groups = await prisma.transaction.findMany({
+    where: { userId, installmentGroupId: { not: null }, date: { gte: monthStart } },
+    select: { installmentGroupId: true },
+    distinct: ['installmentGroupId'],
+  });
+  const ids = groups.map((g) => g.installmentGroupId!).filter(Boolean);
+  if (!ids.length) return c.json([]);
+  const transactions = await prisma.transaction.findMany({
+    where: { userId, installmentGroupId: { in: ids } },
+    include: listInclude,
+    orderBy: [{ installmentGroupId: 'asc' }, { installmentNumber: 'asc' }],
+  });
+  return c.json(transactions.map(formatListed));
+});
 
 // 1. LISTAR (GET /transactions?month=11&year=2025)
 app.get('/', async (c) => {
@@ -56,28 +113,14 @@ app.get('/', async (c) => {
           lte: endDate,
         },
       },
-      include: {
-        category: {
-          select: { id: true, name: true, color: true, type: true }
-        },
-        installmentGroup: {
-          select: { totalInstallments: true } // Para saber se é "1/10"
-        },
-      },
+      include: listInclude,
       orderBy: {
         date: 'desc', // Mais recentes primeiro
       },
     });
 
     // Opcional: Formatamos o retorno para facilitar pro front
-    const formatted = transactions.map(t => ({
-      ...t,
-      amount: Number(t.amount),
-      installmentInfo: t.installmentGroupId ? {
-        current: t.installmentNumber,
-        total: t.installmentGroup?.totalInstallments,
-      } : null
-    }));
+    const formatted = transactions.map(formatListed);
 
     return c.json(formatted);
 
@@ -91,6 +134,7 @@ app.get('/', async (c) => {
 app.post('/', zValidator('json', transactionSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
+  if (!(await isOwnCard(userId, body.cardId))) return c.json(CARD_NOT_FOUND, 404);
 
   try {
     const transaction = await prisma.transaction.create({
@@ -100,7 +144,8 @@ app.post('/', zValidator('json', transactionSchema), async (c) => {
         amount: body.amount,
         date: new Date(body.date),
         type: body.type,
-        categoryId: body.categoryId
+        categoryId: body.categoryId,
+        cardId: body.cardId ?? null,
       }
     });
 
@@ -116,6 +161,7 @@ app.post('/', zValidator('json', transactionSchema), async (c) => {
 app.post('/installment', zValidator('json', installmentSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
+  if (!(await isOwnCard(userId, body.cardId))) return c.json(CARD_NOT_FOUND, 404);
 
   try {
     // Usamos transaction interativa do Prisma para garantir integridade
@@ -129,6 +175,7 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
           description: body.description,
           totalAmount: body.totalAmount,
           totalInstallments: body.totalInstallments,
+          cardId: body.cardId ?? null,
         }
       });
 
@@ -145,9 +192,8 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
         const isFirst = i === 0;
         const amount = isFirst ? (rawInstallmentValue + diff) : rawInstallmentValue;
         
-        // Calcula a data: Mês inicial + i
-        const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(baseDate.getMonth() + i);
+        // Mês inicial + i, sem transbordar (31/jan → 28/fev, não 3/mar).
+        const installmentDate = addMonthsClamped(baseDate, i);
 
         transactionsPayload.push({
           userId: userId,
@@ -158,6 +204,7 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
           type: 'expense', // Parcelamento geralmente é despesa
           installmentGroupId: group.id,
           installmentNumber: i + 1,
+          cardId: body.cardId ?? null,
         });
       }
 
@@ -186,6 +233,15 @@ app.put('/:id', zValidator('json', transactionSchema.partial()), async (c) => {
   // Verifica se pertence ao usuário
   const existing = await prisma.transaction.findFirst({ where: { id, userId: userId } });
   if (!existing) return c.json({ error: 'Transação não encontrada' }, 404);
+  if (!(await isOwnCard(userId, body.cardId))) return c.json(CARD_NOT_FOUND, 404);
+
+  // Trocar o cartão de uma parcela troca o da compra inteira.
+  if (existing.installmentGroupId && body.cardId !== undefined && body.cardId !== existing.cardId) {
+    await prisma.$transaction([
+      prisma.installmentGroup.update({ where: { id: existing.installmentGroupId }, data: { cardId: body.cardId } }),
+      prisma.transaction.updateMany({ where: { installmentGroupId: existing.installmentGroupId }, data: { cardId: body.cardId } }),
+    ]);
+  }
 
   // Se for parcela, bloqueia edição de valor/data (por enquanto, para simplificar)
   // Ou permite editar apenas aquela parcela específica
@@ -198,6 +254,7 @@ app.put('/:id', zValidator('json', transactionSchema.partial()), async (c) => {
       date: body.date ? new Date(body.date) : undefined,
       categoryId: body.categoryId,
       type: body.type,
+      cardId: body.cardId,
     }
   });
 

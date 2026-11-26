@@ -10,6 +10,7 @@ import transactionsRoute from './routes/transactions.js';
 import recurringRoute from './routes/recurring.js';
 import investmentRoute from './routes/investment.js';
 import usersRoute from './routes/users.js';
+import cardsRoute from './routes/cards.js';
 import { getJwtSecret } from './lib/jwt.js';
 
 // Falha na inicialização se o segredo não estiver configurado.
@@ -36,6 +37,7 @@ app.route('/transactions', transactionsRoute);
 app.route('/recurring', recurringRoute);
 app.route('/investment', investmentRoute);
 app.route('/users', usersRoute);
+app.route('/cards', cardsRoute);
 
 serve({
   fetch: app.fetch,

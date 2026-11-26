@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pausar ou encerrar — escuro</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"><style>body{margin:0}a{color:inherit}</style></head><body>
+
+<div style="position:relative;width:390px;height:844px;box-sizing:border-box;display:flex;flex-direction:column;background:#121714;color:#edf1ee;font-family:'Inter',system-ui,sans-serif;overflow:hidden;padding:20px 20px 28px;gap:14px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <a href="RecorrentesDark.html" aria-label="Voltar" style="width:44px;height:44px;border-radius:22px;border:1px solid #2c352f;background:#1b221e;color:#edf1ee;display:flex;align-items:center;justify-content:center;text-decoration:none"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px">Editar recorrência</h1>
+    <div style="width:44px"></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <label for="nome" style="font-size:14px;font-weight:600">Nome</label>
+    <input id="nome" value="Academia" style="box-sizing:border-box;width:100%;height:52px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;padding:0 16px;font-size:15px;font-family:'Inter',system-ui,sans-serif;color:#edf1ee">
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label for="valor" style="font-size:14px;font-weight:600">Valor</label>
+      <input id="valor" inputmode="decimal" value="R$ 100,00" style="box-sizing:border-box;width:100%;height:52px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;padding:0 16px;font-size:15px;font-family:'Inter',system-ui,sans-serif;color:#edf1ee">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label for="dia" style="font-size:14px;font-weight:600">Todo dia</label>
+      <input id="dia" inputmode="numeric" value="25" style="box-sizing:border-box;width:100%;height:52px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;padding:0 16px;font-size:15px;font-family:'Inter',system-ui,sans-serif;color:#edf1ee">
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:14px;font-weight:600">Frequência</div>
+      <button style="min-height:52px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;color:#edf1ee;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:15px;font-weight:500;font-family:'Inter',system-ui,sans-serif">Mensal<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa6a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:14px;font-weight:600">Termina</div>
+      <button style="min-height:52px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;color:#edf1ee;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:15px;font-weight:500;font-family:'Inter',system-ui,sans-serif">Nunca<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa6a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:14px;font-weight:600">Pago com</div>
+    <button style="min-height:52px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;color:#edf1ee;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:15px;font-weight:500;font-family:'Inter',system-ui,sans-serif">Cartão Aurora<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa6a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;min-height:56px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;padding:0 16px">
+    <div style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">Lembrar 1 dia antes</span><span style="font-size:12px;color:#9aa6a0">Aviso no dia 24</span></div>
+    <button role="switch" aria-checked="true" aria-label="Lembrar 1 dia antes" style="width:52px;height:32px;border-radius:16px;border:0;background:#58ad88;padding:0;position:relative;flex:none"><span style="position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:12px;background:#1b221e"></span></button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;min-height:56px;border-radius:16px;border:1px solid #2c352f;background:#1b221e;padding:0 16px">
+    <div style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">Pausar recorrência</span><span style="font-size:12px;color:#9aa6a0">Não lança novas cobranças enquanto estiver pausada</span></div>
+    <button role="switch" aria-checked="false" aria-label="Pausar recorrência" style="width:52px;height:32px;border-radius:16px;border:0;background:#5a655e;padding:0;position:relative;flex:none"><span style="position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:12px;background:#1b221e"></span></button>
+  </div>
+  <div style="flex:1"></div>
+  <a href="RecorrentesDark.html" style="min-height:56px;border-radius:28px;background:#58ad88;color:#0e1a14;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;text-decoration:none">Salvar alterações</a>
+  <a href="EncerrarRecorrenciaDark.html" style="min-height:48px;display:flex;align-items:center;justify-content:center;color:#f08a4b;font-size:15px;font-weight:600;text-decoration:none">Encerrar recorrência</a>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.6)"></div><div role="dialog" style="position:absolute;left:0;right:0;bottom:0;background:#1b221e;border-radius:28px 28px 0 0;padding:12px 20px 28px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box"><span style="align-self:center;width:40px;height:5px;border-radius:3px;background:#2c352f"></span><div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px">Pausar ou encerrar “Academia”?</div><div style="font-size:15px;color:#9aa6a0;line-height:1.5">O histórico de lançamentos continua como está.</div></div><div style="display:flex;align-items:center;gap:12px;min-height:68px;padding:10px 14px;border-radius:16px;border:2px solid #58ad88;background:#1f3a2f"><div style="width:44px;height:44px;border-radius:14px;background:#1b221e;color:#58ad88;display:flex;align-items:center;justify-content:center;flex:none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14M16 5v14"/></svg></div><div style="flex:1"><div style="font-size:15px;font-weight:600">Pausar por um mês</div><div style="font-size:13px;color:#9aa6a0;line-height:1.35">Volta a lançar em dezembro, dia 25.</div></div></div><div style="display:flex;align-items:center;gap:12px;min-height:68px;padding:10px 14px;border-radius:16px;border:1px solid #2c352f"><div style="width:44px;height:44px;border-radius:14px;background:#262e29;color:#c3ccc6;display:flex;align-items:center;justify-content:center;flex:none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12v12H6z"/></svg></div><div style="flex:1"><div style="font-size:15px;font-weight:600">Encerrar</div><div style="font-size:13px;color:#9aa6a0;line-height:1.35">Não lança mais. Você pode recriar quando quiser.</div></div></div><a href="RecorrentesDark.html" style="min-height:56px;border-radius:28px;background:#58ad88;color:#0e1a14;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;text-decoration:none">Confirmar</a><a href="EditarRecorrenciaDark.html" style="min-height:56px;border-radius:28px;border:1px solid #2c352f;background:#1b221e;color:#edf1ee;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;text-decoration:none">Cancelar</a></div>
+</div>
+
+</body></html>

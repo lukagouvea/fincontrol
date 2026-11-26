@@ -129,3 +129,30 @@ describe("Transações", () => {
     expect(screen.getByRole("button", { name: "Adicionar transação" })).toBeVisible();
   });
 });
+
+it("cria uma compra parcelada (Transações) com valor total e quantidade corretos", async () => {
+  installApiFixture();
+  window.history.replaceState({}, "", "/transacoes");
+  render(<App />);
+  const user = userEvent.setup();
+  await user.click((await screen.findAllByRole("button", { name: "Nova transação" }))[0]);
+  const form = await screen.findByRole("dialog", { name: "Nova transação" });
+  await user.type(within(form).getByLabelText("Descrição"), "Compra parcelada");
+  await user.type(within(form).getByLabelText("Valor"), "300");
+  await user.selectOptions(within(form).getByLabelText("Parcelas"), "3");
+  expect(within(form).getByText("3x de R$ 100,00")).toBeVisible();
+  expect(within(form).queryByRole("switch", { name: "Repetir todo mês" })).not.toBeInTheDocument();
+  await user.click(within(form).getByRole("button", { name: "Salvar despesa" }));
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  const sent = requests.filter((r) => r.method === "post");
+  expect(sent).toHaveLength(1);
+  expect(sent[0].url).toBe("/transactions/installment");
+  expect(sent[0].data).toMatchObject({
+    description: "Compra parcelada",
+    totalAmount: 300,
+    totalInstallments: 3,
+    categoryId: "food",
+  });
+});

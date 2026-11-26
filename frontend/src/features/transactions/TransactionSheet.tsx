@@ -96,10 +96,11 @@ export function TransactionSheet({
   );
 
   // Categoria padrão: a primeira do tipo, quando nenhuma (válida) foi escolhida.
+  // Atualização funcional: lê o valor já inicializado pelo efeito de abertura.
   useEffect(() => {
     if (!open || !categories.length) return;
-    if (!categories.some((category) => category.id === categoryId)) setCategoryId(categories[0].id);
-  }, [open, categories, categoryId]);
+    setCategoryId((current) => (categories.some((category) => category.id === current) ? current : categories[0].id));
+  }, [open, categories]);
 
   const quick = useMemo(() => {
     const first = categories.slice(0, QUICK_CATEGORIES);

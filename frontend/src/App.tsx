@@ -26,7 +26,7 @@ const named = <K extends string>(
   name: K,
 ) => lazy(() => loader().then((m) => ({ default: m[name] })));
 
-const Dashboard = named(() => import("./pages/Dashboard"), "Dashboard");
+const Home = named(() => import("./pages/Home"), "Home");
 const Transactions = named(() => import("./pages/Transactions"), "Transactions");
 const Recurring = named(() => import("./pages/Recurring"), "Recurring");
 const Reports = named(() => import("./pages/Reports"), "Reports");
@@ -125,7 +125,7 @@ export function App() {
                             </Suspense>
                           }
                         >
-                          <Route index element={<Dashboard />} />
+                          <Route index element={<Home />} />
                           <Route path="/transacoes" element={<Transactions />} />
                           <Route path="/recorrentes" element={<Recurring />} />
                           <Route path="/relatorios" element={<Reports />} />

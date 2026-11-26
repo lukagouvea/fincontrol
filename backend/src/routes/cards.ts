@@ -44,6 +44,8 @@ const formatCard = (card: CardRow) => ({
   dueDay: card.dueDay,
   color: card.color,
   archived: !!card.archivedAt,
+  // Faturas que venceram antes do cadastro contam como pagas no cliente.
+  createdAt: (card.createdAt ?? new Date()).toISOString(),
   payments: card.payments
     .sort((a, b) => a.paidAt.getTime() - b.paidAt.getTime())
     .map((p) => ({

@@ -15,6 +15,8 @@ export interface TransactionBase {
   categoryId: string;
   recurringRuleId?: string | null;
   type: 'income' | 'expense';
+  /** Cartão usado; null/ausente = À vista. */
+  cardId?: string | null;
 }
 
 export interface VariableTransaction extends TransactionBase {
@@ -34,6 +36,8 @@ export interface FixedTransaction extends TransactionBase {
   day: number;
   startDate: string; // ISO UTC
   endDate?: string | null;  // ISO UTC
+  /** Cartão em que a recorrência é cobrada; null = À vista. */
+  cardId?: string | null;
   /** Histórico de valores/categoria/dia, em ordem de vigência. */
   versions?: FixedVersion[];
 }
@@ -80,3 +84,27 @@ export type MonthlyVariation = {
 };
 
 export type Transaction = VariableIncome | VariableExpense | Parcela;
+
+export type CardColor = 'verde' | 'azul' | 'laranja' | 'grafite';
+
+export type CardPayment = {
+  id: string;
+  /** 'YYYY-MM': a fatura que fecha naquele mês. */
+  invoiceMonth: string;
+  amount: number;
+  paidAt: string;
+};
+
+export type Card = {
+  id: string;
+  name: string;
+  last4: string;
+  limit: number;
+  closingDay: number;
+  dueDay: number;
+  color: CardColor;
+  archived: boolean;
+  /** ISO. Faturas vencidas antes do cadastro são tratadas como pagas. */
+  createdAt?: string;
+  payments: CardPayment[];
+};

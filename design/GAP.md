@@ -144,3 +144,12 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Toast no escuro:** o "Desfazer" usa o verde-escuro, já que o verde-claro da referência não tinha contraste.
 - **Ícone da categoria:** por enquanto é deduzido do nome. Na fase 3b vira o padrão para categorias sem ícone salvo.
 - **Início sem orçamento:** o cartão "Restam do orçamento" virou "Sobrou"/"A pagar no mês" até a fase 3c, e "Faturas abertas" depende da 3a.
+
+### Fase 3a: cartões e fatura (concluída)
+- **Modelo:** `cards` guarda só os 4 últimos dígitos, com CHECKs no banco. `invoice_payments` registra os pagamentos de fatura. `card_id` é opcional em transações, compras parceladas e recorrentes, e o legado fica como À vista. Remover um cartão que tem histórico só o arquiva.
+- **Fatura calculada no cliente** (`frontend/src/features/invoice.ts`), não no backend como previa o plano. Motivo: as recorrentes são projetadas no cliente, e a fatura precisa incluí-las. O backend fornece `/transactions/by-card/:id` e os pagamentos.
+- **Regra nova:** faturas que venceram antes do cadastro do cartão contam como pagas. Sem isso, compras antigas lançadas num cartão novo (por exemplo, parcelas em andamento) ficariam "vencidas" para sempre.
+- **Limite usado** = tudo que ainda não foi pago, incluindo faturas futuras de parcelas. Segue o PRODUCT_RULES ("o limite cai pelo valor total na compra"); os números do protótipo ignoravam as parcelas futuras.
+- **Parcelas no gasto do mês:** cada parcela conta pela própria data (uma por mês a partir da compra), o que na prática coincide com o mês da fatura. A data das parcelas não transborda mais (31/jan + 1 mês = 28/fev).
+- **Pagar fatura** não cria transação, e o pagamento pode ser desfeito.
+- **Pendente (segurança, já existia):** as rotas não conferem se o `categoryId` enviado pertence ao usuário. O `cardId` já é conferido. Corrigir junto com a fase 3b.

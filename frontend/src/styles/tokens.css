@@ -42,3 +42,16 @@
   --toast-bg:#EDF1EE; --toast-ink:#0E1A14; --toast-action:#1E4D3B;
   --hero:#58AD88; --on-hero:#0E1A14; --on-hero-muted:#1E3B2E; --hero-track:#A5D6BE; --hero-fill:#1B221E;
 }
+/* Cores de cartão (chave salva no cartão → token). Valores do NovoCartao.html. */
+:root{
+  --card-verde:#1E4D3B; --card-verde-tint:#E3EEE8; --card-verde-ink:#1E4D3B; --on-card-verde:#FFFFFF;
+  --card-azul:#2F5D8F; --card-azul-tint:#DDE8F2; --card-azul-ink:#2A5584; --on-card-azul:#FFFFFF;
+  --card-laranja:#B4531A; --card-laranja-tint:#F6E4D8; --card-laranja-ink:#A8480F; --on-card-laranja:#FFFFFF;
+  --card-grafite:#2B3330; --card-grafite-tint:#EDEAE0; --card-grafite-ink:#3F4A44; --on-card-grafite:#FFFFFF;
+}
+:root[data-theme="dark"]{
+  --card-verde:#58AD88; --card-verde-tint:#1F3A2F; --card-verde-ink:#58AD88; --on-card-verde:#0E1A14;
+  --card-azul:#5E93CC; --card-azul-tint:#1E2F42; --card-azul-ink:#8DB6E6; --on-card-azul:#0E1A14;
+  --card-laranja:#E8873F; --card-laranja-tint:#3F2A1E; --card-laranja-ink:#F08A4B; --on-card-laranja:#0E1A14;
+  --card-grafite:#4A5750; --card-grafite-tint:#262E29; --card-grafite-ink:#C3CCC6; --on-card-grafite:#EDF1EE;
+}

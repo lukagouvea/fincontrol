@@ -32,6 +32,9 @@ const Recurring = named(() => import("./pages/Recurring"), "Recurring");
 const Reports = named(() => import("./pages/Reports"), "Reports");
 const Categories = named(() => import("./pages/Categories"), "Categories");
 const Settings = named(() => import("./pages/Settings"), "Settings");
+const Cards = named(() => import("./pages/Cards"), "Cards");
+const Invoice = named(() => import("./pages/Invoice"), "Invoice");
+const Commitments = named(() => import("./pages/Commitments"), "Commitments");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
@@ -89,7 +92,6 @@ function NotFound() {
 }
 
 const soon = {
-  cartoes: "Cartões, faturas e compromissos chegam numa próxima etapa.",
   orcamento: "Orçamento mensal, limites por categoria e limite da semana chegam numa próxima etapa.",
   metas: "Metas e “Guardar na meta” chegam numa próxima etapa.",
   alertas: "A central de alertas chega numa próxima etapa.",
@@ -132,7 +134,9 @@ export function App() {
                           <Route path="/categorias" element={<Categories />} />
                           <Route path="/ajustes" element={<Settings />} />
                           <Route path="/ajustes/aparencia" element={<AppearanceSettings />} />
-                          <Route path="/cartoes" element={<ComingSoon title="Cartões" description={soon.cartoes} />} />
+                          <Route path="/cartoes" element={<Cards />} />
+                          <Route path="/cartoes/:cardId/fatura" element={<Invoice />} />
+                          <Route path="/compromissos" element={<Commitments />} />
                           <Route path="/orcamento" element={<ComingSoon title="Orçamento" description={soon.orcamento} />} />
                           <Route path="/metas" element={<ComingSoon title="Metas" description={soon.metas} />} />
                           <Route path="/alertas" element={<ComingSoon title="Alertas" description={soon.alertas} />} />

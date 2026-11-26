@@ -34,6 +34,8 @@ export type LedgerEntry = {
   /** Data ainda não chegou (recorrente prevista ou lançamento futuro). */
   upcoming: boolean;
   installment?: { current: number; total: number; groupId: string | null };
+  /** Cartão usado; null = À vista. */
+  cardId: string | null;
   recurring?: { ruleId: string; day: number; hasVariation: boolean; variationId?: string };
 };
 
@@ -77,6 +79,7 @@ export function buildMonthLedger(input: LedgerInput): LedgerEntry[] {
       categoryId: raw.categoryId || null,
       date,
       upcoming: date > today,
+      cardId: raw.cardId ?? null,
       installment: info?.total
         ? { current: info.current, total: info.total, groupId: raw.installmentGroupId ?? null }
         : undefined,
@@ -105,6 +108,7 @@ export function buildMonthLedger(input: LedgerInput): LedgerEntry[] {
         categoryId: resolved.categoryId,
         date,
         upcoming: date > today,
+        cardId: item.cardId ?? null,
         recurring: {
           ruleId: item.id,
           day: resolved.day,

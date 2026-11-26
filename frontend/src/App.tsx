@@ -33,6 +33,7 @@ const Reports = named(() => import("./pages/Reports"), "Reports");
 const Calendar = named(() => import("./pages/Calendar"), "Calendar");
 const Categories = named(() => import("./pages/Categories"), "Categories");
 const Settings = named(() => import("./pages/Settings"), "Settings");
+const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/LoginPage"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/SignupPage"), "SignupPage");
 const ComingSoon = lazy(() =>
@@ -131,6 +132,7 @@ export function App() {
                           <Route path="/relatorios" element={<Reports />} />
                           <Route path="/categorias" element={<Categories />} />
                           <Route path="/ajustes" element={<Settings />} />
+                          <Route path="/ajustes/aparencia" element={<AppearanceSettings />} />
                           <Route path="/cartoes" element={<ComingSoon title="Cartões" description={soon.cartoes} />} />
                           <Route path="/orcamento" element={<ComingSoon title="Orçamento" description={soon.orcamento} />} />
                           <Route path="/metas" element={<ComingSoon title="Metas" description={soon.metas} />} />

@@ -48,8 +48,8 @@ describe("navegação financeira", () => {
       "receitas",
     );
     expect(
-      await screen.findByRole("tab", { name: "Receitas" }),
-    ).toHaveAttribute("aria-selected", "true");
+      await screen.findByRole("radio", { name: "Receitas" }),
+    ).toHaveAttribute("aria-checked", "true");
   });
 
   it("navega pela barra principal e marca a página atual", async () => {

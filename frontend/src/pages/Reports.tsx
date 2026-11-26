@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useCategories } from "../hooks/useCategories";
+import { useCards } from "../hooks/useCards";
+import { cardVars } from "../features/cards/cardStyle";
 import { useSelectedMonth } from "../app/MonthContext";
 import { useMonthLedger, useMonthsSummary } from "../features/useLedger";
 import { summarizeLedger, type CategoryTotal } from "../features/ledger";
@@ -47,6 +49,22 @@ export function Reports() {
   }, []);
 
   const summary = useMemo(() => summarizeLedger(ledger.entries), [ledger.entries]);
+  const cardsQuery = useCards();
+  const byPayment = useMemo(() => {
+    const totals = new Map<string | null, number>();
+    for (const entry of ledger.entries) {
+      if (entry.type !== "expense") continue;
+      totals.set(entry.cardId, (totals.get(entry.cardId) ?? 0) + toCents(entry.amount));
+    }
+    const cards = cardsQuery.data ?? [];
+    return [
+      { key: "avista", label: "À vista", value: fromCents(totals.get(null) ?? 0), color: "var(--chart-6)" },
+      ...cards
+        .filter((card) => !card.archived || totals.has(card.id))
+        .map((card) => ({ key: card.id, label: card.name, value: fromCents(totals.get(card.id) ?? 0), color: cardVars(card.color).background })),
+    ];
+  }, [ledger.entries, cardsQuery.data]);
+  const hasCards = (cardsQuery.data ?? []).length > 0;
   const savingsRate = summary.income > 0 ? summary.balance / summary.income : null;
   const previous = fromMonthIndex(monthIndex(year, month) - 1);
   const previousSummary = evolution.data.length >= 2 ? evolution.data[evolution.data.length - 2].summary : null;
@@ -248,9 +266,18 @@ export function Reports() {
         </Card>
 
         <Card>
-          <CardHeader title="Fixas e variáveis" subtitle={`Despesas de ${name}`} />
+          <CardHeader title={hasCards ? "Por forma de pagamento" : "Fixas e variáveis"} subtitle={`Despesas de ${name}`} />
           {ledger.isLoading ? (
             <Skeleton className="h-24 w-full" />
+          ) : hasCards ? (
+            <>
+              {byPayment.map((item) => (
+                <ShareRow key={item.key} label={item.label} value={item.value} total={summary.expense} color={item.color} />
+              ))}
+              <p className="border-t border-border pt-3 text-[13px] text-muted">
+                Fixas {formatMoney(summary.fixedExpense)} · Variáveis {formatMoney(summary.variableExpense)}
+              </p>
+            </>
           ) : (
             <>
               <ShareRow label="Recorrentes (fixas)" value={summary.fixedExpense} total={summary.expense} />
@@ -318,7 +345,20 @@ function CategoryChanges({
   );
 }
 
-function ShareRow({ label, value, total, tone = "primary" }: { label: string; value: number; total: number; tone?: "primary" | "expense" }) {
+function ShareRow({
+  label,
+  value,
+  total,
+  tone = "primary",
+  color,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone?: "primary" | "expense";
+  /** Cor da barra (ex.: cor do cartão); sobrepõe o tom. */
+  color?: string;
+}) {
   const percent = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div className="flex flex-col gap-1.5">
@@ -328,7 +368,13 @@ function ShareRow({ label, value, total, tone = "primary" }: { label: string; va
           <Money value={value} size="sm" /> <span className="text-[13px] text-muted">· {percent}%</span>
         </span>
       </div>
-      <ProgressBar value={value} max={total || 1} label={`${label}: ${percent}% das despesas`} tone={tone} />
+      {color ? (
+        <div role="img" aria-label={`${label}: ${percent}% das despesas`} className="h-2 overflow-hidden rounded bg-surface-2">
+          <div className="h-full rounded" style={{ width: `${percent}%`, background: color }} />
+        </div>
+      ) : (
+        <ProgressBar value={value} max={total || 1} label={`${label}: ${percent}% das despesas`} tone={tone} />
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Repeat, Trash2 } from "lucide-react";
-import type { Category } from "../../types/FinanceTypes";
+import type { Card, Category } from "../../types/FinanceTypes";
+import { closingDateOf, invoiceKeyFor } from "../invoice";
+import { todayKey } from "../useLedger";
 import { formatLongDate, formatShortDate } from "../../lib/dates";
 import { Button, buttonClass } from "../../ui/Button";
 import { Money } from "../../ui/Money";
@@ -26,6 +28,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 export function TransactionDetail({
   entry,
   category,
+  card,
   layout,
   onEdit,
   onDelete,
@@ -33,6 +36,7 @@ export function TransactionDetail({
 }: {
   entry: LedgerEntry;
   category?: Category;
+  card?: Card;
   layout: "panel" | "screen";
   onEdit: () => void;
   onDelete: () => void;
@@ -52,6 +56,15 @@ export function TransactionDetail({
           </Badge>
         )}
       </Row>
+      {entry.type === "expense" && <Row label="Pago com">{card ? `${card.name} •••• ${card.last4}` : "À vista"}</Row>}
+      {card && entry.type === "expense" && (
+        <Row label="Fatura">
+          {(() => {
+            const closing = closingDateOf(invoiceKeyFor(entry.date, card.closingDay), card.closingDay);
+            return `${closing >= todayKey() ? "Fecha" : "Fechou"} em ${formatShortDate(closing)}`;
+          })()}
+        </Row>
+      )}
       {installment && (
         <Row label="Parcela">
           {installment.current} de {installment.total}

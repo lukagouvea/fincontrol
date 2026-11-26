@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Repeat, Search } from "lucide-react";
 import { useCategories } from "../hooks/useCategories";
+import { useCards } from "../hooks/useCards";
+import { makeCardLookup, type CardLookup } from "../features/cards/cardStyle";
+import { PayChip } from "../ui/PayChip";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useSelectedMonth } from "../app/MonthContext";
 import { usePendingDeletes } from "../app/PendingDeletes";
@@ -45,6 +48,8 @@ export function Transactions() {
   const ledger = useMonthLedger(month, year);
   const categoriesQuery = useCategories();
   const category = useMemo(() => makeCategoryLookup(categoriesQuery.data), [categoriesQuery.data]);
+  const cardsQuery = useCards();
+  const card = useMemo(() => makeCardLookup(cardsQuery.data), [cardsQuery.data]);
   const { hidden } = usePendingDeletes();
   const editor = useTransactionEditor();
   const deleteEntry = useDeleteEntry();
@@ -93,6 +98,7 @@ export function Transactions() {
     <TransactionDetail
       entry={selected}
       category={category(selected.categoryId)}
+      card={card(selected.cardId)}
       layout={desktop ? "panel" : "screen"}
       onEdit={() => editor.edit(selected)}
       onDelete={() => {
@@ -192,9 +198,9 @@ export function Transactions() {
               }
             />
           ) : desktop ? (
-            <TransactionTable entries={visible} category={category} today={today} selectedKey={selected?.key} onSelect={select} />
+            <TransactionTable entries={visible} category={category} card={card} today={today} selectedKey={selected?.key} onSelect={select} />
           ) : (
-            <TransactionList entries={visible} category={category} today={today} onSelect={select} />
+            <TransactionList entries={visible} category={category} card={card} today={today} onSelect={select} />
           )}
         </div>
 
@@ -218,11 +224,13 @@ export function Transactions() {
 function TransactionList({
   entries,
   category,
+  card,
   today,
   onSelect,
 }: {
   entries: LedgerEntry[];
   category: CategoryLookup;
+  card: CardLookup;
   today: string;
   onSelect: (entry: LedgerEntry) => void;
 }) {
@@ -240,7 +248,8 @@ function TransactionList({
           <ul>
             {group.items.map((entry) => {
               const cat = category(entry.categoryId);
-              const subtitle = [cat?.name ?? "Sem categoria", ...entryTags(entry)].join(" · ");
+              const payment = entry.type === "expense" ? card(entry.cardId)?.name ?? "À vista" : null;
+              const subtitle = [cat?.name ?? "Sem categoria", payment, ...entryTags(entry)].filter(Boolean).join(" · ");
               return (
                 <li key={entry.key}>
                   <button
@@ -274,12 +283,14 @@ function TransactionList({
 function TransactionTable({
   entries,
   category,
+  card,
   today,
   selectedKey,
   onSelect,
 }: {
   entries: LedgerEntry[];
   category: CategoryLookup;
+  card: CardLookup;
   today: string;
   selectedKey?: string;
   onSelect: (entry: LedgerEntry) => void;
@@ -291,6 +302,7 @@ function TransactionTable({
         <tr className="border-b border-border">
           <th scope="col" className={header}>Descrição</th>
           <th scope="col" className={header}>Categoria</th>
+          <th scope="col" className={header}>Pago com</th>
           <th scope="col" className={cx(header, "text-right")}>Valor</th>
         </tr>
       </thead>
@@ -326,6 +338,7 @@ function TransactionTable({
                   </Badge>
                 )}
               </td>
+              <td className="py-3 pr-3">{entry.type === "expense" ? <PayChip card={card(entry.cardId)} /> : <span className="text-muted">—</span>}</td>
               <td className="py-3 pr-2 text-right">
                 <Money value={entry.amount} kind={entry.type} size="sm" />
               </td>

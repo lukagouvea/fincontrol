@@ -1,15 +1,16 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, Bell, CalendarClock, ChartNoAxesColumn, Plus, Repeat, Settings } from "lucide-react";
+import { ArrowDown, Bell, CalendarClock, ChartNoAxesColumn, CreditCard, Plus, Repeat, Settings } from "lucide-react";
 import { useCategories } from "../hooks/useCategories";
 import { useSelectedMonth } from "../app/MonthContext";
 import { usePendingDeletes } from "../app/PendingDeletes";
 import { useTransactionEditor } from "../app/TransactionEditor";
 import { useMonthLedger, todayKey } from "../features/useLedger";
+import { useCardInvoices } from "../features/useCardInvoices";
 import { summarizeLedger, type LedgerEntry } from "../features/ledger";
 import { chartColorVar, makeCategoryLookup, type CategoryLookup } from "../features/categories";
 import { cx } from "../lib/cx";
-import { formatRelativeDay, monthIndex, monthLabel, monthNames, parseDateKey, shortMonthName } from "../lib/dates";
+import { formatRelativeDay, formatShortDate, monthIndex, monthLabel, monthNames, parseDateKey, shortMonthName } from "../lib/dates";
 import { formatMoney, sumMoney } from "../lib/money";
 import { Button } from "../ui/Button";
 import { Card, CardHeader } from "../ui/Card";
@@ -46,6 +47,41 @@ export function Home() {
   const toPay = sumMoney(upcoming.filter((entry) => entry.type === "expense").map((entry) => entry.amount));
   const recent = entries.filter((entry) => !entry.upcoming).slice(0, 5);
   const nextRecurring = upcoming.find((entry) => entry.source === "recurring");
+
+  // Faturas: o que falta pagar das faturas aberta/fechada/vencida de cada cartão.
+  const cardInvoices = useCardInvoices();
+  const activeCards = cardInvoices.data.filter((summary) => !summary.card.archived);
+  const hasCards = activeCards.length > 0;
+  const openInvoices = activeCards
+    .flatMap((summary) =>
+      summary.invoices
+        .filter((invoice) => invoice.remaining > 0 && invoice.status !== "futura" && invoice.status !== "paga")
+        .map((invoice) => ({ card: summary.card, invoice })),
+    )
+    .sort((a, b) => (a.invoice.dueDate < b.invoice.dueDate ? -1 : 1));
+  const invoicesTotal = sumMoney(openInvoices.map((item) => item.invoice.remaining));
+  const nextDue = openInvoices[0];
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const upcomingRows: UpcomingItem[] = [
+    ...upcoming.map((entry) => ({
+      key: entry.key,
+      date: entry.date,
+      title: entry.description,
+      subtitle: entry.source === "recurring" ? "Recorrente" : entry.installment ? `Parcela ${entry.installment.current} de ${entry.installment.total}` : "Agendada",
+      amount: entry.amount,
+      kind: entry.type,
+    })),
+    ...openInvoices
+      .filter(({ invoice }) => invoice.dueDate >= today && invoice.dueDate.startsWith(monthPrefix))
+      .map(({ card, invoice }) => ({
+        key: `fatura:${card.id}:${invoice.key}`,
+        date: invoice.dueDate,
+        title: `Fatura ${card.name}`,
+        subtitle: "Vencimento",
+        amount: invoice.remaining,
+        kind: "neutral" as const,
+      })),
+  ].sort((a, b) => (a.date < b.date ? -1 : 1));
 
   const segments: StackedSegment[] = summary.expenseByCategory.map((item, index) => ({
     key: item.categoryId ?? "none",
@@ -138,11 +174,19 @@ export function Home() {
         <Kpi label={sobrou >= 0 ? "Sobrou" : "Faltou"} loading={ledger.isLoading} value={Math.abs(sobrou)} kind={sobrou >= 0 ? "neutral" : "expense"}>
           Entradas menos gastos{period === "current" ? " até agora" : ""}
         </Kpi>
-        <Kpi label="A pagar no mês" loading={ledger.isLoading} value={toPay} kind="neutral">
-          {upcoming.some((entry) => entry.type === "expense")
-            ? `Próximo: ${upcoming.find((entry) => entry.type === "expense")!.description}, ${formatRelativeDay(upcoming.find((entry) => entry.type === "expense")!.date, today, { short: true }).toLowerCase()}`
-            : "Nada previsto até o fim do mês"}
-        </Kpi>
+        {hasCards ? (
+          <Kpi label="Faturas em aberto" loading={cardInvoices.isLoading} value={invoicesTotal} kind="neutral">
+            {nextDue
+              ? `${nextDue.invoice.dueDate < today ? "Venceu" : "Próximo vencimento"}: ${nextDue.card.name}, ${formatShortDate(nextDue.invoice.dueDate)}`
+              : "Nenhuma fatura a pagar"}
+          </Kpi>
+        ) : (
+          <Kpi label="A pagar no mês" loading={ledger.isLoading} value={toPay} kind="neutral">
+            {upcoming.some((entry) => entry.type === "expense")
+              ? `Próximo: ${upcoming.find((entry) => entry.type === "expense")!.description}, ${formatRelativeDay(upcoming.find((entry) => entry.type === "expense")!.date, today, { short: true }).toLowerCase()}`
+              : "Nada previsto até o fim do mês"}
+          </Kpi>
+        )}
       </section>
 
       {/* Mobile: atalhos */}
@@ -150,9 +194,22 @@ export function Home() {
         <Tile icon={<ArrowDown size={18} />} label="Entradas">
           <Money value={summary.income} kind="income" signed={false} size="md" className="text-[20px]" />
         </Tile>
-        <Tile icon={<CalendarClock size={18} />} label="A pagar">
-          <Money value={toPay} size="md" className="text-[20px]" />
-        </Tile>
+        {hasCards ? (
+          <Link
+            to="/cartoes"
+            className="flex flex-col gap-1 rounded-card border border-border bg-surface p-4 hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
+          >
+            <span className="flex items-center gap-2 text-sm text-muted">
+              <CreditCard size={18} aria-hidden="true" />
+              Faturas abertas
+            </span>
+            <Money value={invoicesTotal} size="md" className="text-[20px]" />
+          </Link>
+        ) : (
+          <Tile icon={<CalendarClock size={18} />} label="A pagar">
+            <Money value={toPay} size="md" className="text-[20px]" />
+          </Tile>
+        )}
         <TileLink to="/recorrentes" icon={<Repeat size={20} />} title="Recorrentes">
           {nextRecurring ? `Próxima: ${formatRelativeDay(nextRecurring.date, today, { short: true }).toLowerCase()}` : "Nada previsto"}
         </TileLink>
@@ -208,14 +265,14 @@ export function Home() {
           <CardHeader title="Próximos dias" action={{ label: "Ver recorrentes", to: "/recorrentes" }} />
           {ledger.isLoading ? (
             <Skeleton className="h-24 w-full" />
-          ) : !upcoming.length ? (
+          ) : !upcomingRows.length ? (
             <p className="text-sm text-muted">
               {period === "past" ? `${monthNames[month]} já fechou.` : `Nada previsto até o fim de ${name}.`}
             </p>
           ) : (
             <ul className="flex flex-col">
-              {upcoming.slice(0, 4).map((entry) => (
-                <UpcomingRow key={entry.key} entry={entry} />
+              {upcomingRows.slice(0, 4).map((item) => (
+                <UpcomingRow key={item.key} item={item} />
               ))}
             </ul>
           )}
@@ -303,8 +360,10 @@ function TileLink({ to, icon, title, children }: { to: string; icon: React.React
   );
 }
 
-function UpcomingRow({ entry }: { entry: LedgerEntry }) {
-  const date = parseDateKey(entry.date);
+type UpcomingItem = { key: string; date: string; title: string; subtitle: string; amount: number; kind: "income" | "expense" | "neutral" };
+
+function UpcomingRow({ item }: { item: UpcomingItem }) {
+  const date = parseDateKey(item.date);
   return (
     <li className="flex min-h-16 items-center gap-3 border-t border-border first:border-t-0">
       <span className="flex size-tap shrink-0 flex-col items-center justify-center rounded-tile bg-surface-2 leading-none">
@@ -312,10 +371,10 @@ function UpcomingRow({ entry }: { entry: LedgerEntry }) {
         <span className="text-[10px] font-semibold uppercase text-muted">{shortMonthName(date.getMonth())}</span>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-semibold">{entry.description}</span>
-        <span className="block text-[13px] text-muted">{entry.source === "recurring" ? "Recorrente" : entry.installment ? `Parcela ${entry.installment.current} de ${entry.installment.total}` : "Agendada"}</span>
+        <span className="block truncate text-[15px] font-semibold">{item.title}</span>
+        <span className="block text-[13px] text-muted">{item.subtitle}</span>
       </span>
-      <Money value={entry.amount} kind={entry.type} size="sm" />
+      <Money value={item.amount} kind={item.kind} size="sm" />
     </li>
   );
 }

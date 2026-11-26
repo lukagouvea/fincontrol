@@ -8,6 +8,10 @@ import {
   useUpdateTransaction,
 } from "../../hooks/useTransactions";
 import { useAddFixedExpense, useAddFixedIncome } from "../../hooks/useFixedTransactions";
+import { useCards } from "../../hooks/useCards";
+import { cardVars } from "../cards/cardStyle";
+import { closingDateOf, invoiceKeyFor } from "../invoice";
+import { formatShortDate } from "../../lib/dates";
 import type { Category } from "../../types/FinanceTypes";
 import { cx } from "../../lib/cx";
 import { dateKeyToIso, parseDateKey, toDateKey } from "../../lib/dates";
@@ -28,6 +32,23 @@ export type TransactionDraft = {
   description?: string;
   categoryId?: string | null;
   date?: string;
+  cardId?: string | null;
+};
+
+const LAST_PAYMENT_KEY = "fincontrol:last-payment";
+const readLastPayment = () => {
+  try {
+    return localStorage.getItem(LAST_PAYMENT_KEY);
+  } catch {
+    return null;
+  }
+};
+const saveLastPayment = (cardId: string | null) => {
+  try {
+    localStorage.setItem(LAST_PAYMENT_KEY, cardId ?? "avista");
+  } catch {
+    /* só uma conveniência */
+  }
 };
 
 export type TransactionSheetMode =
@@ -55,6 +76,8 @@ export function TransactionSheet({
   const addFixedExpense = useAddFixedExpense();
   const addFixedIncome = useAddFixedIncome();
   const showToast = useToast();
+  const cardsQuery = useCards();
+  const activeCards = useMemo(() => (cardsQuery.data ?? []).filter((card) => !card.archived), [cardsQuery.data]);
 
   const [type, setType] = useState<EntryType>("expense");
   const [amountText, setAmountText] = useState<string | undefined>();
@@ -63,6 +86,7 @@ export function TransactionSheet({
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(toDateKey(new Date()));
   const [installments, setInstallments] = useState(1);
+  const [cardId, setCardId] = useState<string | null>(null);
   const [repeat, setRepeat] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
@@ -79,6 +103,8 @@ export function TransactionSheet({
     setCategoryId(source?.categoryId ?? "");
     setDescription(source?.description ?? "");
     setDate(source?.date ?? toDateKey(new Date()));
+    const last = readLastPayment();
+    setCardId(source && "cardId" in source && source.cardId !== undefined ? source.cardId : last && last !== "avista" ? last : null);
     setInstallments(1);
     setRepeat(false);
     setErrors({});
@@ -109,6 +135,13 @@ export function TransactionSheet({
     return first;
   }, [categories, categoryId]);
 
+  // Último cartão usado pode ter sido arquivado/apagado: volta para À vista.
+  const card = type === "expense" ? (cardsQuery.data ?? []).find((item) => item.id === cardId) : undefined;
+  useEffect(() => {
+    if (open && cardId && cardsQuery.data && !cardsQuery.data.some((item) => item.id === cardId)) setCardId(null);
+  }, [open, cardId, cardsQuery.data]);
+  const effectiveCardId = card ? card.id : null;
+
   const isInstallment = !editing && type === "expense" && installments > 1;
   const canRepeat = !editing && !isInstallment;
   const day = parseDateKey(date).getDate();
@@ -133,6 +166,7 @@ export function TransactionSheet({
       categoryId,
       date: dateKeyToIso(date),
       type,
+      cardId: effectiveCardId,
     };
     try {
       if (editing) {
@@ -142,13 +176,14 @@ export function TransactionSheet({
         await addInstallments.mutateAsync({ ...payload, numParcelas: installments });
         showToast({ message: `Compra parcelada em ${installments}x salva` });
       } else if (repeat) {
-        const rule = { description: payload.description, amount: payload.amount, categoryId, day, startDate: payload.date, type };
+        const rule = { description: payload.description, amount: payload.amount, categoryId, day, startDate: payload.date, type, cardId: effectiveCardId };
         await (type === "income" ? addFixedIncome : addFixedExpense).mutateAsync(rule as never);
         showToast({ message: `Recorrente salva: todo dia ${day}` });
       } else {
         await addTransaction.mutateAsync(payload as never);
         showToast({ message: `${type === "income" ? "Receita" : "Despesa"} salva` });
       }
+      if (type === "expense") saveLastPayment(effectiveCardId);
       onClose();
     } catch {
       setSubmitError("Não foi possível salvar. O que você preencheu foi mantido.");
@@ -228,6 +263,30 @@ export function TransactionSheet({
               </p>
             )}
           </div>
+
+          {type === "expense" && (activeCards.length > 0 || card) && (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-sm font-semibold">Pago com</legend>
+              <div className="-mx-5 flex gap-2 overflow-x-auto px-5 lg:mx-0 lg:flex-wrap lg:px-0">
+                <PaymentChoice selected={!card} onSelect={() => setCardId(null)} title="À vista" subtitle="Pix, dinheiro" />
+                {activeCards.map((item) => (
+                  <PaymentChoice
+                    key={item.id}
+                    selected={card?.id === item.id}
+                    onSelect={() => setCardId(item.id)}
+                    title={item.name}
+                    subtitle={`•••• ${item.last4}`}
+                    dot={cardVars(item.color).background}
+                  />
+                ))}
+              </div>
+              <p className="text-[13px] text-muted">
+                {card
+                  ? `${isInstallment ? "1ª parcela entra" : "Entra"} na fatura que fecha em ${formatShortDate(closingDateOf(invoiceKeyFor(date, card.closingDay), card.closingDay))}.`
+                  : "À vista é Pix, dinheiro ou débito: não entra em nenhuma fatura."}
+              </p>
+            </fieldset>
+          )}
 
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 text-sm font-semibold">Categoria</legend>
@@ -366,6 +425,39 @@ function CategoryChoice({
     >
       <CategoryIcon category={category} className="!size-6 !bg-transparent lg:hidden" />
       <span className="max-w-full truncate">{category.name}</span>
+    </button>
+  );
+}
+
+function PaymentChoice({
+  selected,
+  onSelect,
+  title,
+  subtitle,
+  dot,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  title: string;
+  subtitle: string;
+  dot?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      className={cx(
+        "flex min-h-[60px] min-w-[110px] shrink-0 flex-col justify-center rounded-2xl border-2 px-4 text-left",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+        selected ? "border-primary bg-primary-tint" : "border-border bg-surface hover:bg-surface-2",
+      )}
+    >
+      <span className="flex items-center gap-1.5 text-[15px] font-semibold">
+        {dot && <span aria-hidden="true" className="size-2.5 rounded-full" style={{ background: dot }} />}
+        {title}
+      </span>
+      <span className="text-xs text-muted">{subtitle}</span>
     </button>
   );
 }

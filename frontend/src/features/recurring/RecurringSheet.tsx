@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCategories } from "../../hooks/useCategories";
+import { useCards } from "../../hooks/useCards";
 import { fixedTransactionService } from "../../services/fixedTransactionService";
 import type { FixedTransaction } from "../../types/FinanceTypes";
 import { getFixedItemVersion } from "../../utils/financeUtils";
@@ -62,6 +63,8 @@ export function RecurringSheet({
   const [amount, setAmount] = useState<number | null>(null);
   const [day, setDay] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [cardId, setCardId] = useState("");
+  const cardsQuery = useCards();
   const [start, setStart] = useState("");
   const [ends, setEnds] = useState<"never" | "date">("never");
   const [end, setEnd] = useState("");
@@ -80,6 +83,7 @@ export function RecurringSheet({
     setAmountText(item ? String(item.amount).replace(".", ",") : undefined);
     setDay(item ? String(item.day) : String(new Date().getDate()));
     setCategoryId(item?.categoryId ?? "");
+    setCardId(item?.cardId ?? "");
     setStart(item ? isoToDateKey(item.startDate) : toDateKey(new Date()));
     setEnds(item?.endDate ? "date" : "never");
     setEnd(item?.endDate ? isoToDateKey(item.endDate) : "");
@@ -129,6 +133,7 @@ export function RecurringSheet({
         type,
         startDate: dateKeyToIso(start),
         endDate: ends === "date" && end ? dateKeyToIso(end) : null,
+        cardId: type === "expense" && cardId ? cardId : null,
       };
       if (editing) {
         // Valor, categoria e dia têm histórico: só os que mudaram vão, para não
@@ -236,6 +241,20 @@ export function RecurringSheet({
               ))}
             </SelectInput>
           </Field>
+          {type === "expense" && ((cardsQuery.data ?? []).some((card) => !card.archived) || cardId) && (
+            <Field label="Pago com" hint={cardId ? "Cada lançamento entra na fatura do cartão." : undefined}>
+              <SelectInput value={cardId} onChange={(e) => setCardId(e.target.value)}>
+                <option value="">À vista (Pix, dinheiro, débito)</option>
+                {(cardsQuery.data ?? [])
+                  .filter((card) => !card.archived || card.id === cardId)
+                  .map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.name} •••• {card.last4}
+                    </option>
+                  ))}
+              </SelectInput>
+            </Field>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Começa em" error={errors.start}>
               <TextInput type="date" value={start} onChange={(e) => setStart(e.target.value)} />

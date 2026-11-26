@@ -6,7 +6,7 @@ import { useTheme } from "../../context/ThemeContext";
 export function AuthShell({ children }: { children: ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const brand = (
-    <Link className="brand" to="/login">
+    <Link className="brand" to="/entrar">
       <span className="brand-mark">
         <TrendingUp size={20} />
       </span>

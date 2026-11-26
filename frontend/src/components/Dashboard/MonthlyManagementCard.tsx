@@ -45,7 +45,7 @@ const MonthlyManagementCardViewComponent: React.FC<
   compact = false,
 }) => {
   const negativeClass = (value: number) =>
-    value < 0 ? "text-negative" : "text-blue-600";
+    value < 0 ? "text-negative" : "text-primary";
 
   return (
     <div

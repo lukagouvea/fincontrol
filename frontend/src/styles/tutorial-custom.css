@@ -107,25 +107,25 @@
 /* ==========================================
    Modo Escuro (Dark Theme)
    ========================================== */
-.dark .fincontrol-tutorial-popover {
+[data-theme="dark"] .fincontrol-tutorial-popover {
   background: #1f2937 !important;
   border: 1px solid #374151 !important;
 }
 
-.dark .fincontrol-tutorial-popover .driver-popover-title {
+[data-theme="dark"] .fincontrol-tutorial-popover .driver-popover-title {
   color: #f9fafb !important;
 }
 
-.dark .fincontrol-tutorial-popover .driver-popover-description {
+[data-theme="dark"] .fincontrol-tutorial-popover .driver-popover-description {
   color: #d1d5db !important;
 }
 
-.dark .fincontrol-tutorial-popover .driver-popover-prev-btn {
+[data-theme="dark"] .fincontrol-tutorial-popover .driver-popover-prev-btn {
   background: #374151 !important;
   color: #f9fafb !important;
 }
 
-.dark .fincontrol-tutorial-popover .driver-popover-prev-btn:hover {
+[data-theme="dark"] .fincontrol-tutorial-popover .driver-popover-prev-btn:hover {
   background: #4b5563 !important;
 }
 

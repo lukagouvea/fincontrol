@@ -17,7 +17,7 @@ export const RestartTutorialButton = () => {
       onClick={handleClick}
       className="
         flex items-center gap-2 px-4 py-2 
-        bg-blue-600 hover:bg-blue-700 
+        bg-primary hover:opacity-90 
         text-white font-medium rounded-lg 
         transition-colors duration-200
         shadow-md hover:shadow-lg

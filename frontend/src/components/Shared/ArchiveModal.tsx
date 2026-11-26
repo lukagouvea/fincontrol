@@ -75,7 +75,7 @@ export const ArchiveModal = <T extends ArchiveItem>({
           <div className="flex items-center">
             <button
               onClick={() => onEdit(item)}
-              className="text-blue-600 hover:text-blue-900"
+              className="text-primary hover:underline"
             >
               <PencilIcon className="w-5 h-5" />
             </button>

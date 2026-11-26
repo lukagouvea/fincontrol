@@ -23,7 +23,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
     if (active && payload && payload.length) {
       return (
         <div className="bg-surface dark:bg-surface border border-line dark:border-line p-2 shadow-md rounded">
-          <p className="text-blue-500">
+          <p className="text-primary">
             {payload[0].name} :{" "}
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",

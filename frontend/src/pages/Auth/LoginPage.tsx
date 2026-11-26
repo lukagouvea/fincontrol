@@ -110,7 +110,7 @@ export function LoginPage() {
           </form>
           <p className="auth-footnote">
             Ainda não tem conta?{" "}
-            <Link className="auth-link" to="/signup">
+            <Link className="auth-link" to="/criar-conta">
               Criar conta
             </Link>
           </p>

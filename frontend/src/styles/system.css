@@ -1,42 +1,19 @@
 :root {
-  color-scheme: light;
-  --canvas: #f5f6f5;
-  --surface: #ffffff;
-  --surface-muted: #eef1ef;
-  --control: #f8faf9;
-  --ink: #202b28;
-  --secondary: #58675f;
-  --muted: #626e66;
-  --line: #dce3de;
-  --accent: #166b52;
-  --accent-hover: #10523f;
-  --accent-soft: #e7f2eb;
-  --on-accent: #ffffff;
-  --negative: #af343d;
-  --negative-soft: #fcecee;
-  --warning: #906015;
-  --focus: #278967;
-  --overlay: rgb(14 24 20 / 0.5);
-  --radius: 12px;
-}
-.dark {
-  color-scheme: dark;
-  --canvas: #151b18;
-  --surface: #1c2420;
-  --surface-muted: #252f29;
-  --control: #18201b;
-  --ink: #edf2ee;
-  --secondary: #b1bfb5;
-  --muted: #95a69b;
-  --line: #354239;
-  --accent: #83d1ad;
-  --accent-hover: #a6e0c4;
-  --accent-soft: #253b2e;
-  --on-accent: #10261b;
-  --negative: #f3a2aa;
-  --negative-soft: #3c262c;
-  --warning: #e4bf7b;
-  --focus: #83d1ad;
+  /* Aliases legados → tokens do design (tokens.css). Saem junto com este arquivo ao fim da Fase 2. */
+  --canvas: var(--bg);
+  --surface-muted: var(--surface-2);
+  --control: var(--surface);
+  --secondary: var(--ink-2);
+  --line: var(--border);
+  --accent: var(--primary);
+  --accent-hover: var(--primary);
+  --accent-soft: var(--primary-tint);
+  --on-accent: var(--on-primary);
+  --negative: var(--expense);
+  --negative-soft: var(--expense-tint);
+  --warning: var(--chart-5);
+  --overlay: var(--scrim);
+  --radius: 16px;
 }
 @layer base {
   * {
@@ -51,8 +28,8 @@
     min-width: 320px;
     color: var(--ink);
     background: var(--canvas);
-    font-family: "Public Sans Variable", sans-serif;
-    font-size: 14px;
+    font-family: var(--font-ui);
+    font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }

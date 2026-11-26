@@ -24,8 +24,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        theme_color: '#166b52',
-        background_color: '#f5f6f5',
+        theme_color: '#1E4D3B',
+        background_color: '#F5F2EA',
         categories: ['finance', 'productivity'],
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -52,7 +52,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         // Nome do serviço no docker-compose + porta interna
-        target: 'http://backend:3001',
+        target: process.env.API_PROXY_TARGET ?? 'http://backend:3001',
         changeOrigin: true,
         secure: false,
         // Remove o '/api' da frente antes de mandar pro backend

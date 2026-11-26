@@ -4,8 +4,13 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { ThemeProvider, useTheme } from "./ThemeContext";
 
 function ThemeControl() {
-  const { theme, toggleTheme } = useTheme();
-  return <button onClick={toggleTheme}>{theme}</button>;
+  const { theme, toggleTheme, setPreference } = useTheme();
+  return (
+    <>
+      <button onClick={toggleTheme}>{theme}</button>
+      <button onClick={() => setPreference("system")}>auto</button>
+    </>
+  );
 }
 
 function renderTheme() {
@@ -41,7 +46,7 @@ function systemTheme(dark: boolean) {
 
 beforeEach(() => {
   localStorage.clear();
-  document.documentElement.className = "";
+  delete document.documentElement.dataset.theme;
 });
 
 it.each([
@@ -52,8 +57,8 @@ it.each([
   ({ dark, theme }) => {
     systemTheme(dark);
     renderTheme();
-    expect(screen.getByRole("button")).toHaveTextContent(theme);
-    expect(document.documentElement).toHaveClass(theme);
+    expect(screen.getAllByRole("button")[0]).toHaveTextContent(theme);
+    expect(document.documentElement.dataset.theme).toBe(theme);
     expect(localStorage.getItem("theme")).toBeNull();
   },
 );
@@ -62,35 +67,35 @@ it("acompanha mudanças do sistema enquanto não há preferência manual", () =>
   const changeSystem = systemTheme(false);
   renderTheme();
   changeSystem(true);
-  expect(screen.getByRole("button")).toHaveTextContent("dark");
-  expect(document.documentElement).toHaveClass("dark");
+  expect(screen.getAllByRole("button")[0]).toHaveTextContent("dark");
+  expect(document.documentElement.dataset.theme).toBe("dark");
   changeSystem(false);
-  expect(screen.getByRole("button")).toHaveTextContent("light");
-  expect(document.documentElement).not.toHaveClass("dark");
+  expect(screen.getAllByRole("button")[0]).toHaveTextContent("light");
+  expect(document.documentElement.dataset.theme).not.toBe("dark");
   expect(localStorage.getItem("theme")).toBeNull();
 });
 
 it("salva a escolha manual, ignora o sistema e mantém a escolha ao reabrir", async () => {
   const changeSystem = systemTheme(false);
   const view = renderTheme();
-  await userEvent.click(screen.getByRole("button"));
+  await userEvent.click(screen.getAllByRole("button")[0]);
   expect(localStorage.getItem("theme")).toBe("dark");
   changeSystem(true);
   changeSystem(false);
-  expect(screen.getByRole("button")).toHaveTextContent("dark");
+  expect(screen.getAllByRole("button")[0]).toHaveTextContent("dark");
   view.unmount();
   renderTheme();
-  expect(screen.getByRole("button")).toHaveTextContent("dark");
+  expect(screen.getAllByRole("button")[0]).toHaveTextContent("dark");
 });
 
 it("respeita a preferência clara salva mesmo com sistema escuro", () => {
   const changeSystem = systemTheme(true);
   localStorage.setItem("theme", "light");
   renderTheme();
-  expect(document.documentElement).toHaveClass("light");
+  expect(document.documentElement.dataset.theme).toBe("light");
   changeSystem(false);
   changeSystem(true);
-  expect(screen.getByRole("button")).toHaveTextContent("light");
+  expect(screen.getAllByRole("button")[0]).toHaveTextContent("light");
 });
 
 it("permite alternar o tema quando o armazenamento está indisponível", async () => {
@@ -102,7 +107,19 @@ it("permite alternar o tema quando o armazenamento está indisponível", async (
     throw new Error("Storage disabled");
   });
   renderTheme();
-  expect(screen.getByRole("button")).toHaveTextContent("dark");
-  await userEvent.click(screen.getByRole("button"));
-  expect(document.documentElement).toHaveClass("light");
+  expect(screen.getAllByRole("button")[0]).toHaveTextContent("dark");
+  await userEvent.click(screen.getAllByRole("button")[0]);
+  expect(document.documentElement.dataset.theme).toBe("light");
+});
+
+it("volta a seguir o sistema ao escolher Automático", async () => {
+  const changeSystem = systemTheme(false);
+  localStorage.setItem("theme", "dark");
+  renderTheme();
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  await userEvent.click(screen.getByRole("button", { name: "auto" }));
+  expect(localStorage.getItem("theme")).toBeNull();
+  expect(document.documentElement.dataset.theme).toBe("light");
+  changeSystem(true);
+  expect(document.documentElement.dataset.theme).toBe("dark");
 });

@@ -115,7 +115,7 @@ export function SignupPage() {
       </form>
       <p className="auth-footnote">
         Já tem uma conta?{" "}
-        <Link className="auth-link" to="/login">
+        <Link className="auth-link" to="/entrar">
           Entrar
         </Link>
       </p>

@@ -38,7 +38,7 @@ export const ExpensesValueHistogram: React.FC<ExpensesValueHistogramProps> = ({
       return (
         <div className="bg-surface dark:bg-surface border border-line dark:border-line p-2 shadow-md rounded">
           <p className="text-ink font-medium mb-1">{label}</p>
-          <p className="text-blue-500">{payload[0].value} gastos</p>
+          <p className="text-primary">{payload[0].value} gastos</p>
         </div>
       );
     }

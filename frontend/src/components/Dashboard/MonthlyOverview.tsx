@@ -131,7 +131,7 @@ export function MonthlyOverview({
             </dl>
           </div>
         )}
-        <Link className="text-link" to="/relatorio-mensal">
+        <Link className="text-link" to="/relatorios">
           Ver relatório do mês <ArrowRight size={15} />
         </Link>
       </div>

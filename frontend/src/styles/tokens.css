@@ -1,0 +1,44 @@
+/* Fonte: design/tokens.css (não editar valores aqui sem atualizar o design). */
+
+:root{
+  --bg:#F5F2EA; --surface:#FFFFFF; --surface-2:#EDEAE0; --border:#E6E1D5; --border-strong:#C9C3B3;
+  --ink:#16201C; --ink-2:#3F4A44; --muted:#5B6660; --muted-2:#8A948E;
+  --primary:#1E4D3B; --primary-tint:#E3EEE8; --on-primary:#FFFFFF;
+  --income:#0B5A4D; --income-tint:#DCEBE6;
+  --expense:#A8480F; --expense-tint:#F6E4D8;
+  --card-aurora:#1E4D3B; --card-vento:#2F5D8F; --card-vento-tint:#DDE8F2; --card-vento-ink:#2A5584;
+  --scrim:rgba(58,64,61,.6);
+  --chart-1:#1E4D3B; --chart-2:#C2621F; --chart-3:#3B6EA5; --chart-4:#7FB8A8; --chart-5:#D9B26A; --chart-6:#8A948E;
+  --radius-card:20px; --radius-field:16px; --radius-pill:999px; --radius-tile:14px; --radius-sheet:28px; --radius-dialog:24px;
+  --font-ui:'Inter Variable','Inter',system-ui,sans-serif; --font-num:'Space Grotesk',sans-serif;
+  --tap:44px; --btn-h:56px; --field-h:52px; --nav-h:84px; --sidebar-w:248px;
+}
+:root[data-theme="dark"]{
+  --bg:#121714; --surface:#1B221E; --surface-2:#262E29; --border:#2C352F; --border-strong:#3B463F;
+  --ink:#EDF1EE; --ink-2:#C3CCC6; --muted:#9AA6A0; --muted-2:#8A948E;
+  --primary:#58AD88; --primary-tint:#1F3A2F; --on-primary:#0E1A14;
+  --income:#5FC9A8; --income-tint:#1D3A33;
+  --expense:#F08A4B; --expense-tint:#3F2A1E;
+  --card-aurora:#58AD88; --card-vento:#5E93CC; --card-vento-tint:#1E2F42; --card-vento-ink:#8DB6E6;
+  --scrim:rgba(0,0,0,.6);
+  --chart-1:#58AD88; --chart-2:#E07B39; --chart-3:#6FA3DB; --chart-4:#7FB8A8; --chart-5:#D9B26A; --chart-6:#8A948E;
+}
+/* Complementos do app (não estão no protótipo). */
+:root{
+  color-scheme: light;
+  --focus:#1E4D3B;
+  --shadow-fab:0 8px 20px rgba(30,77,59,.28);
+  --shadow-dialog:0 24px 60px rgba(22,32,28,.25);
+  --shadow-toast:0 8px 24px rgba(22,32,28,.3);
+  --toast-bg:#16201C; --toast-ink:#FFFFFF; --toast-action:#7FB8A8;
+  --hero:#1E4D3B; --on-hero:#FFFFFF; --on-hero-muted:#CFE2D8; --hero-track:#3C6B58; --hero-fill:#FFFFFF;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --focus:#58AD88;
+  --shadow-fab:0 8px 20px rgba(0,0,0,.4);
+  --shadow-dialog:0 24px 60px rgba(0,0,0,.5);
+  --shadow-toast:0 8px 24px rgba(0,0,0,.5);
+  --toast-bg:#EDF1EE; --toast-ink:#0E1A14; --toast-action:#1E4D3B;
+  --hero:#58AD88; --on-hero:#0E1A14; --on-hero-muted:#1E3B2E; --hero-track:#A5D6BE; --hero-fill:#1B221E;
+}

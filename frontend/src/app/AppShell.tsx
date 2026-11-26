@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { cx } from "../lib/cx";
@@ -109,8 +109,13 @@ function BottomNav() {
   );
 }
 
+/** Telas com ação principal própria no cabeçalho não mostram o botão flutuante. */
+const NO_FAB = ["/transacoes", "/categorias", "/recorrentes", "/ajustes", "/alertas"];
+
 function Fab() {
   const { create } = useTransactionEditor();
+  const { pathname } = useLocation();
+  if (NO_FAB.some((path) => pathname.startsWith(path))) return null;
   return (
     <button
       type="button"

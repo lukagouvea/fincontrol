@@ -16,8 +16,11 @@ export function PageHeader({
   title: string;
   eyebrow?: ReactNode;
   actions?: ReactNode;
-  /** Mostra o botão voltar; string = destino, true = histórico. */
-  back?: string | true;
+  /**
+   * Botão voltar só no mobile (telas secundárias). Volta no histórico quando
+   * veio de dentro do app; senão vai para este endereço.
+   */
+  back?: string;
 }) {
   const navigate = useNavigate();
   return (
@@ -26,7 +29,8 @@ export function PageHeader({
         {back && (
           <IconButton
             label="Voltar"
-            onClick={() => (back === true ? navigate(-1) : navigate(back))}
+            className="lg:hidden"
+            onClick={() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate(back))}
           >
             <ChevronLeft size={20} aria-hidden="true" />
           </IconButton>

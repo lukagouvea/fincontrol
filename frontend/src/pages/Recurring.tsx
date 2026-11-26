@@ -91,6 +91,7 @@ export function Recurring() {
   return (
     <>
       <PageHeader
+        back="/"
         title="Recorrentes"
         eyebrow={<span className="hidden lg:inline">Lançamentos automáticos</span>}
         actions={

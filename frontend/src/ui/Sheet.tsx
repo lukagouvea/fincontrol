@@ -20,6 +20,7 @@ export function Sheet({
   footer,
   size = "normal",
   desktop = "dialog",
+  mobile = "sheet",
   dismissible = true,
 }: {
   open: boolean;
@@ -30,6 +31,8 @@ export function Sheet({
   footer?: ReactNode;
   size?: "normal" | "wide";
   desktop?: "dialog" | "panel";
+  /** "full" ocupa a tela toda abaixo de 1024px (telas do design mobile). */
+  mobile?: "sheet" | "full";
   dismissible?: boolean;
 }) {
   const returnTarget = useRef<HTMLElement | null>(null);
@@ -56,9 +59,11 @@ export function Sheet({
           }}
           className={cx(
             "fixed z-50 flex flex-col bg-surface text-ink shadow-dialog outline-none",
-            // Mobile: folha inferior
-            "inset-x-0 top-[calc(var(--viewport-top,0px)+var(--viewport-height,100dvh))] -translate-y-full",
-            "max-h-[calc(var(--viewport-height,100dvh)-24px)] rounded-t-sheet",
+            mobile === "full"
+              ? // Mobile: tela cheia, presa ao viewport visível (teclado)
+                "inset-x-0 top-[var(--viewport-top,0px)] h-[var(--viewport-height,100dvh)] bg-bg pt-[env(safe-area-inset-top)] lg:h-auto lg:bg-surface lg:pt-0"
+              : // Mobile: folha inferior
+                "inset-x-0 top-[calc(var(--viewport-top,0px)+var(--viewport-height,100dvh))] -translate-y-full max-h-[calc(var(--viewport-height,100dvh)-24px)] rounded-t-sheet",
             desktop === "dialog"
               ? cx(
                   "lg:inset-x-auto lg:left-1/2 lg:top-24 lg:-translate-x-1/2 lg:translate-y-0",
@@ -68,7 +73,9 @@ export function Sheet({
               : "lg:inset-y-0 lg:left-auto lg:right-0 lg:top-0 lg:h-full lg:max-h-none lg:w-[420px] lg:translate-y-0 lg:rounded-none lg:rounded-l-dialog",
           )}
         >
-          <div aria-hidden="true" className="mx-auto mt-2.5 h-[5px] w-10 shrink-0 rounded-full bg-border-strong lg:hidden" />
+          {mobile === "sheet" && (
+            <div aria-hidden="true" className="mx-auto mt-2.5 h-[5px] w-10 shrink-0 rounded-full bg-border-strong lg:hidden" />
+          )}
           <div className="flex items-start justify-between gap-3 px-5 pb-2 pt-4 lg:px-7 lg:pt-7">
             <div className="min-w-0">
               <RadixDialog.Title className="font-num text-[22px] font-semibold leading-tight">

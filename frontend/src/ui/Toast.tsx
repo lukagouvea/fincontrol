@@ -30,7 +30,9 @@ const ToastContext = createContext<(options: ToastOptions) => void>(() => {});
 
 export const useToast = () => useContext(ToastContext);
 
+/** Toast com "Desfazer" fica mais tempo; aviso simples some antes. */
 export const TOAST_DURATION = 6000;
+export const TOAST_DURATION_SHORT = 3500;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
@@ -52,7 +54,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       // Um toast por vez: o anterior é efetivado antes de mostrar o novo.
       for (const id of [...pending.current.keys()]) settle(id, false);
       const id = nextId.current++;
-      const timer = window.setTimeout(() => settle(id, false), options.duration ?? TOAST_DURATION);
+      const timer = window.setTimeout(() => settle(id, false), options.duration ?? (options.actionLabel ? TOAST_DURATION : TOAST_DURATION_SHORT));
       pending.current.set(id, { options, timer });
       setToasts([{ ...options, id }]);
     },
@@ -78,7 +80,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {createPortal(
         <div
           className={cx(
-            "pointer-events-none fixed inset-x-4 z-[60] flex flex-col items-center gap-2",
+            // Abaixo das folhas/diálogos (z-40/50) para nunca cobrir os botões deles.
+            "pointer-events-none fixed inset-x-4 z-[35] flex flex-col items-center gap-2",
             "bottom-[calc(var(--nav-h)+16px+env(safe-area-inset-bottom))]",
             "lg:bottom-6 lg:left-[calc(var(--sidebar-w)+40px)] lg:right-10",
           )}

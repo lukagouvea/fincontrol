@@ -72,9 +72,7 @@
   button svg {
     flex-shrink: 0;
   }
-  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-  select,
-  textarea {
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea) {
     min-height: 44px;
     width: 100%;
     border: 1px solid var(--line);
@@ -84,21 +82,18 @@
     padding: 10px 12px;
     box-shadow: none;
   }
-  input::placeholder,
-  textarea::placeholder {
+  :where(input, textarea)::placeholder {
     color: var(--muted);
   }
-  input[type="checkbox"],
-  input[type="radio"] {
+  :where(input[type="checkbox"], input[type="radio"]) {
     accent-color: var(--accent);
     width: 18px;
     height: 18px;
   }
-  input[aria-invalid="true"],
-  select[aria-invalid="true"] {
+  :where(input[aria-invalid="true"], select[aria-invalid="true"]) {
     border-color: var(--negative);
   }
-  label {
+  :where(label) {
     color: var(--secondary);
   }
   a {

@@ -77,22 +77,13 @@ describe("navegação financeira", () => {
     expect(screen.getByText("Receitas fixas")).not.toBeVisible();
   });
 
-  it("abre a central e mantém tipo e grupo na URL ao alternar", async () => {
-    window.history.replaceState({}, "", "/lancamentos");
+  it("leva links antigos de fixas para Recorrentes", async () => {
+    window.history.replaceState({}, "", "/lancamentos?tipo=receita&grupo=fixas");
     render(<App />);
-    await screen.findByRole("heading", { name: "Lançamentos", level: 1 });
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Receitas" }));
-    await user.click(screen.getByRole("button", { name: "Fixas" }));
+    await waitFor(() => expect(window.location.pathname).toBe("/recorrentes"));
     expect(new URLSearchParams(window.location.search).get("tipo")).toBe(
       "receita",
     );
-    expect(new URLSearchParams(window.location.search).get("grupo")).toBe(
-      "fixas",
-    );
-    expect(
-      screen.getByRole("button", { name: "Nova receita fixa" }),
-    ).toBeVisible();
   });
 
   it("preserva links antigos de despesas fixas", async () => {

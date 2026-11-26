@@ -11,7 +11,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
-import { QuickAddProvider } from "./components/Layout/QuickAdd";
+import { TransactionEditorProvider } from "./app/TransactionEditor";
+import { PendingDeletesProvider } from "./app/PendingDeletes";
+import { MonthProvider } from "./app/MonthContext";
 import { ErrorBoundary } from "./components/Shared/ErrorBoundary";
 import { useViewport } from "./hooks/useViewport";
 import { AppShell } from "./app/AppShell";
@@ -46,11 +48,26 @@ function RedirectKeepingSearch({ to, extra }: { to: string; extra?: string }) {
   return <Navigate replace to={query ? `${to}?${query}` : to} />;
 }
 
+/** /lancamentos?grupo=fixas virou Recorrentes; o resto virou Transações. */
+function LegacyEntries() {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const fixed = params.get("grupo") === "fixas";
+  params.delete("grupo");
+  const query = params.toString();
+  const to = fixed ? "/recorrentes" : "/transacoes";
+  return <Navigate replace to={query ? `${to}?${query}` : to} />;
+}
+
 function ShellLayout() {
   return (
-    <QuickAddProvider>
-      <AppShell />
-    </QuickAddProvider>
+    <MonthProvider>
+      <PendingDeletesProvider>
+        <TransactionEditorProvider>
+          <AppShell />
+        </TransactionEditorProvider>
+      </PendingDeletesProvider>
+    </MonthProvider>
   );
 }
 
@@ -122,11 +139,11 @@ export function App() {
                           <Route path="/calendario" element={<Calendar />} />
                         </Route>
                         {/* Endereços antigos */}
-                        <Route path="/lancamentos" element={<RedirectKeepingSearch to="/transacoes" />} />
+                        <Route path="/lancamentos" element={<LegacyEntries />} />
                         <Route path="/relatorio-mensal" element={<RedirectKeepingSearch to="/relatorios" />} />
-                        <Route path="/despesas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=despesa&grupo=variaveis" />} />
+                        <Route path="/despesas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=despesa" />} />
                         <Route path="/despesas-fixas" element={<RedirectKeepingSearch to="/recorrentes" extra="tipo=despesa" />} />
-                        <Route path="/rendas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=receita&grupo=variaveis" />} />
+                        <Route path="/rendas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=receita" />} />
                         <Route path="/rendas-fixas" element={<RedirectKeepingSearch to="/recorrentes" extra="tipo=receita" />} />
                         <Route path="/historico-despesas" element={<RedirectKeepingSearch to="/relatorios" extra="aba=despesas" />} />
                         <Route path="/historico-rendas" element={<RedirectKeepingSearch to="/relatorios" extra="aba=receitas" />} />

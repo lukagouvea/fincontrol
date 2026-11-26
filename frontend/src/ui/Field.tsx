@@ -79,11 +79,12 @@ export const SelectInput = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HT
   },
 );
 
-/** Campo de valor em reais (pt-BR). `onValueChange` recebe o número ou null. */
+/** Campo de valor em reais (pt-BR). `onNumberChange` recebe o número ou null. */
 export function MoneyInput({
   invalid,
   className,
   onNumberChange,
+  onValueChange,
   ...props
 }: Omit<CurrencyInputProps, "intlConfig"> &
   Invalid & { onNumberChange?: (value: number | null) => void }) {
@@ -93,11 +94,11 @@ export function MoneyInput({
       decimalsLimit={2}
       inputMode="decimal"
       className={inputClass(invalid, cx("font-num text-base font-semibold", className))}
+      {...props}
       onValueChange={(value, name, values) => {
-        props.onValueChange?.(value, name, values);
+        onValueChange?.(value, name, values);
         onNumberChange?.(values?.float ?? null);
       }}
-      {...props}
     />
   );
 }

@@ -8,17 +8,17 @@ beforeEach(() => localStorage.clear());
 afterEach(() => vi.useRealTimers());
 it("cria uma compra parcelada com valor total e quantidade corretos", async () => {
   installApiFixture();
-  window.history.replaceState({}, "", "/lancamentos");
+  window.history.replaceState({}, "", "/transacoes");
   render(<App />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Nova despesa" }));
-  const form = screen.getByRole("dialog", { name: "Nova despesa" });
+  await user.click((await screen.findAllByRole("button", { name: "Nova transação" }))[0]);
+  const form = await screen.findByRole("dialog", { name: "Nova transação" });
   await user.type(within(form).getByLabelText("Descrição"), "Compra parcelada");
-  await user.type(within(form).getByLabelText("Valor (R$)"), "300");
-  await user.click(within(form).getByLabelText("Pagamento parcelado"));
-  await user.clear(within(form).getByLabelText("Número de parcelas"));
-  await user.type(within(form).getByLabelText("Número de parcelas"), "3");
-  await user.click(within(form).getByRole("button", { name: "Criar" }));
+  await user.type(within(form).getByLabelText("Valor"), "300");
+  await user.selectOptions(within(form).getByLabelText("Parcelas"), "3");
+  expect(within(form).getByText("3x de R$ 100,00")).toBeVisible();
+  expect(within(form).queryByRole("switch", { name: "Repetir todo mês" })).not.toBeInTheDocument();
+  await user.click(within(form).getByRole("button", { name: "Salvar despesa" }));
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
   );
@@ -32,6 +32,7 @@ it("cria uma compra parcelada com valor total e quantidade corretos", async () =
     categoryId: "food",
   });
 });
+
 it("permite variação zero em outro mês e mantém edição de uma fixa arquivada", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 10, 3, 12));
@@ -68,7 +69,7 @@ it("permite variação zero em outro mês e mantém edição de uma fixa arquiva
       },
     ],
   });
-  window.history.replaceState({}, "", "/lancamentos?tipo=despesa&grupo=fixas");
+  window.history.replaceState({}, "", "/recorrentes?tipo=despesa");
   render(<App />);
   const user = userEvent.setup();
   await user.click(
@@ -137,7 +138,7 @@ it("edita o valor de uma fixa a partir de um mês, sem reescrever o histórico",
       },
     ],
   });
-  window.history.replaceState({}, "", "/lancamentos?tipo=despesa&grupo=fixas");
+  window.history.replaceState({}, "", "/recorrentes?tipo=despesa");
   render(<App />);
   const user = userEvent.setup();
   expect(await screen.findByText("Histórico de valores")).toBeInTheDocument();
@@ -199,7 +200,7 @@ it("corrige todo o histórico de uma fixa e só avisa sobre reajustes quando o v
       },
     ],
   });
-  window.history.replaceState({}, "", "/lancamentos?tipo=despesa&grupo=fixas");
+  window.history.replaceState({}, "", "/recorrentes?tipo=despesa");
   render(<App />);
   const user = userEvent.setup();
   await user.click(

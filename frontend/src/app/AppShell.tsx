@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { cx } from "../lib/cx";
-import { useQuickAdd } from "../components/Layout/QuickAdd";
+import { useTransactionEditor } from "./TransactionEditor";
 import { navigation, settingsItem, type NavItem } from "./navigation";
 
 const focusRing =
@@ -110,11 +110,11 @@ function BottomNav() {
 }
 
 function Fab() {
-  const quickAdd = useQuickAdd();
+  const { create } = useTransactionEditor();
   return (
     <button
       type="button"
-      onClick={quickAdd}
+      onClick={() => create()}
       aria-label="Nova transação"
       className={cx(
         "fixed right-5 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-fab lg:hidden",

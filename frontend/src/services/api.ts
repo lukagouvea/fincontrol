@@ -26,11 +26,14 @@ api.interceptors.response.use(
 
     if (status >= 500) {
         console.error(`Erro do Servidor (${status}):`, error.response.data);
-        return Promise.reject(new Error("O servidor está enfrentando problemas temporários."));
+        // Mantém o response para quem precisa do status (ex.: mensagens de login).
+        return Promise.reject(
+            Object.assign(new Error("O servidor está enfrentando problemas temporários."), { response: error.response }),
+        );
     }
 
     if (error.response?.status === 401) {
-        const requestUrl = error.config.url;
+        const requestUrl = error.config?.url;
 
         if (requestUrl?.includes('/auth/me') || requestUrl?.includes('/auth/login')) {
             return Promise.reject(error);

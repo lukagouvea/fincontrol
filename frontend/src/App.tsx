@@ -34,8 +34,8 @@ const Calendar = named(() => import("./pages/Calendar"), "Calendar");
 const Categories = named(() => import("./pages/Categories"), "Categories");
 const Settings = named(() => import("./pages/Settings"), "Settings");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
-const LoginPage = named(() => import("./pages/Auth/LoginPage"), "LoginPage");
-const SignupPage = named(() => import("./pages/Auth/SignupPage"), "SignupPage");
+const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
+const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
 const ComingSoon = lazy(() =>
   import("./pages/ComingSoon").then((m) => ({ default: m.ComingSoon })),
 );

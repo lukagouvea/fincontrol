@@ -47,8 +47,15 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
     };
     const response =
       responses[(config.method || "get") + " " + url] ?? responses[url] ?? {};
-    const data = typeof response === "function" ? response(config) : response;
-    if (data instanceof Error) throw data;
+    // Erros levam o config da requisição, como os do axios.
+    const fail = (error: Error) => Object.assign(error, { config: (error as { config?: unknown }).config ?? config });
+    let data: unknown;
+    try {
+      data = typeof response === "function" ? await response(config) : response;
+    } catch (error) {
+      throw error instanceof Error ? fail(error) : error;
+    }
+    if (data instanceof Error) throw fail(data);
     return { config, data, status: 200, statusText: "OK", headers: {} };
   };
   api.defaults.adapter = adapter;

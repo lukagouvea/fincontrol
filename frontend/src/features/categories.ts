@@ -4,12 +4,14 @@ import {
   Book,
   Briefcase,
   Car,
+  Coffee,
   Dumbbell,
   Gift,
   GraduationCap,
   Heart,
   House,
   Landmark,
+  Music,
   PawPrint,
   PiggyBank,
   Plane,
@@ -26,47 +28,95 @@ import {
   Utensils,
   Wallet,
   Wifi,
+  Wrench,
   Zap,
   type LucideIcon,
 } from "lucide-react";
 import type { Category } from "../types/FinanceTypes";
 
+/** Ícones disponíveis para categorias (chave salva no banco → ícone e nome acessível). */
+export const CATEGORY_ICONS: Record<string, { icon: LucideIcon; label: string }> = {
+  utensils: { icon: Utensils, label: "Refeição" },
+  "shopping-cart": { icon: ShoppingCart, label: "Mercado" },
+  house: { icon: House, label: "Casa" },
+  car: { icon: Car, label: "Carro" },
+  play: { icon: Play, label: "Lazer" },
+  heart: { icon: Heart, label: "Coração" },
+  dumbbell: { icon: Dumbbell, label: "Academia" },
+  repeat: { icon: Repeat, label: "Assinatura" },
+  "graduation-cap": { icon: GraduationCap, label: "Educação" },
+  book: { icon: Book, label: "Livro" },
+  plane: { icon: Plane, label: "Viagem" },
+  shirt: { icon: Shirt, label: "Roupas" },
+  "shopping-bag": { icon: ShoppingBag, label: "Compras" },
+  "paw-print": { icon: PawPrint, label: "Pata" },
+  baby: { icon: Baby, label: "Bebê" },
+  gift: { icon: Gift, label: "Presente" },
+  wifi: { icon: Wifi, label: "Internet" },
+  zap: { icon: Zap, label: "Energia" },
+  sparkles: { icon: Sparkles, label: "Beleza" },
+  smartphone: { icon: Smartphone, label: "Celular" },
+  coffee: { icon: Coffee, label: "Café" },
+  music: { icon: Music, label: "Música" },
+  wrench: { icon: Wrench, label: "Ferramenta" },
+  landmark: { icon: Landmark, label: "Banco" },
+  briefcase: { icon: Briefcase, label: "Trabalho" },
+  "trending-up": { icon: TrendingUp, label: "Investimento" },
+  "piggy-bank": { icon: PiggyBank, label: "Poupança" },
+  "badge-dollar-sign": { icon: BadgeDollarSign, label: "Extra" },
+  wallet: { icon: Wallet, label: "Carteira" },
+  receipt: { icon: Receipt, label: "Conta" },
+  tag: { icon: Tag, label: "Etiqueta" },
+};
+
 /**
- * Ícone da categoria. Até o campo `icon` existir (Fase 3b), é deduzido do nome;
- * depois esta função vira o valor padrão de categorias sem ícone salvo.
+ * Ícone sugerido pelo nome. É o padrão de categorias sem ícone salvo e a
+ * sugestão inicial ao criar uma categoria.
  */
-const rules: Array<[RegExp, LucideIcon]> = [
-  [/aliment|comida|restaur|padaria|lanche|refei|ifood|delivery/i, Utensils],
-  [/mercad|supermerc/i, ShoppingCart],
-  [/morad|aluguel|casa|condom|lar\b/i, House],
-  [/transp|combust|gasolina|uber|carro|ve[ií]culo|estacion|ônibus|onibus/i, Car],
-  [/lazer|divers|cinema|entreten|jogo|show/i, Play],
-  [/sa[uú]de|farm[aá]c|m[eé]dic|hospital|plano/i, Heart],
-  [/academ|esporte|fitness/i, Dumbbell],
-  [/assinat|streaming|servi[cç]o/i, Repeat],
-  [/educa|curso|escola|faculd/i, GraduationCap],
-  [/livro|leitura/i, Book],
-  [/viage|f[eé]rias|turismo/i, Plane],
-  [/roupa|vestu|moda/i, Shirt],
-  [/compra|shopping/i, ShoppingBag],
-  [/pet|animal|cachorro|gato/i, PawPrint],
-  [/filho|crian|beb[eê]/i, Baby],
-  [/presente|doa[cç]/i, Gift],
-  [/internet|telefon|celular/i, Wifi],
-  [/luz|energia|[aá]gua|conta/i, Zap],
-  [/beleza|cuidado|est[eé]tica/i, Sparkles],
-  [/eletr[oô]n|tecnolog/i, Smartphone],
-  [/imposto|taxa|tarifa|banco/i, Landmark],
-  [/sal[aá]rio|trabalho|freela/i, Briefcase],
-  [/invest|rendimento|dividend/i, TrendingUp],
-  [/poupan|reserva|guard/i, PiggyBank],
-  [/cashback|reembolso|b[oô]nus|extra/i, BadgeDollarSign],
-  [/receita|renda|entrada/i, Wallet],
+const rules: Array<[RegExp, string]> = [
+  [/aliment|comida|restaur|padaria|lanche|refei|ifood|delivery/i, "utensils"],
+  [/mercad|supermerc/i, "shopping-cart"],
+  [/morad|aluguel|casa|condom|lar\b/i, "house"],
+  [/transp|combust|gasolina|uber|carro|ve[ií]culo|estacion|ônibus|onibus/i, "car"],
+  [/lazer|divers|cinema|entreten|jogo|show/i, "play"],
+  [/sa[uú]de|farm[aá]c|m[eé]dic|hospital|plano/i, "heart"],
+  [/academ|esporte|fitness/i, "dumbbell"],
+  [/assinat|streaming|servi[cç]o/i, "repeat"],
+  [/educa|curso|escola|faculd/i, "graduation-cap"],
+  [/livro|leitura/i, "book"],
+  [/viage|f[eé]rias|turismo/i, "plane"],
+  [/roupa|vestu|moda/i, "shirt"],
+  [/compra|shopping/i, "shopping-bag"],
+  [/pet|animal|cachorro|gato/i, "paw-print"],
+  [/filho|crian|beb[eê]/i, "baby"],
+  [/presente|doa[cç]/i, "gift"],
+  [/internet|telefon|celular/i, "wifi"],
+  [/luz|energia|[aá]gua|conta/i, "zap"],
+  [/beleza|cuidado|est[eé]tica/i, "sparkles"],
+  [/eletr[oô]n|tecnolog/i, "smartphone"],
+  [/caf[eé]/i, "coffee"],
+  [/m[uú]sica/i, "music"],
+  [/manuten|reparo|conserto/i, "wrench"],
+  [/imposto|taxa|tarifa|banco/i, "landmark"],
+  [/sal[aá]rio|trabalho|freela/i, "briefcase"],
+  [/invest|rendimento|dividend/i, "trending-up"],
+  [/poupan|reserva|guard/i, "piggy-bank"],
+  [/cashback|reembolso|b[oô]nus|extra/i, "badge-dollar-sign"],
+  [/receita|renda|entrada/i, "wallet"],
 ];
 
-export function categoryIcon(name?: string | null): LucideIcon {
-  if (!name) return Tag;
-  return rules.find(([pattern]) => pattern.test(name))?.[1] ?? Receipt;
+export function guessIconKey(name?: string | null): string {
+  if (!name?.trim()) return "tag";
+  return rules.find(([pattern]) => pattern.test(name))?.[1] ?? "receipt";
+}
+
+/** Chave efetiva: a salva (se válida) ou a deduzida do nome. */
+export const categoryIconKey = (category?: Pick<Category, "name" | "icon"> | null) =>
+  category?.icon && CATEGORY_ICONS[category.icon] ? category.icon : guessIconKey(category?.name);
+
+export function categoryIcon(category?: Pick<Category, "name" | "icon"> | null): LucideIcon {
+  if (!category) return Tag;
+  return CATEGORY_ICONS[categoryIconKey(category)].icon;
 }
 
 const tones = ["chart-1", "chart-3", "chart-2", "chart-4", "chart-5", "chart-6"] as const;

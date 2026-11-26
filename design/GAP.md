@@ -152,4 +152,12 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Limite usado** = tudo que ainda não foi pago, incluindo faturas futuras de parcelas. Segue o PRODUCT_RULES ("o limite cai pelo valor total na compra"); os números do protótipo ignoravam as parcelas futuras.
 - **Parcelas no gasto do mês:** cada parcela conta pela própria data (uma por mês a partir da compra), o que na prática coincide com o mês da fatura. A data das parcelas não transborda mais (31/jan + 1 mês = 28/fev).
 - **Pagar fatura** não cria transação, e o pagamento pode ser desfeito.
-- **Pendente (segurança, já existia):** as rotas não conferem se o `categoryId` enviado pertence ao usuário. O `cardId` já é conferido. Corrigir junto com a fase 3b.
+- **Segurança (já existia, corrigido na 3b):** as rotas não conferiam se o `categoryId` enviado pertence ao usuário.
+
+### Fase 3b: categorias (concluída)
+- **Ícone:** fica salvo em `categories.icon`. Quando é nulo, o cliente deduz pelo nome. Ao criar uma categoria, o ícone acompanha o nome digitado até o usuário escolher outro.
+- **Arquivadas no histórico:** `GET /categories?all=1` devolve também as arquivadas. Os lançamentos antigos mantêm o nome da categoria (antes apareciam como "Sem categoria"), e as telas de escolha mostram só as ativas. A seção "Arquivadas (N)" permite restaurar.
+- **Apagar:** pede uma de duas opções. Mesclar em outra (recomendado) move lançamentos, recorrências e versões e depois arquiva. Arquivar só arquiva. As duas têm desfazer, porque a chamada à API só acontece quando o aviso some.
+- **Sem categoria "Outros" fixa:** diverge do design, que tem uma "Outros" fixa. Não criei categorias automaticamente; se existir uma chamada "Outros", ela é o destino padrão da mescla.
+- **Dono e tipo da categoria:** transações e recorrentes recusam categoria de outro usuário ou do tipo errado.
+- **Limite por categoria:** o campo "Limite mensal" da Nova categoria fica para a fase 3c (orçamento).

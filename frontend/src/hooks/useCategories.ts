@@ -51,3 +51,12 @@ export const useDeleteCategory = () => {
     },
   });
 };
+
+// 5. Mesclar em outra categoria (move lançamentos e recorrências)
+export const useMergeCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetId }: { id: string; targetId: string }) => categoryService.merge(id, targetId),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+};

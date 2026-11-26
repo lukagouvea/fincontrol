@@ -11,11 +11,11 @@ export function CategoryIcon({
   size = "md",
   className,
 }: {
-  category?: Pick<Category, "id" | "name"> | null;
+  category?: Pick<Category, "id" | "name" | "icon"> | null;
   size?: "md" | "lg";
   className?: string;
 }) {
-  const Icon = categoryIcon(category?.name);
+  const Icon = categoryIcon(category);
   const color = categoryColorVar(category);
   return (
     <span

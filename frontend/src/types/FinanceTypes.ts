@@ -4,6 +4,8 @@ export type Category = {
   type: 'income' | 'expense';
   description?: string;
   color: string;
+  /** Chave do ícone; null/ausente = deduzido do nome. */
+  icon?: string | null;
   active: boolean
 };
 

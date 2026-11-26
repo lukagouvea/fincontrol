@@ -7,6 +7,7 @@ import { Button } from "../../ui/Button";
 import { Field, TextInput, inputClass } from "../../ui/Field";
 import { CategoryIcon } from "../../ui/CategoryIcon";
 import type { EntryType } from "../ledger";
+import { guessIconKey } from "../categories";
 
 const normalize = (value: string) =>
   value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -56,7 +57,7 @@ export function CategoryPicker({
     }
     setError("");
     try {
-      const created = await addCategory.mutateAsync({ name: name.trim(), type } as never);
+      const created = await addCategory.mutateAsync({ name: name.trim(), type, icon: guessIconKey(name) } as never);
       onSelect(created.id);
     } catch (cause) {
       const status = (cause as { response?: { status?: number } }).response?.status;

@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
-import { useCategories, useDeleteCategory } from "../hooks/useCategories";
+import { useCategories, useDeleteCategory, useMergeCategory, useUpdateCategory } from "../hooks/useCategories";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useSelectedMonth } from "../app/MonthContext";
 import { usePendingDeletes } from "../app/PendingDeletes";
 import { useMonthLedger } from "../features/useLedger";
+import { useToast } from "../ui/Toast";
 import { summarizeLedger, type EntryType } from "../features/ledger";
-import { CategorySheet, type CategorySheetState } from "../features/categories/CategorySheet";
+import { CategorySheet, type CategorySheetState, type DeleteChoice } from "../features/categories/CategorySheet";
 import type { Category } from "../types/FinanceTypes";
 import { monthNames } from "../lib/dates";
 import { formatMoney } from "../lib/money";
@@ -27,6 +28,10 @@ export function Categories() {
   const categoriesQuery = useCategories();
   const ledger = useMonthLedger(month, year);
   const archive = useDeleteCategory();
+  const merge = useMergeCategory();
+  const restore = useUpdateCategory();
+  const showToast = useToast();
+  const [showArchived, setShowArchived] = useState(false);
   const { hidden, scheduleDelete } = usePendingDeletes();
   const [type, setType] = useState<EntryType>("expense");
   const [sheet, setSheet] = useState<CategorySheetState | null>(null);
@@ -42,13 +47,28 @@ export function Categories() {
     .filter((category) => category.type === type && category.active !== false && !hidden.has(`cat:${category.id}`))
     .sort((a, b) => (totals.get(b.id)?.total ?? 0) - (totals.get(a.id)?.total ?? 0) || a.name.localeCompare(b.name, "pt-BR"));
 
-  const archiveCategory = (category: Category) => {
+  const deleteCategory = (category: Category, choice: DeleteChoice) => {
     setSheet(null);
+    const target = choice.mode === "merge" ? (categoriesQuery.data ?? []).find((item) => item.id === choice.targetId) : undefined;
     scheduleDelete({
       keys: [`cat:${category.id}`],
-      message: `“${category.name}” arquivada`,
-      commit: () => archive.mutateAsync(category.id),
+      message: target ? `“${category.name}” mesclada em ${target.name}` : `“${category.name}” arquivada`,
+      commit: () =>
+        choice.mode === "merge" ? merge.mutateAsync({ id: category.id, targetId: choice.targetId }) : archive.mutateAsync(category.id),
     });
+  };
+
+  const archived = (categoriesQuery.data ?? [])
+    .filter((category) => category.type === type && category.active === false)
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+
+  const restoreCategory = async (category: Category) => {
+    try {
+      await restore.mutateAsync({ id: category.id, data: { active: true } });
+      showToast({ message: `“${category.name}” restaurada` });
+    } catch {
+      showToast({ message: "Não foi possível restaurar a categoria." });
+    }
   };
 
   const describe = (category: Category) => {
@@ -134,16 +154,42 @@ export function Categories() {
               ))}
             </ul>
           )}
+          {archived.length > 0 && (
+            <div className="flex flex-col gap-1 border-t border-border pt-2">
+              <Button variant="link" className="self-start" aria-expanded={showArchived} onClick={() => setShowArchived((value) => !value)}>
+                Arquivadas ({archived.length})
+              </Button>
+              {showArchived && (
+                <ul aria-label="Categorias arquivadas">
+                  {archived.map((category) => (
+                    <li key={category.id} className="flex min-h-14 items-center gap-3">
+                      <CategoryIcon category={category} className="opacity-60" />
+                      <span className="flex-1 text-[15px] text-muted">{category.name}</span>
+                      <Button
+                        variant="secondary"
+                        loading={restore.isPending && restore.variables?.id === category.id}
+                        onClick={() => restoreCategory(category)}
+                        aria-label={`Restaurar ${category.name}`}
+                      >
+                        Restaurar
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         <Card className="hidden lg:flex">
-          <CardHeader title="Ao arquivar uma categoria" />
+          <CardHeader title="Ao apagar uma categoria" />
           <p className="rounded-2xl bg-primary-tint p-4 text-[15px] text-ink">
-            <strong>Arquivar</strong>: some das listas para novos lançamentos, mas o histórico continua somando nos relatórios.
+            <strong>Mesclar em outra</strong> (recomendado): o histórico continua somando nos relatórios, dentro da categoria escolhida.
           </p>
-          <p className="text-[13px] text-muted">
-            Você pode desfazer por alguns segundos. Mesclar categorias e escolher ícone chegam em breve.
+          <p className="rounded-2xl bg-surface-2 p-4 text-[15px] text-ink">
+            <strong>Arquivar</strong>: some das listas novas, mas mantém o histórico com o mesmo nome.
           </p>
+          <p className="text-[13px] text-muted">Você pode desfazer por alguns segundos.</p>
           <p className="text-[13px] text-muted">
             Total de {type === "expense" ? "gastos" : "receitas"} em {name}:{" "}
             {formatMoney([...totals.values()].reduce((sum, item) => sum + item.total, 0))}
@@ -151,7 +197,7 @@ export function Categories() {
         </Card>
       </div>
 
-      <CategorySheet state={sheet} onClose={() => setSheet(null)} onArchive={archiveCategory} />
+      <CategorySheet state={sheet} onClose={() => setSheet(null)} onDelete={deleteCategory} monthCount={(id) => totals.get(id)?.count ?? 0} />
     </>
   );
 }

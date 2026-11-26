@@ -3,8 +3,16 @@ import { Category } from '../types/FinanceTypes';
 
 export const categoryService = {
   // GET /categories
+  // Inclui as arquivadas (active=false) para o histórico manter os nomes;
+  // as telas de escolha filtram só as ativas.
   getAll: async (): Promise<Category[]> => {
-    const { data } = await api.get<Category[]>('/categories');
+    const { data } = await api.get<Category[]>('/categories', { params: { all: 1 } });
+    return data;
+  },
+
+  // POST /categories/:id/merge — move tudo para o destino e arquiva a origem
+  merge: async (id: string, targetId: string): Promise<{ moved: number }> => {
+    const { data } = await api.post(`/categories/${id}/merge`, { targetId });
     return data;
   },
 

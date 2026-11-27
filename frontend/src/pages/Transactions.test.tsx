@@ -130,8 +130,10 @@ describe("Transações", () => {
   });
 });
 
-it("cria uma compra parcelada (Transações) com valor total e quantidade corretos", async () => {
-  installApiFixture();
+it("cria uma compra parcelada (Transações) no cartão, com valor total e quantidade corretos", async () => {
+  installApiFixture({
+    "/cards": [{ id: "c1", name: "Aurora", last4: "4821", limit: 6000, closingDay: 8, dueDay: 15, color: "verde", archived: false, payments: [] }],
+  });
   window.history.replaceState({}, "", "/transacoes");
   render(<App />);
   const user = userEvent.setup();
@@ -139,6 +141,7 @@ it("cria uma compra parcelada (Transações) com valor total e quantidade corret
   const form = await screen.findByRole("dialog", { name: "Nova transação" });
   await user.type(within(form).getByLabelText("Descrição"), "Compra parcelada");
   await user.type(within(form).getByLabelText("Valor"), "30000");
+  await user.click(within(form).getByRole("button", { name: /Aurora/ }));
   await user.selectOptions(within(form).getByLabelText("Parcelas"), "3");
   expect(within(form).getByText("3x de R$ 100,00")).toBeVisible();
   expect(within(form).queryByRole("switch", { name: "Repetir todo mês" })).not.toBeInTheDocument();
@@ -154,6 +157,7 @@ it("cria uma compra parcelada (Transações) com valor total e quantidade corret
     totalAmount: 300,
     totalInstallments: 3,
     categoryId: "food",
+    cardId: "c1",
   });
 });
 

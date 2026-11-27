@@ -92,6 +92,14 @@ test("lança uma compra parcelada no cartão", async () => {
   await sheet.getByRole("button", { name: "Salvar despesa" }).click();
   await expect(sheet).toBeHidden();
   await expect(page.getByText("Geladeira").first()).toBeVisible();
+
+  // A 1ª parcela entra na fatura do cartão e ocupa o limite pelo total da compra.
+  await go(page, "Cartões", "/cartoes");
+  await page.getByText("Roxinho").first().click();
+  await expect(page.getByText("Geladeira").first()).toBeVisible();
+  // "Limite disponível" na fatura (celular) ou "Disponível" no painel do cartão (desktop).
+  await expect(page.getByRole("main")).toContainText(/Disponível\s*R\$\s3\.800,00/i);
+  await go(page, "Transações", "/transacoes");
 });
 
 test("lança uma receita", async () => {
@@ -161,6 +169,24 @@ test("cadastra uma conta recorrente", async () => {
   await expect(page.getByText("Aluguel").first()).toBeVisible();
   // A recorrente aparece nas transações do mês, marcada como recorrente.
   await go(page, "Transações", "/transacoes");
+  await expect(page.getByText("Aluguel").first()).toBeVisible();
+});
+
+test("passa a recorrente para o cartão e ela entra na fatura", async () => {
+  await go(page, "Recorrentes", "/recorrentes");
+  await page.getByText("Aluguel").first().click();
+  const sheet = dialog(page);
+  await sheet.getByLabel("Pago com").selectOption({ label: "Roxinho •••• 1234" });
+  // Trocar a forma de pagamento pergunta desde quando vale (padrão: mês que vem).
+  // Escolhe o mês atual, para o lançamento deste mês já ir para a fatura.
+  const now = new Date();
+  const thisMonth = `${now.toLocaleString("pt-BR", { month: "long" })} de ${now.getFullYear()}`;
+  await sheet.getByLabel("Mês de início da alteração").selectOption({ label: thisMonth });
+  await sheet.getByRole("button", { name: "Salvar alterações" }).click();
+  await expect(sheet).toBeHidden();
+
+  await go(page, "Cartões", "/cartoes");
+  await page.getByText("Roxinho").first().click();
   await expect(page.getByText("Aluguel").first()).toBeVisible();
 });
 

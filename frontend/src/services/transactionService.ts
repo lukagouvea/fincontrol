@@ -1,6 +1,16 @@
 import { api } from './api';
 import { Transaction, CompraParcelada } from '../types/FinanceTypes';
 
+/** Compra parcelada como o formulário monta (o total; o backend cria as parcelas). */
+export type InstallmentPurchase = {
+  description: string;
+  amount: number;
+  numParcelas: number;
+  date: string;
+  categoryId: string;
+  cardId?: string | null;
+};
+
 export const transactionService = {
   // GET /transactions?month=11&year=2025
   // Agora filtramos direto no servidor para não pesar o app
@@ -30,13 +40,15 @@ export const transactionService = {
 
   // POST /transactions/installment (Complexa)
   // O Front só manda o cabeçalho, o Back cria as parcelas
-  createCompraParcelada: async (compraData: any): Promise<any> => {
+  createCompraParcelada: async (compraData: InstallmentPurchase): Promise<{ message: string; groupId: string }> => {
     const payload = {
       description: compraData.description,
       totalAmount: compraData.amount, // O front chama de 'amount', o back espera 'totalAmount'
       totalInstallments: compraData.numParcelas,
       date: compraData.date,
-      categoryId: compraData.categoryId
+      categoryId: compraData.categoryId,
+      // Cartão da compra: sem ele, as parcelas entravam como À vista e ficavam fora da fatura.
+      cardId: compraData.cardId ?? null,
     };
 
     const { data } = await api.post('/transactions/installment', payload);

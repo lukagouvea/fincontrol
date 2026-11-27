@@ -37,6 +37,8 @@ const Invoice = named(() => import("./pages/Invoice"), "Invoice");
 const Commitments = named(() => import("./pages/Commitments"), "Commitments");
 const Budget = named(() => import("./pages/Budget"), "Budget");
 const Goals = named(() => import("./pages/Goals"), "Goals");
+const History = named(() => import("./pages/History"), "History");
+const MonthClosing = named(() => import("./pages/MonthClosing"), "MonthClosing");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
@@ -144,6 +146,8 @@ export function App() {
                           <Route path="/transacoes" element={<Transactions />} />
                           <Route path="/recorrentes" element={<Recurring />} />
                           <Route path="/relatorios" element={<Reports />} />
+                          <Route path="/relatorios/historico" element={<History />} />
+                          <Route path="/relatorios/historico/:month" element={<MonthClosing />} />
                           <Route path="/categorias" element={<Categories />} />
                           <Route path="/ajustes" element={<Settings />} />
                           <Route path="/ajustes/aparencia" element={<AppearanceSettings />} />

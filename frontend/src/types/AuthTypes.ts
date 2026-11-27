@@ -6,6 +6,8 @@ export type User = {
   /** ISO; null = ainda não fez a configuração inicial. */
   onboardingCompletedAt?: string | null;
   createdAt?: string;
+  /** Último mês fechado ('YYYY-MM') cuja virada já foi vista. */
+  lastClosingSeen?: string | null;
   token?: string; // Futuro JWT
 };
 

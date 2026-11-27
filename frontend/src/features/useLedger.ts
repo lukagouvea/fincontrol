@@ -46,7 +46,7 @@ export function useMonthLedger(month: number, year: number) {
 export type MonthSummary = { month: number; year: number; summary: LedgerSummary };
 
 /** Resumo dos `count` meses que terminam em (month, year), do mais antigo ao mais recente. */
-export function useMonthsSummary(month: number, year: number, count: number, enabled = true) {
+export function useMonthsSummary(month: number, year: number, count: number, enabled = true, { untilToday = false } = {}) {
   const fixedIncomes = useFixedIncomes();
   const fixedExpenses = useFixedExpenses();
   const variations = useMonthlyVariations();
@@ -80,6 +80,7 @@ export function useMonthsSummary(month: number, year: number, count: number, ena
               variations: variations.data ?? [],
               today,
             }),
+            { untilToday },
           ),
         }));
   return {

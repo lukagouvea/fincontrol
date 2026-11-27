@@ -14,7 +14,7 @@ import { chartColorVar, makeCategoryLookup } from "../features/categories";
 import { cx } from "../lib/cx";
 import { fromMonthIndex, monthIndex, monthNames, shortMonthName } from "../lib/dates";
 import { MINUS, formatMoney, fromCents, toCents } from "../lib/money";
-import { Button } from "../ui/Button";
+import { Button, ButtonLink } from "../ui/Button";
 import { Card, CardHeader } from "../ui/Card";
 import { Money } from "../ui/Money";
 import { MonthSwitcher } from "../ui/MonthSwitcher";
@@ -83,7 +83,18 @@ export function Reports() {
   };
 
   const header = (
-    <PageHeader title="Relatórios" eyebrow={<span className="hidden lg:inline">{monthNames[month]} de {year}</span>} actions={<MonthSwitcher month={month} year={year} onChange={setMonth} />} />
+    <PageHeader
+      title="Relatórios"
+      eyebrow={<span className="hidden lg:inline">{monthNames[month]} de {year}</span>}
+      actions={
+        <>
+          <MonthSwitcher month={month} year={year} onChange={setMonth} />
+          <ButtonLink to="/relatorios/historico" variant="secondary">
+            Histórico
+          </ButtonLink>
+        </>
+      }
+    />
   );
 
   if (ledger.isError) {

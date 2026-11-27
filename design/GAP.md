@@ -188,3 +188,11 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Limite "Geral" (decisão):** o passo 2 pede um orçamento total, que o usuário divide por categoria depois, mas no nosso modelo o total é a soma dos limites. O valor informado vira um limite sem categoria, "Geral", que entra na soma e cobre os gastos das categorias sem limite próprio. Em Orçamento, ele aparece como a linha "Geral", que pode ser reduzida conforme o orçamento é dividido.
 - **Checklist:** some quando os quatro itens estão feitos, 30 dias depois da configuração ou ao tocar em "Dispensar".
 - **Pendente:** a coluna `tutorial_completed` e a rota `/users/tutorial-status` saem na limpeza da fase 3i, junto com o investimento.
+
+### Fase 3f: histórico e virada de mês (concluída)
+- **Resumo calculado na hora, sem snapshot (decisão):** o plano previa uma tabela `MonthSummary`. Como todo mês pode ser calculado a partir dos dados, o resumo é derivado na hora e sempre reflete edições em meses passados. No banco fica só `users.last_closing_seen`, o último mês cuja virada já foi vista, para o aviso aparecer uma vez em qualquer aparelho.
+- **"Sobrou/Passou":** com orçamento, é orçamento − gasto, como no design (R$ 4.150 − R$ 3.940 = R$ 210). Sem orçamento no mês, é entradas − gastos, e o texto avisa.
+- **Histórico:** gasto por mês com a linha do orçamento, média dos meses fechados, quantos meses ficaram dentro do orçamento, melhor e pior mês, e a lista mês a mês em 6 ou 12 meses.
+- **Fechamento:** sobra, entradas, faturas pagas no mês (pela data do pagamento), maior gasto e as categorias com limite. "Guardar a sobra numa meta" registra o aporte com o mês de origem (`sourceMonth`), e o que já foi guardado do mês sai da sugestão.
+- **Virada:** aparece no Início na primeira visita depois que o mês fecha. Não aparece para contas criadas no mês corrente nem quando o mês anterior não teve lançamentos. Mostra o resultado e o que o mês novo já traz: orçamento repetido, recorrentes, parcelas e limite da semana. O orçamento e as recorrentes já "nascem" no mês novo porque são derivados, sem tarefa agendada.
+- **Pendente para a fase 3i:** o "Exportar CSV" do Histórico desktop, junto com "Segurança e dados".

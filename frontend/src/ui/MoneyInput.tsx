@@ -142,6 +142,40 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
     input.setSelectionRange(position, position);
   });
 
+  // Modo centavos: o navegador não edita o texto. Cada tecla é interceptada
+  // antes (beforeinput) e vira "acrescenta dígito" ou "tira o último", então
+  // a posição do cursor não importa e não há como editar o meio do número.
+  // Se o teclado não deixar cancelar (alguns IMEs), o onChange abaixo cobre.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onValueChangeRef = useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
+  useEffect(() => {
+    const input = local.current;
+    if (mode !== "cents" || !input) return;
+    const handle = (event: InputEvent) => {
+      const cents = valueRef.current ? toCents(valueRef.current) : 0;
+      let next: number | undefined;
+      if (event.inputType === "insertText" || event.inputType === "insertReplacementText") {
+        const digits = (event.data ?? "").replace(/\D/g, "");
+        next = digitsToCents(String(cents) + digits);
+      } else if (event.inputType === "deleteContentBackward" || event.inputType === "deleteContentForward") {
+        next = Math.floor(cents / 10);
+      } else if (event.inputType.startsWith("delete")) {
+        next = 0; // Ctrl/Alt+Backspace, recortar: limpa.
+      } else if (event.inputType === "insertFromPaste") {
+        return; // tratado no onPaste
+      }
+      if (!event.cancelable) return;
+      event.preventDefault();
+      if (next === undefined || next === cents) return;
+      caret.current = "end";
+      onValueChangeRef.current(next ? next / 100 : null);
+    };
+    input.addEventListener("beforeinput", handle);
+    return () => input.removeEventListener("beforeinput", handle);
+  }, [mode]);
+
   const commit = (next: number | null) => {
     if (mode === "decimal") setRaw(rawFromValue(next));
     caret.current = "end";
@@ -171,13 +205,11 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
         onFocus?.(event);
       }}
       onSelect={(event) => {
-        // Modo centavos: o cursor mora no fim. Tocar no meio do número e apagar
-        // tiraria um dígito do meio; selecionar tudo (para substituir) continua valendo.
+        // Modo centavos: o cursor mora no fim e não há seleção (nem "selecionar tudo").
         if (mode !== "cents") return;
         const input = event.currentTarget;
         const end = input.value.length;
-        const all = input.selectionStart === 0 && input.selectionEnd === end;
-        if (!all && (input.selectionStart !== end || input.selectionEnd !== end)) input.setSelectionRange(end, end);
+        if (input.selectionStart !== end || input.selectionEnd !== end) input.setSelectionRange(end, end);
       }}
       onChange={(event) => {
         if (mode === "cents") {

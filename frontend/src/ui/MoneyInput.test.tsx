@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { MoneyInput, digitsToCents, normalizeDecimal, parsePastedMoney, type MoneyInputMode } from "./MoneyInput";
@@ -94,6 +94,36 @@ describe("valor no modo centavos", () => {
     expect(input.selectionStart).toBe(input.value.length);
     await user.keyboard("{Backspace}");
     expect(input).toHaveValue("R$ 4,59");
+  });
+
+  it("não deixa selecionar trecho nem tudo: o cursor volta para o fim", () => {
+    render(<Harness mode="cents" initial={45.9} />);
+    const input = screen.getByLabelText("Valor") as HTMLInputElement;
+    input.focus();
+    input.setSelectionRange(0, input.value.length);
+    fireEvent.select(input);
+    expect([input.selectionStart, input.selectionEnd]).toEqual([input.value.length, input.value.length]);
+  });
+
+  it("o teclado nunca edita o meio: dígito entra no fim e apagar tira o último", () => {
+    render(<Harness mode="cents" initial={45.9} />);
+    const input = screen.getByLabelText("Valor") as HTMLInputElement;
+    const press = (inputType: string, data: string | null = null) => {
+      const event = new InputEvent("beforeinput", { inputType, data, cancelable: true, bubbles: true });
+      act(() => {
+        input.dispatchEvent(event);
+      });
+      return event.defaultPrevented;
+    };
+    expect(press("insertText", "1")).toBe(true);
+    expect(input).toHaveValue("R$ 459,01");
+    expect(press("deleteContentBackward")).toBe(true);
+    expect(input).toHaveValue("R$ 45,90");
+    expect(press("insertText", "a")).toBe(true);
+    expect(input).toHaveValue("R$ 45,90");
+    expect(press("deleteWordBackward")).toBe(true);
+    expect(input).toHaveValue("");
+    expect(screen.getByTestId("value")).toHaveTextContent("null");
   });
 });
 

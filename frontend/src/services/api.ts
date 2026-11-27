@@ -11,6 +11,14 @@ export const api = axios.create({
   },
 });
 
+/**
+ * Configuração para pedidos que precisam chegar ao servidor mesmo se a página
+ * recarregar ou fechar logo depois: as exclusões adiadas pelo "Desfazer"
+ * (PendingDeletes), que saem quando o aviso some ou no pagehide. O XHR padrão do
+ * axios é cancelado junto com a página; fetch com keepalive não.
+ */
+export const survivesUnload = { adapter: 'fetch', fetchOptions: { keepalive: true } } as const;
+
 // Interceptor (Opcional, mas recomendado)
 // Se a API retornar 401 (Não autorizado), podemos redirecionar pro login automaticamente
 api.interceptors.response.use(

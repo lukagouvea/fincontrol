@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, survivesUnload } from './api';
 import { Transaction, CompraParcelada } from '../types/FinanceTypes';
 
 /** Compra parcelada como o formulário monta (o total; o backend cria as parcelas). */
@@ -66,10 +66,10 @@ export const transactionService = {
     body:
       | { action: 'update'; ids: string[]; data: { categoryId?: string; cardId?: string | null } }
       | { action: 'delete'; ids: string[] },
-  ) => (await api.post('/transactions/batch', body)).data,
+  ) => (await api.post('/transactions/batch', body, survivesUnload)).data,
 
   // DELETE /transactions/:id
   delete: async (id: string): Promise<void> => {
-    await api.delete(`/transactions/${id}`);
+    await api.delete(`/transactions/${id}`, survivesUnload);
   }
 };

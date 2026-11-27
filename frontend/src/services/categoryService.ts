@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, survivesUnload } from './api';
 import { Category } from '../types/FinanceTypes';
 
 export const categoryService = {
@@ -12,7 +12,7 @@ export const categoryService = {
 
   // POST /categories/:id/merge — move tudo para o destino e arquiva a origem
   merge: async (id: string, targetId: string): Promise<{ moved: number }> => {
-    const { data } = await api.post(`/categories/${id}/merge`, { targetId });
+    const { data } = await api.post(`/categories/${id}/merge`, { targetId }, survivesUnload);
     return data;
   },
 
@@ -30,6 +30,6 @@ export const categoryService = {
 
   // DELETE /categories/:id
   delete: async (id: string): Promise<void> => {
-    await api.delete(`/categories/${id}`);
+    await api.delete(`/categories/${id}`, survivesUnload);
   }
 };

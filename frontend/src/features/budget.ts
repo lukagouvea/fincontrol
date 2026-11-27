@@ -8,9 +8,10 @@
  *   cruzam a virada do mês são cortadas no limite do mês.
  */
 import type { BudgetLimit } from "../types/FinanceTypes";
-import { daysInMonth, parseDateKey, toDateKey } from "../lib/dates";
+import { daysInMonth, parseDateKey, shiftDateKey, toDateKey } from "../lib/dates";
 import { fromCents, toCents } from "../lib/money";
 import type { LedgerEntry } from "./ledger";
+import { dailySamples, hashSeed, isVariableExpense, simulate, type Band, type DaySample } from "./forecast";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 export const monthKeyOf = (year: number, month: number) => `${year}-${pad(month + 1)}`;
@@ -37,7 +38,6 @@ export function monthLimits(records: BudgetLimit[], categoryIds: string[], month
   return { limits, total };
 }
 
-const isVariableExpense = (entry: LedgerEntry) => entry.type === "expense" && entry.source !== "recurring";
 
 const sumCents = (entries: LedgerEntry[]) => entries.reduce((sum, entry) => sum + toCents(entry.amount), 0);
 
@@ -132,37 +132,72 @@ export function weekStatus(variable: number, entries: LedgerEntry[], week: Week,
   };
 }
 
-export type BurnPoint = { x: string; label: string; real: number | null; ideal: number; projection: number | null };
+export type BurnPoint = {
+  x: string;
+  label: string;
+  real: number | null;
+  ideal: number;
+  /** Faixa de 80% (P10–P90) e mediana do restante estimado; null antes de hoje. */
+  projection: Band | null;
+};
+
+/** Restante estimado no fim do período e chance de fechar dentro do limite. */
+export type BurnForecast = Band & { pWithin: number };
+
+export type Burn = { points: BurnPoint[]; forecast: BurnForecast | null };
+
+const toBand = (band: Band): Band => ({ p10: fromCents(band.p10), p50: fromCents(band.p50), p90: fromCents(band.p90) });
 
 /**
  * Burndown do orçamento variável num período: restante ao fim de cada dia
- * (real, até hoje), linha ideal reta até zero e projeção no ritmo atual.
+ * (real, até hoje), linha ideal reta até zero e estimativa por Monte Carlo
+ * (ver features/forecast.ts). As amostras "recentes" são os dias completos de
+ * `samplesFrom` até ontem (na semana, o mês inteiro até ontem); `history` são
+ * os dias dos meses fechados anteriores.
  */
-export function burndown(budget: number, entries: LedgerEntry[], start: string, end: string, today: string, startSpent = 0): BurnPoint[] {
+export function burndown(
+  budget: number,
+  entries: LedgerEntry[],
+  start: string,
+  end: string,
+  today: string,
+  { startSpent = 0, history = [], samplesFrom = start }: { startSpent?: number; history?: DaySample[]; samplesFrom?: string } = {},
+): Burn {
   const variableEntries = entries.filter(isVariableExpense);
   const total = daysBetween(start, end);
   const elapsed = today < start ? 0 : today > end ? total : daysBetween(start, today);
+  const spentOn = new Map<string, number>();
+  for (const entry of variableEntries) spentOn.set(entry.date, (spentOn.get(entry.date) ?? 0) + toCents(entry.amount));
+  const budgetCents = toCents(budget);
   let cumulative = toCents(startSpent);
   const points: BurnPoint[] = [];
-  const spentToday = (key: string) => sumCents(variableEntries.filter((entry) => entry.date === key));
-  const budgetCents = toCents(budget);
-  let realToday = budgetCents - cumulative;
   for (let i = 0; i < total; i += 1) {
-    const d = parseDateKey(start);
-    d.setDate(d.getDate() + i);
-    const key = toDateKey(d);
+    const key = shiftDateKey(start, i);
     const ideal = fromCents(Math.round(budgetCents * (1 - (i + 1) / total)));
     let real: number | null = null;
     if (i < elapsed) {
-      cumulative += spentToday(key);
+      cumulative += spentOn.get(key) ?? 0;
       real = fromCents(budgetCents - cumulative);
-      realToday = budgetCents - cumulative;
     }
-    points.push({ x: key, label: String(d.getDate()), real, ideal, projection: null });
+    points.push({ x: key, label: String(parseDateKey(key).getDate()), real, ideal, projection: null });
   }
-  if (elapsed > 0 && elapsed < total) {
-    const pace = (budgetCents - realToday - toCents(startSpent)) / elapsed;
-    for (let i = elapsed - 1; i < total; i += 1) points[i].projection = fromCents(Math.round(realToday - pace * (i - (elapsed - 1))));
-  }
-  return points;
+  if (elapsed === 0 || elapsed >= total) return { points, forecast: null };
+
+  const yesterday = shiftDateKey(today, -1);
+  const result = simulate({
+    remainingCents: budgetCents - cumulative,
+    // Só o gasto sorteável de hoje: parcelas de hoje já estão no real e não "gastam" o sorteio.
+    todayCents: dailySamples(entries, today, today)[0].cents,
+    todayWeekday: parseDateKey(today).getDay(),
+    days: points.slice(elapsed).map((p) => ({ weekday: parseDateKey(p.x).getDay(), knownCents: spentOn.get(p.x) ?? 0 })),
+    recent: samplesFrom <= yesterday ? dailySamples(entries, samplesFrom, yesterday) : [],
+    history,
+    seed: hashSeed(`${start}|${end}|${today}`),
+  });
+  if (!result) return { points, forecast: null };
+  // A faixa parte do ponto "hoje"; o resto do dia de hoje entra no dia seguinte.
+  const now = points[elapsed - 1].real!;
+  points[elapsed - 1].projection = { p10: now, p50: now, p90: now };
+  result.days.forEach((band, i) => (points[elapsed + i].projection = toBand(band)));
+  return { points, forecast: { ...toBand(result.days.at(-1)!), pWithin: result.pWithin } };
 }

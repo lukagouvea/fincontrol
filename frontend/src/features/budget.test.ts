@@ -75,11 +75,24 @@ describe("semana", () => {
 });
 
 describe("burndown", () => {
-  it("real até hoje, ideal até zero e projeção no ritmo atual", () => {
-    const points = burndown(100, [entry("2026-11-01", 10), entry("2026-11-02", 20)], "2026-11-01", "2026-11-04", "2026-11-02");
-    expect(points.map((p) => p.real)).toEqual([90, 70, null, null]);
+  it("real até hoje, ideal até zero e estimativa a partir de hoje", () => {
+    const { points, forecast } = burndown(100, [entry("2026-11-01", 10), entry("2026-11-02", 20)], "2026-11-01", "2026-11-04", "2026-11-03");
+    expect(points.map((p) => p.real)).toEqual([90, 70, 70, null]);
     expect(points.map((p) => p.ideal)).toEqual([75, 50, 25, 0]);
-    expect(points.map((p) => p.projection)).toEqual([null, 70, 55, 40]);
+    // A faixa parte do ponto de hoje; dias sorteados entre 10 e 20.
+    expect(points[2].projection).toEqual({ p10: 70, p50: 70, p90: 70 });
+    expect(points[3].projection!.p10).toBeGreaterThanOrEqual(30);
+    expect(points[3].projection!.p90).toBeLessThanOrEqual(50);
+    expect(forecast).toEqual({ ...points[3].projection, pWithin: 1 });
+  });
+
+  it("sem estimativa antes de começar, depois de acabar e sem nenhum dia de amostra", () => {
+    const entries = [entry("2026-11-01", 10)];
+    expect(burndown(100, entries, "2026-11-01", "2026-11-04", "2026-10-30").forecast).toBeNull();
+    expect(burndown(100, entries, "2026-11-01", "2026-11-04", "2026-11-04").forecast).toBeNull();
+    const first = burndown(100, entries, "2026-11-01", "2026-11-04", "2026-11-01");
+    expect(first.forecast).toBeNull();
+    expect(first.points.every((p) => p.projection === null)).toBe(true);
   });
 });
 

@@ -57,7 +57,7 @@ describe("atalhos e fila offline", () => {
     const form = await screen.findByRole("dialog", { name: "Nova transação" });
     expect(within(form).getByText(/Parcelas e recorrências precisam de conexão/)).toBeVisible();
     expect(within(form).queryByRole("switch", { name: "Repetir todo mês" })).not.toBeInTheDocument();
-    await user.type(within(form).getByLabelText("Valor"), "35");
+    await user.type(within(form).getByLabelText("Valor"), "3500");
     await user.type(within(form).getByLabelText("Descrição"), "Feira");
     await user.click(within(form).getByRole("button", { name: "Salvar despesa" }));
     expect(await screen.findByText(/lançamento guardado. Será enviado/)).toBeVisible();

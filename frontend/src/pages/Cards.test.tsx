@@ -97,7 +97,7 @@ describe("Cartões", () => {
     expect(await within(form).findByRole("button", { name: /À vista/ })).toHaveAttribute("aria-pressed", "true");
     await user.click(within(form).getByRole("button", { name: /Aurora/ }));
     expect(within(form).getByText("Entra na fatura que fecha em 8 dez.")).toBeVisible();
-    await user.type(within(form).getByLabelText("Valor"), "50");
+    await user.type(within(form).getByLabelText("Valor"), "5000");
     await user.type(within(form).getByLabelText("Descrição"), "Farmácia");
     await user.click(within(form).getByRole("button", { name: "Salvar despesa" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

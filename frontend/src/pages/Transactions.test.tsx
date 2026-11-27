@@ -74,7 +74,7 @@ describe("Transações", () => {
     await screen.findByText("Padaria");
     await user.click(screen.getAllByRole("button", { name: "Nova transação" })[0]);
     const dialog = await screen.findByRole("dialog", { name: "Nova transação" });
-    await user.type(within(dialog).getByLabelText("Valor"), "1990");
+    await user.type(within(dialog).getByLabelText("Valor"), "199000");
     await user.type(within(dialog).getByLabelText("Descrição"), "Mercado");
     const save = within(dialog).getByRole("button", { name: "Salvar despesa" });
     await user.click(save);
@@ -92,7 +92,7 @@ describe("Transações", () => {
     await screen.findByText("Padaria");
     await user.click(screen.getAllByRole("button", { name: "Nova transação" })[0]);
     const dialog = await screen.findByRole("dialog", { name: "Nova transação" });
-    await user.type(within(dialog).getByLabelText("Valor"), "50");
+    await user.type(within(dialog).getByLabelText("Valor"), "5000");
     await user.type(within(dialog).getByLabelText("Descrição"), "Farmácia");
     await user.click(within(dialog).getByRole("button", { name: "Salvar despesa" }));
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Não foi possível salvar");
@@ -138,7 +138,7 @@ it("cria uma compra parcelada (Transações) com valor total e quantidade corret
   await user.click((await screen.findAllByRole("button", { name: "Nova transação" }))[0]);
   const form = await screen.findByRole("dialog", { name: "Nova transação" });
   await user.type(within(form).getByLabelText("Descrição"), "Compra parcelada");
-  await user.type(within(form).getByLabelText("Valor"), "300");
+  await user.type(within(form).getByLabelText("Valor"), "30000");
   await user.selectOptions(within(form).getByLabelText("Parcelas"), "3");
   expect(within(form).getByText("3x de R$ 100,00")).toBeVisible();
   expect(within(form).queryByRole("switch", { name: "Repetir todo mês" })).not.toBeInTheDocument();

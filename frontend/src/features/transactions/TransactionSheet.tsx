@@ -1,5 +1,4 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
-import CurrencyInput from "react-currency-input-field";
 import { MoreHorizontal } from "lucide-react";
 import { useCategories } from "../../hooks/useCategories";
 import { useAddCompraParcelada, useUpdateTransaction } from "../../hooks/useTransactions";
@@ -20,6 +19,7 @@ import { Segmented } from "../../ui/Segmented";
 import { Toggle } from "../../ui/Toggle";
 import { useToast } from "../../ui/Toast";
 import { CategoryIcon } from "../../ui/CategoryIcon";
+import { CentsInput } from "../../ui/CentsInput";
 import { CategoryPicker } from "./CategoryPicker";
 import type { EntryType, LedgerEntry } from "../ledger";
 
@@ -77,7 +77,6 @@ export function TransactionSheet({
   const activeCards = useMemo(() => (cardsQuery.data ?? []).filter((card) => !card.archived), [cardsQuery.data]);
 
   const [type, setType] = useState<EntryType>("expense");
-  const [amountText, setAmountText] = useState<string | undefined>();
   const [amount, setAmount] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -96,7 +95,6 @@ export function TransactionSheet({
     const source = editing ?? (mode.kind === "create" ? mode.draft : undefined);
     setType(source?.type ?? "expense");
     setAmount(source?.amount ?? null);
-    setAmountText(source?.amount !== undefined ? String(source.amount).replace(".", ",") : undefined);
     setCategoryId(source?.categoryId ?? "");
     setDescription(source?.description ?? "");
     setDate(source?.date ?? toDateKey(new Date()));
@@ -234,17 +232,10 @@ export function TransactionSheet({
             <label htmlFor={`${formId}-amount`} className="text-sm text-muted">
               Valor{isInstallment ? " total" : ""}
             </label>
-            <CurrencyInput
+            <CentsInput
               id={`${formId}-amount`}
-              intlConfig={{ locale: "pt-BR", currency: "BRL" }}
-              decimalsLimit={2}
-              inputMode="decimal"
-              placeholder="R$ 0,00"
-              value={amountText}
-              onValueChange={(value, _name, values) => {
-                setAmountText(value);
-                setAmount(values?.float ?? null);
-              }}
+              value={amount}
+              onValueChange={setAmount}
               aria-invalid={errors.amount ? true : undefined}
               aria-describedby={errors.amount ? `${formId}-amount-error` : undefined}
               className={cx(

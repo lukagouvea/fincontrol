@@ -40,7 +40,6 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
       "/budgets": [],
       "/goals": [],
       "/transactions/installments/active": [],
-      "/users/tutorial-status": { tutorialCompleted: true },
       ...overrides,
     };
     const response =

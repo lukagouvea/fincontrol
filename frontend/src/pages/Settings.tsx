@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Download, Flag, Moon, Repeat, Tag } from "lucide-react";
+import { Bell, ChevronRight, Flag, Moon, Repeat, ShieldCheck, Tag } from "lucide-react";
+import { AlertToggles } from "./AlertSettings";
+import { DataActions } from "./DataSettings";
 import { useAuth } from "../context/AuthContext";
 import { useTheme, type ThemePreference } from "../context/ThemeContext";
 import { useMediaQuery } from "../hooks/useMediaQuery";
@@ -157,7 +159,8 @@ export function Settings() {
           <SettingsLink to="/categorias" icon={<Tag size={20} />} title="Categorias" subtitle="Organize seus gastos" />
           <SettingsLink to="/recorrentes" icon={<Repeat size={20} />} title="Recorrentes" subtitle="Lançamentos automáticos" />
           <SettingsLink to="/metas" icon={<Flag size={20} />} title="Metas" subtitle="Seus objetivos" />
-          <SettingsLink to="/importar" icon={<Download size={20} />} title="Importar extrato" subtitle="CSV ou OFX do banco" />
+          <SettingsLink to="/ajustes/alertas" icon={<Bell size={20} />} title="Alertas" subtitle="O que avisar no sino" />
+          <SettingsLink to="/ajustes/dados" icon={<ShieldCheck size={20} />} title="Segurança e dados" subtitle="Importar, exportar e apagar" />
         </ul>
         <Button variant="secondary" size="lg" block loading={leaving} onClick={signOut} className="mt-4 !text-expense">
           Sair da conta
@@ -188,6 +191,14 @@ export function Settings() {
           <CardHeader title="Aparência" />
           <AppearanceOptions layout="tiles" />
           <p className="text-[13px] text-muted">A escolha vale neste aparelho. No celular você pode escolher outra.</p>
+        </Card>
+        <Card>
+          <CardHeader title="Alertas" />
+          <AlertToggles />
+        </Card>
+        <Card>
+          <CardHeader title="Segurança e dados" />
+          <DataActions />
         </Card>
       </div>
     </>

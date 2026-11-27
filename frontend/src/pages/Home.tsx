@@ -13,6 +13,7 @@ import { goalProgress } from "../features/goals";
 import { WeekCard } from "../features/budgetui/WeekCard";
 import { StartChecklist } from "../features/onboarding/StartChecklist";
 import { MonthTurnover } from "../features/historyui/MonthTurnover";
+import { useAlerts } from "../features/useAlerts";
 import { ProgressBar } from "../ui/ProgressBar";
 import { summarizeLedger, type LedgerEntry } from "../features/ledger";
 import { chartColorVar, makeCategoryLookup, type CategoryLookup } from "../features/categories";
@@ -57,6 +58,7 @@ export function Home() {
   const budget = useMonthBudget(month, year, entries, !ledger.isLoading && !ledger.isError).data;
   const hasBudget = !!budget?.hasBudget;
   const goals = useGoals();
+  const unreadAlerts = useAlerts().unread;
   const activeGoals = (goals.data ?? []).filter((goal) => goal.saved < goal.target);
 
   // Faturas: o que falta pagar das faturas aberta/fechada/vencida de cada cartão.
@@ -116,8 +118,9 @@ export function Home() {
         <Link to="/ajustes" aria-label="Ajustes" className={iconLink + " lg:hidden"}>
           <Settings size={20} aria-hidden="true" />
         </Link>
-        <Link to="/alertas" aria-label="Alertas" className={iconLink}>
+        <Link to="/alertas" aria-label={unreadAlerts ? `Alertas: ${unreadAlerts} não ${unreadAlerts === 1 ? "lido" : "lidos"}` : "Alertas"} className={cx(iconLink, "relative")}>
           <Bell size={20} aria-hidden="true" />
+          {unreadAlerts > 0 && <span aria-hidden="true" className="absolute right-2.5 top-2.5 size-2.5 rounded-full border-2 border-surface bg-expense" />}
         </Link>
         <span className="hidden lg:inline-flex">
           <MonthSwitcher month={month} year={year} onChange={setMonth} />

@@ -11,11 +11,9 @@ flowchart TB
     entry["src/index.ts<br/>CORS e registro de rotas"]
     entry --> auth["routes/auth.ts<br/>Cadastro, login, logout e perfil"]
     entry --> middleware["middleware/auth.ts<br/>Validação do cookie JWT"]
-    middleware --> finance["routes/<br/>categories, transactions,<br/>recurring e investment"]
-    entry --> users["routes/users.ts<br/>Tutorial com validação do cookie"]
+    middleware --> finance["routes/<br/>categories, transactions, recurring,<br/>cards, budgets, goals, imports,<br/>months, onboarding e account (/me)"]
     auth --> prisma["lib/prisma.ts<br/>Cliente com adaptador PostgreSQL"]
     finance --> prisma
-    users --> prisma
     schema["prisma/schema.prisma"] -->|"prisma generate"| generated["src/generated/<br/>Cliente Prisma"]
     generated --> prisma
     prisma --> db[("PostgreSQL")]
@@ -82,7 +80,7 @@ npx prisma migrate deploy
 npx prisma studio
 ```
 
-A suíte atual substitui métodos do Prisma e verifica o cookie emitido no login, perfil, tutorial e middleware, além da rejeição de tokens ausentes, expirados ou com assinatura/algoritmo incorretos. Gere o cliente Prisma e configure `.env` antes de executá-la.
+A suíte atual substitui métodos do Prisma e verifica o cookie emitido no login, perfil, rotas da conta e middleware, as rotas de cartões, orçamento, metas, lote, importação e conta, além da rejeição de tokens ausentes, expirados ou com assinatura/algoritmo incorretos. Gere o cliente Prisma e configure `.env` antes de executá-la.
 
 ## Autenticação e URLs da API
 
@@ -95,7 +93,7 @@ O cookie atual usa `SameSite=Lax`, `path=/` e `secure: false`. A configuração 
 | Backend direto | `http://localhost:3001` | `/auth/login` |
 | Proxy Vite/Nginx | `/api` na origem do frontend | `/api/auth/login` |
 
-O backend registra rotas sem `/api`. Os proxies removem esse prefixo. Os caminhos abaixo são relativos ao backend; categorias, transações, recorrências, investimento, perfil e status do tutorial exigem sessão.
+O backend registra rotas sem `/api`. Os proxies removem esse prefixo. Os caminhos abaixo são relativos ao backend; todas as rotas, exceto as de `/auth`, exigem sessão.
 
 ### Fluxo de autenticação
 
@@ -130,7 +128,7 @@ sequenceDiagram
 | POST | `/auth/logout` | Remove cookie e retorna mensagem |
 | GET | `/auth/me` | Retorna `{ user }`; sem sessão válida, `{ user: null }` com status 401 |
 
-O cadastro exige nome com pelo menos dois caracteres, email válido e senha com pelo menos seis caracteres. Email já cadastrado retorna 409; credenciais inválidas no login retornam 401. O perfil inclui `tutorialCompleted`.
+O cadastro exige nome com pelo menos dois caracteres, email válido e senha com pelo menos seis caracteres. Email já cadastrado retorna 409; credenciais inválidas no login retornam 401. O perfil inclui `onboardingCompletedAt`, `lastClosingSeen`, `alertPrefs` e `alertsReadAt`.
 
 ### Categorias
 
@@ -196,28 +194,41 @@ Exemplo de regra:
 
 O payload usa `day` (1–31), mapeado para `dayOfMonth` no banco. A categoria é opcional; `endDate` pode ser omitido ou `null`. A listagem devolve `day`, datas e categoria em formato adaptado ao frontend.
 
-Uma variação usa `{ "year": 2026, "month": 10, "amount": 0, "type": "expense" }`. **Aqui, `month` vai de 0 a 11**; em transações e investimento vai de 1 a 12. Variações ficam persistidas como transações com `recurringRuleId`. O frontend combina as regras vigentes com essas variações para calcular os valores mensais, inclusive valor zero.
+Uma variação usa `{ "year": 2026, "month": 10, "amount": 0, "type": "expense" }`. **Aqui, `month` vai de 0 a 11**; em transações vai de 1 a 12. Variações ficam persistidas como transações com `recurringRuleId`. O frontend combina as regras vigentes com essas variações para calcular os valores mensais, inclusive valor zero.
 
-### Investimento
-
-| Método | Caminho | Corpo / retorno |
-|---|---|---|
-| GET | `/investment` | `{ defaultMonthlyAmount }`; padrão zero se não configurado |
-| PUT | `/investment` | Salva `{ defaultMonthlyAmount }` |
-| GET | `/investment/effective?month=11&year=2026` | Retorna `{ defaultMonthlyAmount, overrideMonthlyAmount, effectiveMonthlyAmount }` |
-| PUT | `/investment/override` | Salva `{ year, month, amount }` para um mês específico |
-| DELETE | `/investment/override?month=11&year=2026` | Remove o valor específico e volta a usar o padrão |
-
-Valores são não negativos. O valor específico do mês tem prioridade sobre o padrão, inclusive quando é zero. As configurações são persistidas por usuário no PostgreSQL.
-
-### Tutorial
+### Cartões e faturas
 
 | Método | Caminho | Corpo / retorno |
 |---|---|---|
-| GET | `/users/tutorial-status` | `{ tutorialCompleted: boolean }` |
-| PATCH | `/users/tutorial-status` | Recebe `{ tutorialCompleted: boolean }` e retorna `{ user }` atualizado |
+| GET | `/cards` | Todos os cartões (inclusive arquivados), com `payments` |
+| POST / PUT | `/cards`, `/cards/:id` | `{ name, last4, limit, closingDay, dueDay, color }`; só os 4 últimos dígitos; `archived` no PUT |
+| DELETE | `/cards/:id` | Apaga se não tiver uso; senão arquiva |
+| POST / DELETE | `/cards/:id/payments`, `/cards/:id/payments/:paymentId` | Pagamento de fatura `{ invoiceMonth: 'YYYY-MM', amount, paidAt }`; não cria transação |
+| GET | `/transactions/by-card/:cardId` | Todas as transações do cartão (a fatura é calculada no cliente) |
+| GET | `/transactions/installments/active` | Parcelas de compras ainda em andamento |
+| POST | `/transactions/batch` | Lote: `{ action: 'update', ids, data: { categoryId?, cardId? } }` ou `{ action: 'delete', ids }`; tudo ou nada |
 
-O campo começa como `false` para novos usuários. A interface usa esse status para iniciar o tutorial e permite revê-lo pelo painel da conta. O CORS atual não lista `PATCH` em `allowMethods`; para chamadas pelo navegador, use o proxy de mesma origem ou ajuste essa configuração ao executar frontend e backend em origens diferentes.
+### Orçamento, metas, meses e importação
+
+| Método | Caminho | Corpo / retorno |
+|---|---|---|
+| GET | `/budgets` | Registros de limite `{ categoryId \| null, month, amount \| null, repeat }` |
+| PUT | `/budgets/:month` | `{ repeat, limits: [{ categoryId \| null, amount \| null }] }`; `categoryId: null` é o limite "Geral" |
+| GET / POST / PUT / DELETE | `/goals`, `/goals/:id` | Metas `{ name, target, deadline? }`; `initial` no POST |
+| POST / DELETE | `/goals/:id/contributions`, `/goals/:id/contributions/:id` | Guardar (positivo) ou retirar (negativo); `sourceMonth` opcional |
+| POST | `/months/:month/seen` | Marca a virada do mês como vista |
+| POST | `/onboarding/complete` | `{ budget? }`; cria categorias padrão se não houver e conclui a configuração inicial |
+| POST / DELETE | `/imports`, `/imports/:id` | Importação de extrato `{ fileName, cardId, items }` (até 2000) e desfazer |
+
+### Conta (`/me`)
+
+| Método | Caminho | Corpo / retorno |
+|---|---|---|
+| PUT | `/me/alerts/preferences` | Liga/desliga tipos de alerta (`semana`, `categorias`, `faturaFechando`, `vencimento`, `recorrencia`, `resumoSemanal`) |
+| POST | `/me/alerts/read` | Marca os alertas como vistos |
+| GET | `/me/export.csv` | Todas as transações em CSV (`;` e vírgula decimal) |
+| POST | `/me/wipe` | `{ confirm: 'APAGAR' }`; apaga os dados e mantém conta, categorias e cartões |
+| DELETE | `/me` | `{ password }`; exclui a conta e encerra a sessão |
 
 ## Modelo de dados
 
@@ -225,13 +236,15 @@ O [schema Prisma](./prisma/schema.prisma) define:
 
 | Modelo | Finalidade |
 |---|---|
-| `User` | Perfil, hash da senha e `tutorialCompleted` |
+| `User` | Perfil, hash da senha, configuração inicial, virada vista e preferências de alerta |
 | `Category` | Categoria por usuário, com tipo, cor, descrição e estado ativo |
 | `Transaction` | Receita/despesa, parcela ou variação vinculada a recorrência |
 | `RecurringRule` | Valor padrão, dia e vigência de uma receita/despesa fixa |
 | `InstallmentGroup` | Valor total e quantidade de parcelas; exclusão em cascata das parcelas |
-| `InvestmentSetting` | Investimento mensal padrão, único por usuário |
-| `InvestmentOverride` | Valor específico, único por usuário, ano e mês |
+| `Card` / `InvoicePayment` | Cartões (só 4 dígitos) e pagamentos de fatura; a fatura é derivada |
+| `BudgetLimit` | Limite por categoria e mês (ou "Geral"), com repetição |
+| `Goal` / `GoalContribution` | Metas e aportes/retiradas |
+| `ImportBatch` | Importação de extrato, para desfazer |
 
 ### Relacionamentos
 
@@ -241,8 +254,14 @@ erDiagram
     User ||--o{ Transaction : registra
     User ||--o{ RecurringRule : configura
     User ||--o{ InstallmentGroup : possui
-    User ||--o| InvestmentSetting : configura
-    User ||--o{ InvestmentOverride : ajusta
+    User ||--o{ Card : possui
+    User ||--o{ BudgetLimit : define
+    User ||--o{ Goal : guarda
+    User ||--o{ ImportBatch : importa
+    Card |o--o{ Transaction : paga
+    Card ||--o{ InvoicePayment : quita
+    Goal ||--o{ GoalContribution : recebe
+    ImportBatch |o--o{ Transaction : cria
     Category |o--o{ Transaction : classifica
     Category |o--o{ RecurringRule : classifica
     RecurringRule |o--o{ Transaction : vincula_variacoes
@@ -253,7 +272,9 @@ erDiagram
         string email UK
         string name
         string passwordHash
-        boolean tutorialCompleted
+        datetime onboardingCompletedAt
+        string lastClosingSeen
+        json alertPrefs
     }
     Category {
         uuid id PK
@@ -268,6 +289,8 @@ erDiagram
         uuid categoryId FK
         uuid recurringRuleId FK
         uuid installmentGroupId FK
+        uuid cardId FK
+        uuid importBatchId FK
         decimal amount
         datetime date
         string type
@@ -288,23 +311,26 @@ erDiagram
         decimal totalAmount
         int totalInstallments
     }
-    InvestmentSetting {
-        uuid id PK
-        uuid userId FK,UK
-        decimal defaultMonthlyAmount
-    }
-    InvestmentOverride {
+    Card {
         uuid id PK
         uuid userId FK
-        int year
-        int month
+        string last4
+        decimal limit
+        int closingDay
+        int dueDay
+    }
+    BudgetLimit {
+        uuid id PK
+        uuid categoryId FK "null = Geral"
+        date month
         decimal amount
+        boolean repeat
     }
 ```
 
-O diagrama mostra os principais campos. As relações opcionais de uma transação são categoria, recorrência e grupo de parcelas; o schema também define as restrições compostas por usuário, nome/tipo da categoria e ano/mês do investimento.
+O diagrama mostra os principais campos. As relações opcionais de uma transação são categoria, recorrência e grupo de parcelas; o schema também define as restrições compostas por usuário, nome/tipo da categoria e categoria/mês do orçamento.
 
-Valores monetários são armazenados como `Decimal(12, 2)`. A API converte alguns retornos para número (como listagem de transações e investimento); os consumidores devem considerar a serialização dos demais retornos do Prisma.
+Valores monetários são armazenados como `Decimal(12, 2)`. A API converte alguns retornos para número (como listagem de transações, cartões e metas); os consumidores devem considerar a serialização dos demais retornos do Prisma.
 
 ## Testando com cURL
 

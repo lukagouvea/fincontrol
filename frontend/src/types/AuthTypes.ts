@@ -2,12 +2,15 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  tutorialCompleted?: boolean;
   /** ISO; null = ainda não fez a configuração inicial. */
   onboardingCompletedAt?: string | null;
   createdAt?: string;
   /** Último mês fechado ('YYYY-MM') cuja virada já foi vista. */
   lastClosingSeen?: string | null;
+  /** Preferências da central de alertas (ausente = padrão). */
+  alertPrefs?: Record<string, boolean> | null;
+  /** ISO: alertas até aqui já foram vistos. */
+  alertsReadAt?: string | null;
   token?: string; // Futuro JWT
 };
 

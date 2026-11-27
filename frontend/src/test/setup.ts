@@ -1,6 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+// As telas montam várias consultas em paralelo (livro, orçamento, cartões,
+// alertas); com a suíte inteira rodando, 1 s às vezes não basta.
+configure({ asyncUtilTimeout: 3000 });
 
 afterEach(() => cleanup());
 const portalRoot = document.createElement("div");

@@ -23,6 +23,10 @@ type AuthContextType = {
   /** Marca a configuração inicial como concluída (sem recarregar o usuário). */
   markOnboarded: (at: string) => void;
   markClosingSeen: (month: string) => void;
+  /** Atualiza campos do usuário em memória depois de salvar no servidor. */
+  patchUser: (patch: Partial<User>) => void;
+  /** Encerra a sessão local sem chamar o servidor (ex.: conta excluída). */
+  clearSession: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,6 +129,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       logout,
       markOnboarded: (at: string) => setCurrentUser((user) => (user ? { ...user, onboardingCompletedAt: at } : user)),
       markClosingSeen: (month: string) => setCurrentUser((user) => (user ? { ...user, lastClosingSeen: month } : user)),
+      patchUser: (patch: Partial<User>) => setCurrentUser((user) => (user ? { ...user, ...patch } : user)),
+      clearSession: () => {
+        resetSessionCache();
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      },
     }),
     [currentUser, isAuthenticated, isLoading, sessionVersion, isCurrentSession],
   );

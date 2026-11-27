@@ -226,3 +226,14 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
   - Sem sugestão, o item vem "sem categoria", desmarcado até escolher.
 - **Importação tudo ou nada:** até 2.000 lançamentos por vez. "Desfazer importação" apaga todos os lançamentos criados por ela.
 - **Correção colateral:** a regra de ícone de "Moradia" casava "lar" no fim de palavras ("Farmácia Popu*lar*") e agora exige a palavra inteira.
+
+### Fase 3i: alertas, segurança e dados, limpeza (concluída)
+- **Alertas derivados no cliente** (`features/alerts.ts`), como fatura e orçamento: limite da semana (80% e passou), limite de categoria, fatura fechando (2 dias), vencimento (3 dias ou vencida), recorrência lançada (desligado por padrão, como no design) e resumo semanal. No banco ficam só as preferências (`alert_prefs`) e o "lido até" (`alerts_read_at`), que acende o ponto no sino. A data de cada alerta é o dia em que ele passou a valer, por exemplo o dia em que a categoria estourou.
+- **Limitação:** o "lido" é por dia. Um alerta novo no mesmo dia em que a central foi aberta não acende o ponto de novo.
+- **Segurança e dados:**
+  - **Exportar:** CSV com `;` e vírgula decimal, protegido contra fórmula em planilha.
+  - **Apagar todos os dados:** exige digitar APAGAR e mantém conta, categorias e cartões.
+  - **Excluir a conta:** pede a senha e encerra a sessão.
+- **Fora do escopo:** "Bloqueio com biometria" e "PIN" do design não se aplicam a um app web/PWA, então ficaram de fora.
+- **Push no aparelho:** fica para a fase 4 (PWA).
+- **Limpeza:** saíram as tabelas `investment_*`, a coluna `tutorial_completed` e as rotas `/investment`, `/users/tutorial-status` e o `dashboard.ts` que nunca foi montado. O backup automático do deploy roda antes das migrações.

@@ -40,14 +40,14 @@ const Goals = named(() => import("./pages/Goals"), "Goals");
 const History = named(() => import("./pages/History"), "History");
 const MonthClosing = named(() => import("./pages/MonthClosing"), "MonthClosing");
 const Import = named(() => import("./pages/Import"), "Import");
+const Alerts = named(() => import("./pages/Alerts"), "Alerts");
+const AlertSettings = named(() => import("./pages/AlertSettings"), "AlertSettings");
+const DataSettings = named(() => import("./pages/DataSettings"), "DataSettings");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
 const Welcome = named(() => import("./pages/Onboarding/Welcome"), "Welcome");
 const Setup = named(() => import("./pages/Onboarding/Setup"), "Setup");
-const ComingSoon = lazy(() =>
-  import("./pages/ComingSoon").then((m) => ({ default: m.ComingSoon })),
-);
 
 /** Redireciona mantendo a query string (?tipo=…&aba=…). */
 function RedirectKeepingSearch({ to, extra }: { to: string; extra?: string }) {
@@ -107,10 +107,6 @@ function NotFound() {
   );
 }
 
-const soon = {
-  alertas: "A central de alertas chega numa próxima etapa.",
-};
-
 export function App() {
   useViewport();
   const [queryClient] = useState(
@@ -158,7 +154,9 @@ export function App() {
                           <Route path="/compromissos" element={<Commitments />} />
                           <Route path="/orcamento" element={<Budget />} />
                           <Route path="/metas" element={<Goals />} />
-                          <Route path="/alertas" element={<ComingSoon title="Alertas" description={soon.alertas} />} />
+                          <Route path="/alertas" element={<Alerts />} />
+                          <Route path="/ajustes/alertas" element={<AlertSettings />} />
+                          <Route path="/ajustes/dados" element={<DataSettings />} />
                         </Route>
                         {/* Endereços antigos */}
                         <Route path="/lancamentos" element={<LegacyEntries />} />

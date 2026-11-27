@@ -8,7 +8,13 @@
 //
 // Login: SHOTS_EMAIL e SHOTS_PASSWORD (opcional; sem eles captura só rotas públicas).
 // Saída: frontend/.shots/<tema>-<largura>/<nome>.png
-import { chromium } from "playwright";
+//
+// Larguras: 360px (Android comum, ex.: Galaxy S25), 390px (iPhone) e 1280px (desktop).
+// 390px usa o WebKit (motor do Safari) quando ele roda nesta máquina; senão cai
+// no Chrome com um aviso (no Linux o WebKit pede `sudo npx playwright install-deps`).
+// Toda rota do app é conferida contra rolagem horizontal: se alguma tela passar
+// da largura, o script lista e termina com erro.
+import { chromium, webkit } from "playwright";
 import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -31,10 +37,20 @@ const DEFAULT_ROUTES = [
   "/recorrentes",
   "/relatorios",
   "/categorias",
+  "/compromissos",
+  "/relatorios/historico",
+  "/alertas",
+  "/importar",
   "/ajustes",
 ];
 
-const widths = [390, 1280];
+const DEVICES = [
+  { width: 360, height: 780, label: "Android" },
+  { width: 390, height: 844, label: "iPhone", engine: "webkit" },
+  { width: 1280, height: 900, label: "desktop" },
+];
+// As referências do design só existem em 390 (celular) e 1280 (desktop).
+const REF_WIDTHS = [390, 1280];
 const themes = ["light", "dark"];
 const baseUrl = process.env.SHOTS_URL ?? "http://localhost:5173";
 
@@ -52,15 +68,33 @@ async function login(page) {
   return true;
 }
 
+/** Quanto a página passa da largura da tela (0 = cabe). */
+const horizontalOverflow = (page) =>
+  page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+
+async function launchWebkit() {
+  try {
+    return await webkit.launch();
+  } catch {
+    console.warn("! WebKit indisponível nesta máquina: 390px vai no Chrome (veja o topo do script).");
+    return null;
+  }
+}
+
 async function main() {
-  const browser = await chromium.launch({ channel: process.env.SHOTS_CHANNEL ?? "chrome" });
+  const chrome = await chromium.launch({ channel: process.env.SHOTS_CHANNEL ?? "chrome" });
+  const safari = refMode ? null : await launchWebkit();
+  const overflows = [];
   try {
     for (const theme of themes) {
-      for (const width of widths) {
+      for (const device of DEVICES) {
+        const { width, height } = device;
+        if (refMode && !REF_WIDTHS.includes(width)) continue;
+        const browser = device.engine === "webkit" && safari ? safari : chrome;
         const dir = path.join(outRoot, refMode ? `ref-${theme}-${width}` : `${theme}-${width}`);
         await mkdir(dir, { recursive: true });
         const context = await browser.newContext({
-          viewport: { width, height: width < 1024 ? 844 : 900 },
+          viewport: { width, height },
           deviceScaleFactor: 1,
           colorScheme: theme,
         });
@@ -85,15 +119,23 @@ async function main() {
             if (!loggedIn && route !== "/entrar" && route !== "/criar-conta") continue;
             await page.goto(`${baseUrl}${route}`);
             await page.waitForLoadState("networkidle");
+            const extra = await horizontalOverflow(page);
+            if (extra > 0) overflows.push(`${route} em ${width}px (${theme}): passa ${extra}px da tela`);
             await page.screenshot({ path: path.join(dir, `${nameFor(route)}.png`), fullPage: true });
           }
         }
         await context.close();
-        console.log(`✓ ${theme} ${width}px → ${path.relative(process.cwd(), dir)}`);
+        const engine = browser === safari ? "WebKit" : "Chrome";
+        console.log(`✓ ${theme} ${width}px (${device.label}, ${engine}) → ${path.relative(process.cwd(), dir)}`);
       }
     }
   } finally {
-    await browser.close();
+    await chrome.close();
+    await safari?.close();
+  }
+  if (overflows.length) {
+    console.error(`\n✗ Rolagem horizontal em ${overflows.length} captura(s):\n  ${overflows.join("\n  ")}`);
+    process.exitCode = 1;
   }
 }
 

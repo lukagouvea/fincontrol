@@ -201,3 +201,32 @@ export function burndown(
   result.days.forEach((band, i) => (points[elapsed + i].projection = toBand(band)));
   return { points, forecast: { ...toBand(result.days.at(-1)!), pWithin: result.pWithin } };
 }
+
+/** De onde vem a referência dos gráficos de ritmo (ver design/PRODUCT_RULES.md). */
+export type PaceKind = "budget" | "income" | "typical";
+export type PaceReference = { kind: PaceKind; amount: number };
+
+/** Gasto variável total (com parcelas) de um mês "AAAA-MM". */
+export const monthVariableTotal = (entries: LedgerEntry[], month: string) =>
+  fromCents(sumCents(entries.filter((entry) => isVariableExpense(entry) && entry.date.startsWith(month))));
+
+/**
+ * Referência variável do mês para os gráficos de ritmo, em cascata:
+ * 1. orçamento: orçamento − fixas (como no resto do app);
+ * 2. renda: receitas do mês inteiro (com recorrentes previstas) − fixas, se sobrar algo;
+ * 3. mês típico: mediana do gasto variável dos meses anteriores com gasto
+ *    (`typicalMonths`, já sem os meses vazios);
+ * sem nada disso, null. O orçamento de hoje nunca vale para meses passados:
+ * `budgetTotal` é o do próprio mês.
+ */
+export function paceReference(budgetTotal: number, entries: LedgerEntry[], typicalMonths: number[]): PaceReference | null {
+  const fixed = toCents(fixedExpenses(entries));
+  if (budgetTotal > 0) return { kind: "budget", amount: fromCents(Math.max(0, toCents(budgetTotal) - fixed)) };
+  const income = sumCents(entries.filter((entry) => entry.type === "income"));
+  if (income - fixed > 0) return { kind: "income", amount: fromCents(income - fixed) };
+  const totals = typicalMonths.map(toCents).filter((cents) => cents > 0).sort((a, b) => a - b);
+  if (!totals.length) return null;
+  const mid = Math.floor(totals.length / 2);
+  const median = totals.length % 2 ? totals[mid] : Math.round((totals[mid - 1] + totals[mid]) / 2);
+  return { kind: "typical", amount: fromCents(median) };
+}

@@ -78,7 +78,8 @@ export function TransactionSheet({
 
   const [type, setType] = useState<EntryType>("expense");
   const [amount, setAmount] = useState<number | null>(null);
-  const [categoryId, setCategoryId] = useState<string>("");
+  // Categoria escolhida; a usada é `categoryId`, abaixo (cai na primeira do tipo se não valer).
+  const [chosenCategoryId, setCategoryId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(toDateKey(new Date()));
   const [installments, setInstallments] = useState(1);
@@ -111,17 +112,16 @@ export function TransactionSheet({
   const categories = useMemo(
     () =>
       (categoriesQuery.data ?? []).filter(
-        (category) => category.type === type && (category.active !== false || category.id === categoryId),
+        (category) => category.type === type && (category.active !== false || category.id === chosenCategoryId),
       ),
-    [categoriesQuery.data, type, categoryId],
+    [categoriesQuery.data, type, chosenCategoryId],
   );
 
   // Categoria padrão: a primeira do tipo, quando nenhuma (válida) foi escolhida.
-  // Atualização funcional: lê o valor já inicializado pelo efeito de abertura.
-  useEffect(() => {
-    if (!open || !categories.length) return;
-    setCategoryId((current) => (categories.some((category) => category.id === current) ? current : categories[0].id));
-  }, [open, categories]);
+  // Derivada na renderização, não corrigida por efeito: um efeito rodava no
+  // instante em que a folha abria ainda com o tipo anterior (ex.: editar uma
+  // despesa logo depois de lançar uma receita) e trocava a categoria salva.
+  const categoryId = categories.some((category) => category.id === chosenCategoryId) ? chosenCategoryId : categories[0]?.id ?? "";
 
   const quick = useMemo(() => {
     const first = categories.slice(0, QUICK_CATEGORIES);

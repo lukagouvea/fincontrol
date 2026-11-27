@@ -156,3 +156,31 @@ it("cria uma compra parcelada (Transações) com valor total e quantidade corret
     categoryId: "food",
   });
 });
+
+it("editar uma despesa logo depois de abrir uma receita mantém a categoria salva", async () => {
+  renderAt("/transacoes", {
+    "/categories": [
+      { id: "food", name: "Alimentação", type: "expense", active: true, color: "#16836b" },
+      { id: "pets", name: "Pets", type: "expense", active: true, color: "#16836b" },
+      { id: "salary", name: "Trabalho", type: "income", active: true, color: "#5d6b80" },
+    ],
+    "/transactions": [{ id: "t9", type: "expense", description: "Ração", amount: 45.9, categoryId: "pets", date: day(2) }],
+    "put /transactions/t9": { id: "t9" },
+  });
+  const user = userEvent.setup();
+  await screen.findByText("Ração");
+
+  // Abre "Nova transação" como receita e fecha sem salvar: a folha guarda o tipo.
+  await user.click(screen.getAllByRole("button", { name: "Nova transação" })[0]);
+  const create = await screen.findByRole("dialog", { name: "Nova transação" });
+  await user.click(within(create).getByRole("radio", { name: "Receita" }));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+  await user.click(screen.getByText("Ração"));
+  await user.click(await screen.findByRole("button", { name: /^Editar( transação)?$/ }));
+  const edit = await screen.findByRole("dialog", { name: "Editar despesa" });
+  expect(within(edit).getByRole("button", { name: "Pets" })).toHaveAttribute("aria-pressed", "true");
+  await user.click(within(edit).getByRole("button", { name: "Salvar alterações" }));
+  await waitFor(() => expect(requests.find((r) => r.method === "put" && r.url === "/transactions/t9")?.data).toMatchObject({ categoryId: "pets" }));
+});

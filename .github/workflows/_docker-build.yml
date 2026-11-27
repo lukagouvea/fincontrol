@@ -15,6 +15,10 @@ on:
         description: Construir a imagem do frontend
         type: boolean
         default: true
+      latest:
+        description: Publicar também a tag latest (no CD ela só é marcada depois dos testes)
+        type: boolean
+        default: true
     secrets:
       DOCKER_USERNAME:
         required: false
@@ -51,8 +55,8 @@ jobs:
           target: runner
           push: ${{ inputs.push }}
           tags: |
-            ${{ env.IMAGE_NAMESPACE }}/fincontrol-backend:latest
             ${{ env.IMAGE_NAMESPACE }}/fincontrol-backend:${{ github.sha }}
+            ${{ inputs.latest && format('{0}/fincontrol-backend:latest', env.IMAGE_NAMESPACE) || '' }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
 
@@ -65,8 +69,8 @@ jobs:
           target: runner
           push: ${{ inputs.push }}
           tags: |
-            ${{ env.IMAGE_NAMESPACE }}/fincontrol-frontend:latest
             ${{ env.IMAGE_NAMESPACE }}/fincontrol-frontend:${{ github.sha }}
+            ${{ inputs.latest && format('{0}/fincontrol-frontend:latest', env.IMAGE_NAMESPACE) || '' }}
           build-args: |
             VITE_API_URL=/api
           cache-from: type=gha,scope=frontend

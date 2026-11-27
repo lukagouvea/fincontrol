@@ -33,18 +33,44 @@ jobs:
   test-e2e:
     uses: ./.github/workflows/_test-e2e.yml
 
+  # Roda em paralelo com os testes e publica só a tag do SHA, que é a usada pelo
+  # deploy. Se um teste falhar, a imagem fica no registry mas nunca chega à VPS.
   build-and-push:
-    needs: [ test-backend, test-frontend, test-e2e ]
     uses: ./.github/workflows/_docker-build.yml
     with:
       push: true
       backend: true
       frontend: true
+      latest: false
     secrets: inherit
+
+  # Com os testes verdes, aponta a latest para as imagens deste commit (sem rebuild).
+  tag-latest:
+    name: Marcar latest
+    needs: [ test-backend, test-frontend, test-e2e, build-and-push ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Apontar latest para o SHA
+        env:
+          NS: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          for app in backend frontend; do
+            docker buildx imagetools create \
+              -t "$NS/fincontrol-$app:latest" "$NS/fincontrol-$app:$GITHUB_SHA"
+          done
 
   deploy-vps:
     name: Deploy na VPS
-    needs: build-and-push
+    needs: [ test-backend, test-frontend, test-e2e, build-and-push ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código

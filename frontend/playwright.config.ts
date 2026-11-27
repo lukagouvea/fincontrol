@@ -27,6 +27,9 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
+  // No CI, um worker por projeto (android, iphone, desktop) rodando juntos; cada
+  // roteiro cria a própria conta, então não disputam dados.
+  workers: CI ? 3 : undefined,
   forbidOnly: CI,
   // Sem nova tentativa: um teste instável deve aparecer, não ser escondido.
   retries: 0,

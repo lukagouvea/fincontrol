@@ -69,10 +69,30 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # Os navegadores ficam em cache por versão do Playwright; os pacotes do sistema
+      # (apt) não entram no cache e são instalados sempre.
+      - name: Versão do Playwright
+        id: playwright
+        working-directory: frontend
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache dos navegadores do Playwright
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       # Chromium (Android 360px e desktop 1280px) e WebKit, o motor do Safari (iPhone 390px).
       - name: Instalar os navegadores do Playwright
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: frontend
         run: npx playwright install --with-deps chromium webkit
+
+      - name: Instalar as dependências de sistema dos navegadores
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: frontend
+        run: npx playwright install-deps chromium webkit
 
       # O Playwright sobe o Vite (webServer em playwright.config.ts).
       - name: Rodar o roteiro e2e (Android 360px, iPhone 390px, desktop 1280px)

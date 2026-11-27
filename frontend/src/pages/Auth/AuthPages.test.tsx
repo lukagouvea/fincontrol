@@ -35,6 +35,24 @@ describe("Entrar e Criar conta", () => {
     await waitFor(() => expect(window.location.pathname).toBe("/relatorios"));
   });
 
+  it("depois de \"Sair da conta\", entrar de novo começa no Início", async () => {
+    const ana = { id: "u", name: "Ana", email: "ana@example.test", onboardingCompletedAt: "2026-01-01T00:00:00Z" };
+    installApiFixture({
+      "/auth/me": { user: ana },
+      "post /auth/logout": {},
+      "post /auth/login": { user: ana },
+    });
+    window.history.replaceState({}, "", "/ajustes");
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Sair da conta" }));
+    await waitFor(() => expect(window.location.pathname).toBe("/entrar"));
+    await user.type(await screen.findByLabelText("E-mail"), "ana@example.test");
+    await user.type(screen.getByLabelText("Senha"), "certa");
+    await user.click(screen.getByRole("button", { name: "Entrar" }));
+    await waitFor(() => expect(window.location.pathname).toBe("/"));
+  });
+
   it("valida o cadastro antes de enviar e avisa e-mail já cadastrado", async () => {
     installApiFixture({ "/auth/me": httpError(401), "post /auth/signup": httpError(409) });
     window.history.replaceState({}, "", "/criar-conta");

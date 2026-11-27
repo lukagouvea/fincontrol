@@ -220,9 +220,8 @@ test("sai e entra de novo", async () => {
   await page.getByLabel("E-mail").fill(user.email);
   await page.getByLabel("Senha", { exact: true }).fill(user.password);
   await page.getByRole("button", { name: /^entrar$/i }).click();
-  // Volta para onde estava antes de sair (Ajustes); os dados continuam lá.
-  await expect(page).not.toHaveURL(/\/entrar/);
-  await go(page, "Início", "/");
+  // Depois de "Sair da conta", o próximo login começa no Início, com os dados lá.
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByText("Geladeira").first()).toBeVisible();
 });
 

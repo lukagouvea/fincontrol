@@ -14,6 +14,8 @@ import { useQueryClient } from "@tanstack/react-query";
 type AuthContextType = {
   currentUser: User | null;
   isAuthenticated: boolean;
+  /** A pessoa saiu de propósito (ou excluiu a conta) nesta aba. */
+  signedOut: boolean;
   isLoading: boolean; // Adicionado estado de loading global
   sessionVersion: number;
   isCurrentSession: (version: number) => boolean;
@@ -56,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [signedOut, setSignedOut] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Começa true para verificar localStorage
 
   // Verifica autenticação ao carregar (Persistência no Refresh)
@@ -66,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (user) {
           setCurrentUser(user);
           setIsAuthenticated(true);
+      setSignedOut(false);
         }
       } catch (error) {
         // Se der erro, apenas segue como deslogado
@@ -88,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Atualiza estado
       setCurrentUser(user);
       setIsAuthenticated(true);
+      setSignedOut(false);
     } catch (error) {
       throw error; // Repassa o erro para o componente tratar (ex: mostrar mensagem)
     } finally {
@@ -103,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setCurrentUser(user);
       setIsAuthenticated(true);
+      setSignedOut(false);
     } catch (error) {
       throw error;
     } finally {
@@ -115,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     resetSessionCache();
     setCurrentUser(null);
     setIsAuthenticated(false);
+    setSignedOut(true);
   };
 
   const value = useMemo(
@@ -134,9 +141,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         resetSessionCache();
         setCurrentUser(null);
         setIsAuthenticated(false);
+        setSignedOut(true);
       },
+      signedOut,
     }),
-    [currentUser, isAuthenticated, isLoading, sessionVersion, isCurrentSession],
+    [currentUser, isAuthenticated, signedOut, isLoading, sessionVersion, isCurrentSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

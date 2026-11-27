@@ -195,7 +195,8 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
       autoComplete="off"
       placeholder={placeholder}
       aria-invalid={props["aria-invalid"] ?? (invalid ? true : undefined)}
-      className={appearances[appearance](invalid, className)}
+      // Modo centavos: o cursor fica sempre no fim e não dá para movê-lo, então não precisa piscar.
+      className={appearances[appearance](invalid, cx(mode === "cents" && "caret-transparent", className))}
       value={text}
       onFocus={(event) => {
         if (mode === "cents") {

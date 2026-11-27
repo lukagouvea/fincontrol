@@ -15,6 +15,7 @@ import budgetsRoute from './routes/budgets.js';
 import goalsRoute from './routes/goals.js';
 import onboardingRoute from './routes/onboarding.js';
 import monthsRoute from './routes/months.js';
+import importsRoute from './routes/imports.js';
 import { getJwtSecret } from './lib/jwt.js';
 
 // Falha na inicialização se o segredo não estiver configurado.
@@ -46,6 +47,7 @@ app.route('/budgets', budgetsRoute);
 app.route('/goals', goalsRoute);
 app.route('/onboarding', onboardingRoute);
 app.route('/months', monthsRoute);
+app.route('/imports', importsRoute);
 
 serve({
   fetch: app.fetch,

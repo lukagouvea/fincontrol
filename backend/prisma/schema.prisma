@@ -32,6 +32,7 @@ model User {
   budgetLimits      BudgetLimit[]
   goals             Goal[]
   goalContributions GoalContribution[]
+  importBatches     ImportBatch[]
 
   @@map("users")
 }
@@ -142,11 +143,15 @@ model Transaction {
 
   // Forma de pagamento: cartão cadastrado ou null = À vista (Pix, dinheiro, débito).
   cardId             String?           @map("card_id") @db.Uuid
+
+  // Importação de extrato que criou esta transação (para desfazer a importação).
+  importBatchId      String?           @map("import_batch_id") @db.Uuid
   
   createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações
   card               Card?             @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  importBatch        ImportBatch?      @relation(fields: [importBatchId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   category           Category?         @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
   installmentGroup   InstallmentGroup? @relation(fields: [installmentGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   recurringRule      RecurringRule?    @relation(fields: [recurringRuleId], references: [id], onUpdate: NoAction)
@@ -155,6 +160,7 @@ model Transaction {
   @@index([userId, categoryId], map: "idx_transactions_user_category")
   @@index([userId, date], map: "idx_transactions_user_date")
   @@index([cardId, date], map: "idx_transactions_card_date")
+  @@index([importBatchId], map: "idx_transactions_import_batch")
   @@unique([recurringRuleId, occurrenceMonth], map: "unique_recurring_occurrence")
   @@map("transactions")
 }
@@ -207,6 +213,7 @@ model Card {
   installmentGroups InstallmentGroup[]
   recurringRules    RecurringRule[]
   payments          InvoicePayment[]
+  importBatches     ImportBatch[]
 
   @@index([userId], map: "idx_cards_user")
   @@map("cards")
@@ -286,4 +293,22 @@ model GoalContribution {
 
   @@index([goalId, date], map: "idx_goal_contributions_goal_date")
   @@map("goal_contributions")
+}
+
+// Importação de extrato (CSV/OFX lido no cliente). Desfazer apaga as
+// transações criadas por ela.
+model ImportBatch {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  cardId    String?   @map("card_id") @db.Uuid
+  fileName  String    @map("file_name") @db.VarChar(255)
+  count     Int
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  card         Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  transactions Transaction[]
+
+  @@index([userId], map: "idx_import_batches_user")
+  @@map("import_batches")
 }

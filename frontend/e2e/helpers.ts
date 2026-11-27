@@ -7,37 +7,90 @@ export const money = (amount: string) => new RegExp(`^[-−+]?\\s*R\\$\\s${amoun
 export const dialog = (page: Page, name?: string) =>
   name ? page.getByRole("dialog", { name }) : page.getByRole("dialog").last();
 
-/**
- * Navega como a pessoa faria: pelo menu (barra lateral no desktop, barra
- * inferior no celular) ou, no celular, por Ajustes quando o item não está
- * na barra inferior. Cai no endereço direto só se não achar o link.
- */
-export async function go(page: Page, name: string, path: string) {
-  const nav = page.getByRole("navigation").getByRole("link", { name, exact: true });
-  if (await nav.first().isVisible().catch(() => false)) {
-    await nav.first().click();
-  } else {
-    const settings = page.getByRole("link", { name: "Ajustes", exact: true }).or(page.getByRole("link", { name: /ajustes/i })).first();
-    if (path !== "/ajustes" && (await settings.isVisible().catch(() => false))) {
-      await settings.click();
-      const item = page.getByRole("link", { name: new RegExp(`^${name}`) }).first();
-      if (await item.isVisible().catch(() => false)) await item.click();
-      else await page.goto(path);
-    } else if (path === "/ajustes" && (await settings.isVisible().catch(() => false))) {
-      await settings.click();
-    } else {
-      await page.goto(path);
-    }
-  }
+export const isDesktop = (page: Page) => (page.viewportSize()?.width ?? 0) >= 1024;
+
+/** Itens que, no celular, só existem dentro de Ajustes (engrenagem no Início). */
+const SETTINGS_ITEMS = ["Categorias", "Recorrentes", "Metas", "Alertas", "Atalhos", "Aparência", "Segurança e dados"];
+
+/** Espera a tela de destino de fato: a URL muda antes de a tela nova aparecer. */
+async function waitForScreen(page: Page, name: string, path: string) {
   await expect(page).toHaveURL(new RegExp(`${path.replace(/\//g, "\\/")}(\\?|$)`));
-  // A URL muda antes de a tela nova aparecer: enquanto o código da rota carrega,
-  // o React mantém a tela anterior. Espera a tela de destino de fato (no CI,
-  // um clique logo depois caía na tela antiga).
+  // Enquanto o código da rota carrega, o React mantém a tela anterior visível
+  // (no CI, um clique logo depois caía na tela antiga).
   const ready =
     path === "/"
       ? page.getByText(/^Gasto em /).filter({ visible: true }).first()
       : page.getByRole("heading", { level: 1, name, exact: true });
   await expect(ready).toBeVisible();
+}
+
+/**
+ * Navega só pela interface, como a pessoa faria, e falha se não houver caminho
+ * (nunca digita a URL: isso escondia caminhos quebrados).
+ * - Item no menu principal (barra lateral no desktop, barra inferior no celular): clica.
+ * - Celular, item de Ajustes: Início › engrenagem (Ajustes) › item.
+ * - Desktop, Ajustes: link na barra lateral.
+ */
+export async function go(page: Page, name: string, path: string) {
+  const inNav = page.getByRole("navigation", { name: "Navegação principal" }).getByRole("link", { name, exact: true }).filter({ visible: true });
+  if (await inNav.count()) {
+    await inNav.first().click();
+    return waitForScreen(page, name, path);
+  }
+  if (name !== "Ajustes" && !SETTINGS_ITEMS.includes(name)) throw new Error(`Sem caminho na interface para "${name}" (${path}).`);
+
+  // Ajustes: link na barra lateral (desktop) ou engrenagem do Início (celular).
+  const settingsLink = page.getByRole("link", { name: "Ajustes", exact: true }).filter({ visible: true });
+  if (!(await settingsLink.count())) await go(page, "Início", "/");
+  await settingsLink.first().click();
+  await waitForScreen(page, "Ajustes", "/ajustes");
+  if (name === "Ajustes") return;
+
+  const item = page.getByRole("link", { name: new RegExp(`^${name}`) }).filter({ visible: true });
+  await expect(item, `"${name}" deveria estar em Ajustes`).toHaveCount(1);
+  await item.click();
+  await waitForScreen(page, name, path);
+}
+
+/**
+ * Linha visível de lista ou tabela que contém `text` (ex.: a transação na lista),
+ * para conferir valor, categoria etc. na própria linha, não em qualquer lugar da página.
+ */
+export const row = (page: Page, text: string | RegExp) =>
+  page.getByRole("listitem").or(page.getByRole("row")).filter({ hasText: text }).filter({ visible: true }).first();
+
+/**
+ * Abre o cartão como a pessoa faria: no celular, toca no cartão (vai para a
+ * fatura); no desktop, escolhe o cartão na lista (abre o painel ao lado).
+ */
+export async function openCard(page: Page, name: string) {
+  if (isDesktop(page)) {
+    const option = page.getByRole("listbox", { name: "Seus cartões" }).getByRole("option").filter({ hasText: name });
+    await option.click();
+    await expect(option).toHaveAttribute("aria-selected", "true");
+  } else {
+    await page.getByLabel("Seus cartões").getByRole("link").filter({ hasText: name }).click();
+    await expect(page.getByRole("heading", { level: 1, name: `Fatura ${name}` })).toBeVisible();
+  }
+}
+
+/**
+ * Detalhe da transação aberto: folha "Detalhes" no celular; no desktop, o painel
+ * ao lado da lista (a página inteira, já que o painel não tem nome próprio).
+ */
+export async function detailOf(page: Page) {
+  if (isDesktop(page)) return page.getByRole("main");
+  const sheet = dialog(page, "Detalhes");
+  await expect(sheet).toBeVisible();
+  return sheet;
+}
+
+/** Fecha o detalhe no celular (no desktop o painel fica). */
+export async function closeDetail(page: Page) {
+  if (isDesktop(page)) return;
+  const sheet = dialog(page, "Detalhes");
+  await sheet.getByRole("button", { name: "Fechar" }).click();
+  await expect(sheet).toBeHidden();
 }
 
 /** Abre "Nova transação" pelo botão que estiver na tela (topo, "+" flutuante ou cabeçalho). */

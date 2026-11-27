@@ -155,6 +155,7 @@ test('pagar fatura registra o pagamento sem criar transação', async () => {
 test('apagar cartão com histórico arquiva; sem uso apaga', async () => {
   mock(prisma.card, 'findFirst', (async () => card) as AnyFn);
   mock(prisma.recurringRule, 'count', (async () => 0) as AnyFn);
+  mock(prisma.recurringRuleVersion, 'count', (async () => 0) as AnyFn);
   let deleted = false;
   let archivedAt: unknown;
   mock(prisma.card, 'delete', (async () => ((deleted = true), card)) as AnyFn);
@@ -165,7 +166,30 @@ test('apagar cartão com histórico arquiva; sem uso apaga', async () => {
   assert.ok(archivedAt instanceof Date);
   assert.equal(deleted, false);
 
+  // Recorrente que já foi paga com este cartão (versão antiga) também é histórico.
   mock(prisma.transaction, 'count', (async () => 0) as AnyFn);
+  mock(prisma.recurringRuleVersion, 'count', (async () => 1) as AnyFn);
+  assert.deepEqual(await (await send(`/cards/${card.id}`, 'DELETE')).json(), { archived: true });
+  assert.equal(deleted, false);
+
+  mock(prisma.recurringRuleVersion, 'count', (async () => 0) as AnyFn);
   assert.deepEqual(await (await send(`/cards/${card.id}`, 'DELETE')).json(), { deleted: true });
   assert.equal(deleted, true);
+});
+
+test('desarquivar (edição parcial) não troca a cor do cartão', async () => {
+  let data: Record<string, unknown> = {};
+  mock(prisma.card, 'findFirst', (async () => ({ ...card, color: 'laranja' })) as AnyFn);
+  mock(prisma.card, 'update', (async (args: { data: Record<string, unknown> }) => ((data = args.data), { ...card, color: 'laranja' })) as AnyFn);
+  assert.equal((await send(`/cards/${card.id}`, 'PUT', { archived: false })).status, 200);
+  assert.equal('color' in data, false);
+  assert.equal(data.archivedAt, null);
+});
+
+test('cartão novo sem cor ganha o verde padrão', async () => {
+  let data: Record<string, unknown> = {};
+  mock(prisma.card, 'create', (async (args: { data: Record<string, unknown> }) => ((data = args.data), { ...card })) as AnyFn);
+  const { color: _color, ...body } = { name: 'Vento', last4: '7730', limit: 3000, closingDay: 2, dueDay: 10, color: 'azul' };
+  assert.equal((await send('/cards', 'POST', body)).status, 201);
+  assert.equal(data.color, 'verde');
 });

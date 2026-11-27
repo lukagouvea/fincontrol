@@ -16,8 +16,13 @@ const cardSchema = z.object({
   limit: z.number().positive('O limite deve ser maior que zero'),
   closingDay: z.number().int().min(1).max(31),
   dueDay: z.number().int().min(1).max(31),
-  color: z.enum(CARD_COLORS).default('verde'),
+  color: z.enum(CARD_COLORS),
 });
+
+// O padrão da cor fica só na criação: com `.default()` no schema base, o
+// `.partial()` da atualização também o aplicaria e trocaria a cor em qualquer
+// edição que não a enviasse (ex.: { archived: false }).
+const createSchema = cardSchema.extend({ color: cardSchema.shape.color.default('verde') });
 
 const updateSchema = cardSchema.partial().extend({
   // false desarquiva.
@@ -69,7 +74,7 @@ app.get('/', async (c) => {
   return c.json(cards.map(formatCard));
 });
 
-app.post('/', zValidator('json', cardSchema), async (c) => {
+app.post('/', zValidator('json', createSchema), async (c) => {
   const body = c.req.valid('json');
   const card = await prisma.card.create({
     data: { ...body, userId: c.var.userId },
@@ -100,11 +105,13 @@ app.delete('/:id', async (c) => {
   const userId = c.var.userId;
   const existing = await findOwn(userId, c.req.param('id'));
   if (!existing) return c.json({ error: 'Cartão não encontrado' }, 404);
-  const [transactions, rules] = await Promise.all([
+  // Recorrente que já passou por este cartão (versão antiga) também é histórico.
+  const [transactions, rules, ruleVersions] = await Promise.all([
     prisma.transaction.count({ where: { cardId: existing.id } }),
     prisma.recurringRule.count({ where: { cardId: existing.id } }),
+    prisma.recurringRuleVersion.count({ where: { cardId: existing.id } }),
   ]);
-  if (transactions === 0 && rules === 0 && existing.payments.length === 0) {
+  if (transactions === 0 && rules === 0 && ruleVersions === 0 && existing.payments.length === 0) {
     await prisma.card.delete({ where: { id: existing.id } });
     return c.json({ deleted: true });
   }

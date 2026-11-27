@@ -19,8 +19,8 @@ const nov26 = monthIndex(2026, 10);
 const dec26 = monthIndex(2026, 11);
 const jan27 = monthIndex(2027, 0);
 
-const v = (effectiveFrom: number, amount: number, dayOfMonth = 10, categoryId: string | null = 'cat-a'): Version =>
-  ({ effectiveFrom, amount, dayOfMonth, categoryId });
+const v = (effectiveFrom: number, amount: number, dayOfMonth = 10, categoryId: string | null = 'cat-a', cardId: string | null = null): Version =>
+  ({ effectiveFrom, amount, dayOfMonth, categoryId, cardId });
 
 test('versionForMonth usa a versão mais recente já vigente', () => {
   const versions = [v(jan26, 1500), v(dec26, 1650)];
@@ -58,6 +58,19 @@ test('"a partir de" aplica só os campos alterados nas versões posteriores', ()
     v(jan26, 1500),
     v(oct26, 1600),
   ]);
+});
+
+test('trocar o cartão "a partir de" mantém a forma de pagamento dos meses anteriores', () => {
+  // Netflix À vista desde jan; passa para o cartão em dez: até nov continua À vista.
+  const result = planVersions([v(jan26, 39.9)], { cardId: 'card-roxo' }, 'from', dec26, jan26);
+  assert.deepEqual(result, [v(jan26, 39.9), v(dec26, 39.9, 10, 'cat-a', 'card-roxo')]);
+  assert.equal(versionForMonth(result, nov26).cardId, null);
+  assert.equal(versionForMonth(result, jan27).cardId, 'card-roxo');
+});
+
+test('mesmo cartão enviado de novo não cria versão', () => {
+  const versions = [v(jan26, 39.9, 10, 'cat-a', 'card-roxo')];
+  assert.deepEqual(planVersions(versions, { cardId: 'card-roxo' }, 'from', dec26, jan26), versions);
 });
 
 test('mudança de dia a partir de um mês mantém o dia antigo antes dele', () => {
@@ -191,4 +204,45 @@ test('PUT recusa effectiveFrom fora do formato YYYY-MM', async () => {
     body: JSON.stringify({ amount: 1650, effectiveFrom: '12/2026' }),
   });
   assert.equal(res.status, 400);
+});
+
+test('PUT trocando o cartão "a partir de" grava a versão nova e as faturas antigas ficam À vista', async () => {
+  const card = '44444444-4444-4444-8444-444444444444';
+  const rule = {
+    id: 'rule-2', userId, description: 'Streaming', type: 'expense', amount: 39.9, categoryId: 'cat-a', dayOfMonth: 10,
+    startDate: new Date('2025-01-01T03:00:00Z'), endDate: null, cardId: null, pausedFrom: null, pausedUntil: null, category: null,
+    versions: [{ id: 'v1', effectiveFrom: new Date('2025-01-01T00:00:00Z'), amount: 39.9, categoryId: 'cat-a', dayOfMonth: 10, cardId: null, category: null }],
+  };
+  const upserts: Array<{ create: { effectiveFrom: Date; cardId: string | null } }> = [];
+  let ruleData: { cardId?: string | null } = {};
+  const tx = {
+    recurringRule: {
+      update: async (args: { data: { cardId?: string | null } }) => { ruleData = args.data; },
+      findUniqueOrThrow: async () => rule,
+    },
+    recurringRuleVersion: { deleteMany: async () => {}, upsert: async (args: (typeof upserts)[number]) => { upserts.push(args); } },
+    transaction: { findMany: async () => [], update: async () => {} },
+  };
+  const originalCard = prisma.card.findFirst;
+  prisma.card.findFirst = (async () => ({ id: card })) as unknown as typeof prisma.card.findFirst;
+  prisma.recurringRule.findFirst = (async () => rule) as unknown as typeof prisma.recurringRule.findFirst;
+  prisma.$transaction = (async (fn: (t: typeof tx) => unknown) => fn(tx)) as unknown as typeof prisma.$transaction;
+  try {
+    const res = await recurringRoute.request('/rule-2', {
+      method: 'PUT',
+      headers: { Cookie: cookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cardId: card, scope: 'from', effectiveFrom: '2026-12' }),
+    });
+    assert.equal(res.status, 200);
+  } finally {
+    prisma.card.findFirst = originalCard;
+  }
+  assert.deepEqual(
+    upserts.map((u) => [u.create.effectiveFrom.toISOString().slice(0, 7), u.create.cardId]),
+    [['2025-01', null], ['2026-12', card]],
+  );
+  // A coluna da regra espelha a versão vigente hoje (antes de dez/2026: À vista).
+  const today = new Date();
+  const expected = today >= new Date('2026-12-01T00:00:00Z') ? card : null;
+  assert.equal(ruleData.cardId, expected);
 });

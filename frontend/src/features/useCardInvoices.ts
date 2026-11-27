@@ -49,11 +49,12 @@ export function cardCharges(
   const now = new Date();
   const end = monthIndex(now.getFullYear(), now.getMonth());
   for (const { item, type } of rules) {
-    if (item.cardId !== card.id) continue;
     for (let index = end - RECURRING_LOOKBACK; index <= end; index += 1) {
       const { year, month } = fromMonthIndex(index);
       const resolved = resolveFixedItemForMonth(item, type, year, month, variations);
-      if (!resolved) continue;
+      // Só os meses em que a recorrente era paga com este cartão (versão vigente):
+      // mudar a forma de pagamento não reescreve faturas passadas.
+      if (!resolved || resolved.cardId !== card.id) continue;
       const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(resolved.occurrenceDay).padStart(2, "0")}`;
       if (date > today) continue; // ainda não foi cobrada
       charges.push({

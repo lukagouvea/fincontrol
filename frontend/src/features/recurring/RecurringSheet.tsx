@@ -62,7 +62,8 @@ export function RecurringSheet({
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState<number | null>(null);
   const [day, setDay] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  // Categoria escolhida; a usada é `categoryId`, abaixo (cai na primeira do tipo se não valer).
+  const [chosenCategoryId, setCategoryId] = useState("");
   const [cardId, setCardId] = useState("");
   const cardsQuery = useCards();
   const [start, setStart] = useState("");
@@ -94,24 +95,24 @@ export function RecurringSheet({
   }, [state]);
 
   const categories = useMemo(
-    () => (categoriesQuery.data ?? []).filter((c) => c.type === type && (c.active !== false || c.id === categoryId)),
-    [categoriesQuery.data, type, categoryId],
+    () => (categoriesQuery.data ?? []).filter((c) => c.type === type && (c.active !== false || c.id === chosenCategoryId)),
+    [categoriesQuery.data, type, chosenCategoryId],
   );
-  // Categoria padrão. Atualização funcional: lê o valor já inicializado pelo
-  // efeito acima, mesmo que os dois rodem no mesmo ciclo.
-  useEffect(() => {
-    if (!state || !categories.length) return;
-    setCategoryId((current) => (categories.some((c) => c.id === current) ? current : categories[0].id));
-  }, [state, categories]);
+  // Categoria padrão: a primeira do tipo, quando nenhuma (válida) foi escolhida.
+  // Derivada na renderização: um efeito rodava no instante em que a folha abria
+  // ainda com o tipo anterior e trocava a categoria salva (igual à TransactionSheet).
+  const categoryId = categories.some((c) => c.id === chosenCategoryId) ? chosenCategoryId : categories[0]?.id ?? "";
 
   const changed = editing
     ? {
         amount: amount !== editing.amount,
         categoryId: categoryId !== (editing.categoryId ?? ""),
         day: Number(day) !== editing.day,
+        cardId: (type === "expense" && cardId ? cardId : null) !== (editing.cardId ?? null),
       }
-    : { amount: false, categoryId: false, day: false };
-  const versionedChanged = changed.amount || changed.categoryId || changed.day;
+    : { amount: false, categoryId: false, day: false, cardId: false };
+  // A forma de pagamento também tem histórico: trocar de cartão pergunta "a partir de quando".
+  const versionedChanged = changed.amount || changed.categoryId || changed.day || changed.cardId;
   const replacesAdjustments = scope === "all" && changed.amount && (editing?.versions?.length ?? 0) > 1;
 
   const now = monthIndex(new Date().getFullYear(), new Date().getMonth());
@@ -132,8 +133,8 @@ export function RecurringSheet({
         type,
         startDate: dateKeyToIso(start),
         endDate: ends === "date" && end ? dateKeyToIso(end) : null,
-        cardId: type === "expense" && cardId ? cardId : null,
       };
+      const payment = type === "expense" && cardId ? cardId : null;
       if (editing) {
         // Valor, categoria e dia têm histórico: só os que mudaram vão, para não
         // sobrescrever os outros nos meses afetados.
@@ -143,11 +144,13 @@ export function RecurringSheet({
           ...(changed.amount && { amount: amount! }),
           ...(changed.categoryId && { categoryId }),
           ...(changed.day && { day: Number(day) }),
+          // Só se mudou: reenviar o mesmo cartão com "corrigir todo o histórico" apagaria trocas antigas.
+          ...(changed.cardId && { cardId: payment }),
           ...(versionedChanged && { scope, ...(scope === "from" && { effectiveFrom: from }) }),
         } as never);
       }
       const create = fixedTransactionService[type === "income" ? "createIncome" : "createExpense"];
-      return create({ ...base, amount: amount!, categoryId, day: Number(day) } as never);
+      return create({ ...base, amount: amount!, categoryId, day: Number(day), cardId: payment } as never);
     },
     onSuccess: invalidate,
   });

@@ -90,7 +90,7 @@ model RecurringRule {
   startDate    DateTime      @map("start_date")
   endDate      DateTime?     @map("end_date")
   active       Boolean?      @default(true)
-  // Forma de pagamento da regra inteira (não é versionada). null = À vista.
+  // Espelho da forma de pagamento da versão vigente hoje (a fonte é a versão). null = À vista.
   cardId       String?       @map("card_id") @db.Uuid
   // Pausa: não lança de pausedFrom até pausedUntil (meses, dia 1, inclusive).
   pausedFrom   DateTime?     @map("paused_from") @db.Date
@@ -117,9 +117,12 @@ model RecurringRuleVersion {
   amount        Decimal       @db.Decimal(12, 2)
   categoryId    String?       @map("category_id") @db.Uuid
   dayOfMonth    Int           @map("day_of_month")
+  // Forma de pagamento a partir deste mês. null = À vista.
+  cardId        String?       @map("card_id") @db.Uuid
   createdAt     DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
 
   rule          RecurringRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  card          Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@unique([ruleId, effectiveFrom], map: "unique_recurring_version_month")
@@ -185,6 +188,7 @@ model Card {
   transactions      Transaction[]
   installmentGroups InstallmentGroup[]
   recurringRules    RecurringRule[]
+  ruleVersions      RecurringRuleVersion[]
   payments          InvoicePayment[]
   importBatches     ImportBatch[]
 

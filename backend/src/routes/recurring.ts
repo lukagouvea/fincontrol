@@ -31,7 +31,7 @@ const recurringSchema = z.object({
   categoryId: z.uuid().optional().or(z.literal('')), // Pode vir vazio
   startDate: z.iso.datetime(), // Front manda ISO
   endDate: z.iso.datetime().optional().or(z.literal('')).nullable(), // Pode vir vazio
-  // Forma de pagamento da regra inteira (não versionada). null = À vista.
+  // Forma de pagamento (versionada como valor/categoria/dia). null = À vista.
   cardId: z.uuid().nullable().optional(),
   // Pausa por meses ('YYYY-MM', inclusive). null remove a pausa.
   pausedFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable().optional(),
@@ -39,7 +39,7 @@ const recurringSchema = z.object({
 });
 
 const updateSchema = recurringSchema.partial().extend({
-  // 'from': valor/categoria/dia valem a partir de `effectiveFrom`.
+  // 'from': valor/categoria/dia/cartão valem a partir de `effectiveFrom`.
   // 'all': corrige todo o histórico.
   scope: z.enum(['from', 'all']).default('from'),
   effectiveFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM').optional(),
@@ -60,6 +60,7 @@ type DbVersion = {
   amount: unknown;
   categoryId: string | null;
   dayOfMonth: number;
+  cardId: string | null;
   category?: { id: string; name: string; color: string | null } | null;
 };
 
@@ -85,6 +86,7 @@ const toVersion = (v: DbVersion): Version & { id?: string; category?: DbVersion[
   amount: Number(v.amount),
   categoryId: v.categoryId,
   dayOfMonth: v.dayOfMonth,
+  cardId: v.cardId,
   category: v.category,
 });
 
@@ -97,6 +99,7 @@ const versionsOf = (rule: RuleWithVersions) =>
         amount: Number(rule.amount),
         categoryId: rule.categoryId,
         dayOfMonth: rule.dayOfMonth,
+        cardId: rule.cardId,
         category: rule.category,
       }];
 
@@ -126,7 +129,8 @@ const formatRule = (rule: RuleWithVersions) => {
     day: current.dayOfMonth, // Banco (day_of_month) -> Front (day)
     startDate: rule.startDate.toISOString(),
     endDate: rule.endDate?.toISOString(),
-    cardId: rule.cardId,
+    // Forma de pagamento vigente no mês de referência (cada mês usa a da sua versão).
+    cardId: current.cardId,
     pausedFrom: rule.pausedFrom ? rule.pausedFrom.toISOString().slice(0, 7) : null,
     pausedUntil: rule.pausedUntil ? rule.pausedUntil.toISOString().slice(0, 7) : null,
     categoryId: current.categoryId,
@@ -137,6 +141,7 @@ const formatRule = (rule: RuleWithVersions) => {
       amount: v.amount,
       categoryId: v.categoryId,
       day: v.dayOfMonth,
+      cardId: v.cardId,
     })),
   };
 };
@@ -156,6 +161,7 @@ async function writeVersions(tx: Tx, ruleId: string, desired: Version[]) {
       amount: v.amount,
       categoryId: v.categoryId,
       dayOfMonth: v.dayOfMonth,
+      cardId: v.cardId,
     };
     await tx.recurringRuleVersion.upsert({
       where: {
@@ -342,6 +348,7 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
             amount: body.amount,
             categoryId,
             dayOfMonth: body.day,
+            cardId: body.cardId ?? null,
           },
         },
       },
@@ -391,6 +398,8 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
       amount: body.amount,
       categoryId: body.categoryId === '' ? null : body.categoryId,
       dayOfMonth: body.day,
+      // Trocar o cartão vale a partir do mês escolhido: as faturas antigas ficam como estavam.
+      cardId: body.cardId,
     },
     body.scope,
     body.effectiveFrom ? parseMonthKey(body.effectiveFrom) : currentMonthIndex(),
@@ -407,7 +416,7 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
           description,
           startDate,
           endDate,
-          cardId: body.cardId,
+          cardId: current.cardId,
           ...(body.pausedFrom !== undefined && { pausedFrom: body.pausedFrom ? new Date(`${body.pausedFrom}-01T00:00:00Z`) : null }),
           ...(body.pausedUntil !== undefined && { pausedUntil: body.pausedUntil ? new Date(`${body.pausedUntil}-01T00:00:00Z`) : null }),
           amount: current.amount,

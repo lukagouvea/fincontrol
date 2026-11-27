@@ -32,6 +32,8 @@ export interface FixedVersion {
   amount: number;
   categoryId: string | null;
   day: number;
+  /** Forma de pagamento a partir deste mês (null = À vista). Ausente em respostas antigas. */
+  cardId?: string | null;
 }
 
 export interface FixedTransaction extends TransactionBase {

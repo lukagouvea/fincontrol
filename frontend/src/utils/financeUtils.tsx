@@ -53,6 +53,7 @@ type FixedItemLike = {
   endDate?: string | null;
   amount?: number;
   categoryId?: string | null;
+  cardId?: string | null;
   versions?: FixedVersion[];
 };
 
@@ -60,6 +61,8 @@ export type FixedItemValues = {
   amount: number;
   categoryId: string | null;
   day: number;
+  /** Forma de pagamento vigente no mês (null = À vista). */
+  cardId: string | null;
 };
 
 const monthIndex = (year: number, month: number) => year * 12 + month;
@@ -88,6 +91,7 @@ export const getFixedItemVersion = (
     amount: item.amount ?? 0,
     categoryId: item.categoryId ?? null,
     day: item.day,
+    cardId: item.cardId ?? null,
   };
   if (!item.versions?.length) return fallback;
   const target = monthIndex(year, month);
@@ -99,7 +103,9 @@ export const getFixedItemVersion = (
     if (versionMonthIndex(v.effectiveFrom) <= target) current = v;
     else break;
   }
-  return { amount: current.amount, categoryId: current.categoryId ?? null, day: current.day };
+  // Versões de antes do cartão versionado não trazem cardId: usa o da regra.
+  const cardId = current.cardId === undefined ? fallback.cardId : current.cardId ?? null;
+  return { amount: current.amount, categoryId: current.categoryId ?? null, day: current.day, cardId };
 };
 
 export const getActualFixedItemAmount = (

@@ -108,7 +108,8 @@ export function buildMonthLedger(input: LedgerInput): LedgerEntry[] {
         categoryId: resolved.categoryId,
         date,
         upcoming: date > today,
-        cardId: item.cardId ?? null,
+        // Forma de pagamento da versão vigente neste mês (trocar de cartão vale daqui pra frente).
+        cardId: resolved.cardId,
         recurring: {
           ruleId: item.id,
           day: resolved.day,

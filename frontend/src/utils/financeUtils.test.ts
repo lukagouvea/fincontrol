@@ -111,11 +111,13 @@ describe("histórico de versões das fixas", () => {
       amount: 1650,
       categoryId: "cat-a",
       day: 10,
+      cardId: null,
     });
     expect(getFixedItemVersion(rent, 2027, 0)).toEqual({
       amount: 1650,
       categoryId: "cat-b",
       day: 15,
+      cardId: null,
     });
   });
 
@@ -149,6 +151,7 @@ describe("histórico de versões das fixas", () => {
       amount: 99,
       categoryId: "c",
       day: 5,
+      cardId: null,
     });
     expect(resolveFixedItemForMonth(item, "expense", 2026, 1, [])).toBeNull();
   });

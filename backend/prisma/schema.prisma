@@ -26,6 +26,8 @@ model User {
   cards             Card[]
   invoicePayments   InvoicePayment[]
   budgetLimits      BudgetLimit[]
+  goals             Goal[]
+  goalContributions GoalContribution[]
 
   @@map("users")
 }
@@ -243,4 +245,39 @@ model BudgetLimit {
   @@unique([categoryId, month], map: "unique_budget_limit_month")
   @@index([userId, month], map: "idx_budget_limits_user_month")
   @@map("budget_limits")
+}
+
+// Meta de economia. O "já guardado" é a soma das contribuições.
+model Goal {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  name      String    @db.VarChar(80)
+  target    Decimal   @db.Decimal(12, 2)
+  // Mês do prazo (dia 1); opcional.
+  deadline  DateTime? @db.Date
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contributions GoalContribution[]
+
+  @@index([userId], map: "idx_goals_user")
+  @@map("goals")
+}
+
+// "Guardar na meta" (valor positivo) ou "Retirar" (negativo).
+model GoalContribution {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  goalId    String    @map("goal_id") @db.Uuid
+  amount    Decimal   @db.Decimal(12, 2)
+  date      DateTime
+  // Mês fechado de onde veio a sobra (Fechamento do mês), quando for o caso.
+  sourceMonth DateTime? @map("source_month") @db.Date
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([goalId, date], map: "idx_goal_contributions_goal_date")
+  @@map("goal_contributions")
 }

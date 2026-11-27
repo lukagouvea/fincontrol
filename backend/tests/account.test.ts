@@ -63,7 +63,8 @@ test('apagar todos os dados exige digitar APAGAR e mantém conta, categorias e c
   }
   mock(prisma, '$transaction', (async (ops: Promise<unknown>[]) => Promise.all(ops)) as AnyFn);
   assert.equal((await send('/me/wipe', 'POST', { confirm: 'apagar' })).status, 400);
-  assert.deepEqual(deleted, []);
+  // length em vez de deepEqual(deleted, []): deepEqual estreita o tipo para never[].
+  assert.equal(deleted.length, 0);
   assert.equal((await send('/me/wipe', 'POST', { confirm: 'APAGAR' })).status, 200);
   assert.ok(!deleted.includes('category') && !deleted.includes('card'));
   assert.equal(deleted.length, 7);

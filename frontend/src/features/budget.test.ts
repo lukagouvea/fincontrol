@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { burndown, fixedExpenses, limitForMonth, monthLimits, weekOf, weekStatus, weeksOfMonth } from "./budget";
+import { burndown, fixedExpenses, limitForMonth, monthLimits, monthVariableTotal, paceReference, weekOf, weekStatus, weeksOfMonth } from "./budget";
 import type { LedgerEntry } from "./ledger";
 import type { BudgetLimit } from "../types/FinanceTypes";
 import { isItemActiveInMonth } from "../utils/financeUtils";
@@ -93,6 +93,42 @@ describe("burndown", () => {
     const first = burndown(100, entries, "2026-11-01", "2026-11-04", "2026-11-01");
     expect(first.forecast).toBeNull();
     expect(first.points.every((p) => p.projection === null)).toBe(true);
+  });
+});
+
+describe("referência dos gráficos de ritmo", () => {
+  const rent = entry("2026-11-05", 1500, { source: "recurring" });
+  const salary = entry("2026-11-05", 5000, { type: "income", source: "recurring", upcoming: true });
+  const coffee = entry("2026-11-03", 20);
+
+  it("com orçamento no mês, usa orçamento − fixas", () => {
+    expect(paceReference(3000, [rent, salary, coffee], [2000])).toEqual({ kind: "budget", amount: 1500 });
+  });
+
+  it("sem orçamento, usa a renda do mês inteiro (inclusive a prevista) − fixas", () => {
+    expect(paceReference(0, [rent, salary, coffee], [2000])).toEqual({ kind: "income", amount: 3500 });
+  });
+
+  it("sem orçamento e sem sobra de renda, usa a mediana dos meses anteriores com gasto", () => {
+    const small = entry("2026-11-05", 1000, { type: "income" });
+    expect(paceReference(0, [rent, small], [2000, 0, 3000])).toEqual({ kind: "typical", amount: 2500 });
+    expect(paceReference(0, [coffee], [2000, 4000, 3000])).toEqual({ kind: "typical", amount: 3000 });
+  });
+
+  it("sem orçamento, renda nem histórico, não há referência", () => {
+    expect(paceReference(0, [coffee], [0, 0, 0])).toBeNull();
+    expect(paceReference(0, [], [])).toBeNull();
+  });
+
+  it("gasto variável do mês conta parcelas, mas não recorrentes, receitas e outros meses", () => {
+    const entries = [
+      entry("2026-10-03", 20),
+      entry("2026-10-09", 300, { installment: { current: 1, total: 3, groupId: null } }),
+      entry("2026-10-05", 1500, { source: "recurring" }),
+      entry("2026-10-05", 5000, { type: "income" }),
+      entry("2026-11-01", 99),
+    ];
+    expect(monthVariableTotal(entries, "2026-10")).toBe(320);
   });
 });
 

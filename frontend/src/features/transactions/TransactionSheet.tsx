@@ -240,7 +240,6 @@ export function TransactionSheet({
               onValueChange={setAmount}
               invalid={!!errors.amount}
               aria-describedby={errors.amount ? `${formId}-amount-error` : undefined}
-              className={type === "expense" ? "caret-expense" : "caret-income"}
             />
             {errors.amount && (
               <p id={`${formId}-amount-error`} className="text-[13px] text-expense">

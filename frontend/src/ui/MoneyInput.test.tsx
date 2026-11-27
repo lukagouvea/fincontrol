@@ -60,6 +60,14 @@ describe("valor no modo decimal (padrão)", () => {
 });
 
 describe("valor no modo centavos", () => {
+  it("esconde o cursor, que só pode ficar no fim (no modo decimal ele aparece)", () => {
+    const { unmount } = render(<Harness mode="cents" />);
+    expect(screen.getByLabelText("Valor")).toHaveClass("caret-transparent");
+    unmount();
+    render(<Harness />);
+    expect(screen.getByLabelText("Valor")).not.toHaveClass("caret-transparent");
+  });
+
   it("dígitos entram pela direita", async () => {
     render(<Harness mode="cents" />);
     const user = userEvent.setup();

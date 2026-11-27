@@ -11,5 +11,8 @@ export const ProtectedRoute: React.FC = () => {
     return <LoadingCard label="Carregando sua conta…" />;
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/entrar" replace state={{ from: location.pathname + location.search }} />;
+  if (isAuthenticated) return <Outlet />;
+  // Quem abre o app sem sessão vê as boas-vindas; links internos levam ao login.
+  if (location.pathname === "/" && !location.search) return <Navigate to="/boas-vindas" replace />;
+  return <Navigate to="/entrar" replace state={{ from: location.pathname + location.search }} />;
 };

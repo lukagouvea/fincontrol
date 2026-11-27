@@ -16,7 +16,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export const monthKeyOf = (year: number, month: number) => `${year}-${pad(month + 1)}`;
 
 /** Limite de uma categoria num mês: o do próprio mês ou o último repetido antes dele. */
-export function limitForMonth(records: BudgetLimit[], categoryId: string, month: string): number | null {
+export function limitForMonth(records: BudgetLimit[], categoryId: string | null, month: string): number | null {
   let found: BudgetLimit | undefined;
   for (const record of records) {
     if (record.categoryId !== categoryId) continue;
@@ -26,10 +26,10 @@ export function limitForMonth(records: BudgetLimit[], categoryId: string, month:
   return found ? found.amount : null;
 }
 
-/** Limites do mês (só categorias com limite) e o total. */
+/** Limites do mês (só categorias com limite, e o "Geral" com chave null) e o total. */
 export function monthLimits(records: BudgetLimit[], categoryIds: string[], month: string) {
-  const limits = new Map<string, number>();
-  for (const id of categoryIds) {
+  const limits = new Map<string | null, number>();
+  for (const id of [null, ...categoryIds]) {
     const limit = limitForMonth(records, id, month);
     if (limit !== null && limit > 0) limits.set(id, limit);
   }

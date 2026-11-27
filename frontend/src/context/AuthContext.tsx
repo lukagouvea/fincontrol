@@ -20,6 +20,8 @@ type AuthContextType = {
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  /** Marca a configuração inicial como concluída (sem recarregar o usuário). */
+  markOnboarded: (at: string) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       login,
       signup,
       logout,
+      markOnboarded: (at: string) => setCurrentUser((user) => (user ? { ...user, onboardingCompletedAt: at } : user)),
     }),
     [currentUser, isAuthenticated, isLoading, sessionVersion, isCurrentSession],
   );

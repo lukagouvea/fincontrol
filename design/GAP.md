@@ -180,3 +180,11 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Sem ícone por meta:** o design não mostra ícone, então a meta não tem esse campo.
 - **Pendente para a fase 3i (alertas):** o "Lembrar de guardar todo mês".
 - **Onde aparecem:** a tela Metas pode ser aberta pelo Início (atalho no mobile, cartão no desktop) e por Ajustes.
+
+### Fase 3e: primeiro uso (concluída)
+- **Fluxo:** quem abre o app sem sessão vê as boas-vindas. Depois vem criar conta e a configuração inicial em dois passos, primeiro cartão e orçamento mensal, ambos puláveis. No fim, o Início mostra o checklist "Comece por aqui".
+- **Contas existentes** são marcadas como já configuradas na migração (`onboarding_completed_at`) e não veem o fluxo.
+- **Categorias padrão (decisão, não está no design):** uma conta nova não tinha nenhuma categoria e o formulário de transação exige uma. Ao concluir a configuração, se não houver categorias, são criadas as despesas Moradia, Alimentação, Transporte, Lazer, Saúde, Assinaturas e Outros, e as receitas Salário e Extras, já com ícones.
+- **Limite "Geral" (decisão):** o passo 2 pede um orçamento total, que o usuário divide por categoria depois, mas no nosso modelo o total é a soma dos limites. O valor informado vira um limite sem categoria, "Geral", que entra na soma e cobre os gastos das categorias sem limite próprio. Em Orçamento, ele aparece como a linha "Geral", que pode ser reduzida conforme o orçamento é dividido.
+- **Checklist:** some quando os quatro itens estão feitos, 30 dias depois da configuração ou ao tocar em "Dispensar".
+- **Pendente:** a coluna `tutorial_completed` e a rota `/users/tutorial-status` saem na limpeza da fase 3i, junto com o investimento.

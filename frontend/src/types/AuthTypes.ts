@@ -3,6 +3,9 @@ export type User = {
   name: string;
   email: string;
   tutorialCompleted?: boolean;
+  /** ISO; null = ainda não fez a configuração inicial. */
+  onboardingCompletedAt?: string | null;
+  createdAt?: string;
   token?: string; // Futuro JWT
 };
 

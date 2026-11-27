@@ -210,7 +210,8 @@ export function SignupPage() {
     setError("");
     try {
       await signup({ name: name.trim(), email: email.trim(), password });
-      navigate(target, { replace: true });
+      // Conta nova passa pela configuração inicial (cartão e orçamento).
+      navigate("/configurar", { replace: true });
     } catch (cause) {
       setError(
         statusOf(cause) === 409

@@ -8,7 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ProtectedRoute } from "./app/ProtectedRoute";
 import { TransactionEditorProvider } from "./app/TransactionEditor";
@@ -40,6 +40,8 @@ const Goals = named(() => import("./pages/Goals"), "Goals");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
+const Welcome = named(() => import("./pages/Onboarding/Welcome"), "Welcome");
+const Setup = named(() => import("./pages/Onboarding/Setup"), "Setup");
 const ComingSoon = lazy(() =>
   import("./pages/ComingSoon").then((m) => ({ default: m.ComingSoon })),
 );
@@ -64,8 +66,16 @@ function LegacyEntries() {
   return <Navigate replace to={query ? `${to}?${query}` : to} />;
 }
 
+/** Conta nova ainda sem configuração inicial vai para /configurar. */
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const { currentUser } = useAuth();
+  if (currentUser && currentUser.onboardingCompletedAt === null) return <Navigate to="/configurar" replace />;
+  return <>{children}</>;
+}
+
 function ShellLayout() {
   return (
+    <OnboardingGate>
     <MonthProvider>
       <PendingDeletesProvider>
         <TransactionEditorProvider>
@@ -73,6 +83,7 @@ function ShellLayout() {
         </TransactionEditorProvider>
       </PendingDeletesProvider>
     </MonthProvider>
+    </OnboardingGate>
   );
 }
 
@@ -114,11 +125,13 @@ export function App() {
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Suspense fallback={<PageFallback />}>
                   <Routes>
+                    <Route path="/boas-vindas" element={<Welcome />} />
                     <Route path="/entrar" element={<LoginPage />} />
                     <Route path="/criar-conta" element={<SignupPage />} />
                     <Route path="/login" element={<Navigate replace to="/entrar" />} />
                     <Route path="/signup" element={<Navigate replace to="/criar-conta" />} />
                     <Route element={<ProtectedRoute />}>
+                      <Route path="/configurar" element={<Setup />} />
                       <Route element={<ShellLayout />}>
                         <Route
                           element={

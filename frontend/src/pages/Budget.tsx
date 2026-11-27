@@ -27,21 +27,25 @@ import { CategoryIcon } from "../ui/CategoryIcon";
 import { useToast } from "../ui/Toast";
 import { inputClass } from "../ui/Field";
 
+/** Chave do rascunho: o limite "Geral" não tem categoria. */
+const rowKey = (id: string | null) => id ?? "geral";
+const GENERAL_NAME = "Geral";
+
 /** Rascunho dos limites (texto do campo + número) por categoria. */
 function useLimitDraft(rows: CategoryBudget[], resetKey: string) {
   const [values, setValues] = useState<Record<string, { text?: string; value: number | null }>>({});
   useEffect(() => {
-    setValues(Object.fromEntries(rows.map((row) => [row.categoryId, { text: row.limit ? String(row.limit).replace(".", ",") : undefined, value: row.limit }])));
+    setValues(Object.fromEntries(rows.map((row) => [rowKey(row.categoryId), { text: row.limit ? String(row.limit).replace(".", ",") : undefined, value: row.limit }])));
     // Reinicia ao trocar de mês ou quando os dados salvos mudam.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
   const total = fromCents(Object.values(values).reduce((sum, item) => sum + (item.value && item.value > 0 ? toCents(item.value) : 0), 0));
-  const dirty = rows.some((row) => (values[row.categoryId]?.value ?? null) !== row.limit);
+  const dirty = rows.some((row) => (values[rowKey(row.categoryId)]?.value ?? null) !== row.limit);
   const payload = rows.map((row) => {
-    const value = values[row.categoryId]?.value ?? null;
+    const value = values[rowKey(row.categoryId)]?.value ?? null;
     return { categoryId: row.categoryId, amount: value && value > 0 ? value : null };
   });
-  const set = (id: string, text: string | undefined, value: number | null) => setValues((current) => ({ ...current, [id]: { text, value } }));
+  const set = (id: string | null, text: string | undefined, value: number | null) => setValues((current) => ({ ...current, [rowKey(id)]: { text, value } }));
   return { values, set, total, dirty, payload };
 }
 
@@ -75,7 +79,7 @@ export function Budget() {
   const nextName = monthNames[fromMonthIndex(monthIndex(year, month) + 1).month].toLowerCase();
 
   // Edição mostra só categorias ativas (ou com limite); a lista, todas com gasto ou limite.
-  const editable = (budget.data?.categories ?? []).filter((row) => category(row.categoryId)?.active !== false || row.limit !== null);
+  const editable = (budget.data?.categories ?? []).filter((row) => row.categoryId === null || category(row.categoryId)?.active !== false || row.limit !== null);
   const draft = useLimitDraft(editable, `${year}-${month}-${JSON.stringify(editable.map((row) => [row.categoryId, row.limit]))}`);
 
   const submit = async () => {
@@ -135,14 +139,14 @@ export function Budget() {
         {editable.map((row) => {
           const cat = category(row.categoryId);
           return (
-            <li key={row.categoryId} className="flex min-h-16 items-center justify-between gap-3 border-b border-border">
+            <li key={rowKey(row.categoryId)} className="flex min-h-16 items-center justify-between gap-3 border-b border-border">
               <span className="flex min-w-0 items-center gap-3">
                 <CategoryIcon category={cat} />
-                <span className="truncate text-[15px] font-semibold">{cat?.name}</span>
+                <span className="truncate text-[15px] font-semibold">{cat?.name ?? GENERAL_NAME}</span>
               </span>
               <LimitInput
-                label={`Limite de ${cat?.name}`}
-                text={draft.values[row.categoryId]?.text}
+                label={`Limite de ${cat?.name ?? GENERAL_NAME}`}
+                text={draft.values[rowKey(row.categoryId)]?.text}
                 onChange={(text, value) => draft.set(row.categoryId, text, value)}
                 className="!w-40"
               />
@@ -192,7 +196,7 @@ export function Budget() {
       {desktop && (
         <p className="text-[13px] text-muted">
           {over.length
-            ? `${category(over[0].categoryId)?.name} passou ${formatMoney(over[0].spent - (over[0].limit ?? 0))} do limite. Considere ajustar ou mover de outra categoria.`
+            ? `${over[0].categoryId ? category(over[0].categoryId)?.name : GENERAL_NAME} passou ${formatMoney(over[0].spent - (over[0].limit ?? 0))} do limite. Considere ajustar ou mover de outra categoria.`
             : `Orçamento variável: ${formatMoney(data.variable)} (sem as recorrentes fixas de ${formatMoney(data.fixed)}).`}
         </p>
       )}
@@ -214,7 +218,7 @@ export function Budget() {
         </div>
         <ul className="flex flex-col gap-4">
           {withLimit.map((row) => (
-            <LimitRow key={row.categoryId} row={row} category={category} />
+            <LimitRow key={rowKey(row.categoryId)} row={row} category={category} />
           ))}
         </ul>
         {withoutLimit.length > 0 && (
@@ -222,7 +226,7 @@ export function Budget() {
             <h2 className="text-[13px] font-semibold text-muted">Sem limite</h2>
             <ul>
               {withoutLimit.map((row) => (
-                <li key={row.categoryId} className="flex min-h-12 items-center justify-between gap-3">
+                <li key={rowKey(row.categoryId)} className="flex min-h-12 items-center justify-between gap-3">
                   <span className="text-[15px]">{category(row.categoryId)?.name ?? "Sem categoria"}</span>
                   <Money value={row.spent} size="sm" />
                 </li>
@@ -256,13 +260,13 @@ export function Budget() {
             <tbody>
               {editable.map((row) => {
                 const cat = category(row.categoryId);
-                const limit = draft.values[row.categoryId]?.value ?? null;
+                const limit = draft.values[rowKey(row.categoryId)]?.value ?? null;
                 return (
-                  <tr key={row.categoryId} className="border-b border-border">
+                  <tr key={rowKey(row.categoryId)} className="border-b border-border">
                     <th scope="row" className="py-2 pr-3 text-left text-[15px] font-semibold">
                       <span className="flex items-center gap-2.5">
                         <CategoryIcon category={cat} className="!size-9" />
-                        {cat?.name}
+                        {cat?.name ?? GENERAL_NAME}
                       </span>
                     </th>
                     <td className="w-48 py-2 pr-3">
@@ -272,7 +276,7 @@ export function Budget() {
                       <Money value={row.spent} size="sm" />
                     </td>
                     <td className="py-2 pl-4">
-                      <LimitInput label={`Limite de ${cat?.name}`} text={draft.values[row.categoryId]?.text} onChange={(text, value) => draft.set(row.categoryId, text, value)} />
+                      <LimitInput label={`Limite de ${cat?.name ?? GENERAL_NAME}`} text={draft.values[rowKey(row.categoryId)]?.text} onChange={(text, value) => draft.set(row.categoryId, text, value)} />
                     </td>
                   </tr>
                 );
@@ -317,7 +321,7 @@ function LimitRow({ row, category }: { row: CategoryBudget; category: CategoryLo
   return (
     <li className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[15px] font-semibold">{category(row.categoryId)?.name ?? "Sem categoria"}</span>
+        <span className="text-[15px] font-semibold">{row.categoryId ? category(row.categoryId)?.name ?? "Sem categoria" : GENERAL_NAME}</span>
         <span className={cx("text-[13px]", over ? "font-semibold text-expense" : "text-muted")}>
           {over ? `${formatMoney(row.spent - limit)} acima do limite` : `${formatMoney(row.spent)} de ${formatMoney(limit)}`}
         </span>

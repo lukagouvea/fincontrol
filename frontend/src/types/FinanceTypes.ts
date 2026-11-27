@@ -116,7 +116,8 @@ export type Card = {
 
 /** Limite de uma categoria num mês. Com `repeat`, vale também nos meses seguintes. */
 export type BudgetLimit = {
-  categoryId: string;
+  /** null = limite "Geral" (parte do orçamento ainda não dividida). */
+  categoryId: string | null;
   /** 'YYYY-MM' */
   month: string;
   /** null = sem limite */

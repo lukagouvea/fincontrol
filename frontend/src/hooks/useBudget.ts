@@ -9,7 +9,7 @@ export const useBudgetLimits = () =>
 export const useSaveBudget = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ month, repeat, limits }: { month: string; repeat: boolean; limits: Array<{ categoryId: string; amount: number | null }> }) =>
+    mutationFn: ({ month, repeat, limits }: { month: string; repeat: boolean; limits: Array<{ categoryId: string | null; amount: number | null }> }) =>
       budgetService.save(month, repeat, limits),
     onSuccess: () => client.invalidateQueries({ queryKey: BUDGET_KEY }),
   });

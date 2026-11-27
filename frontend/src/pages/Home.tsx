@@ -11,6 +11,7 @@ import { useMonthBudget } from "../features/useMonthBudget";
 import { useGoals } from "../hooks/useGoals";
 import { goalProgress } from "../features/goals";
 import { WeekCard } from "../features/budgetui/WeekCard";
+import { StartChecklist } from "../features/onboarding/StartChecklist";
 import { ProgressBar } from "../ui/ProgressBar";
 import { summarizeLedger, type LedgerEntry } from "../features/ledger";
 import { chartColorVar, makeCategoryLookup, type CategoryLookup } from "../features/categories";
@@ -215,6 +216,8 @@ export function Home() {
           </Kpi>
         )}
       </section>
+
+      <StartChecklist hasTransactions={entries.some((entry) => entry.source === "transaction")} />
 
       {period === "current" &&
         (budget?.week ? (

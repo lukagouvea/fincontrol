@@ -25,6 +25,7 @@ model User {
   investmentOverrides InvestmentOverride[]
   cards             Card[]
   invoicePayments   InvoicePayment[]
+  budgetLimits      BudgetLimit[]
 
   @@map("users")
 }
@@ -46,6 +47,7 @@ model Category {
   recurringRules RecurringRule[]
   recurringRuleVersions RecurringRuleVersion[]
   transactions   Transaction[]
+  budgetLimits   BudgetLimit[]
 
   @@unique([userId, name, type], map: "unique_category_per_user")
   @@map("categories")
@@ -82,6 +84,9 @@ model RecurringRule {
   active       Boolean?      @default(true)
   // Forma de pagamento da regra inteira (não é versionada). null = À vista.
   cardId       String?       @map("card_id") @db.Uuid
+  // Pausa: não lança de pausedFrom até pausedUntil (meses, dia 1, inclusive).
+  pausedFrom   DateTime?     @map("paused_from") @db.Date
+  pausedUntil  DateTime?     @map("paused_until") @db.Date
   createdAt    DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações
@@ -218,4 +223,24 @@ model InvoicePayment {
 
   @@index([cardId, invoiceMonth], map: "idx_invoice_payments_card_month")
   @@map("invoice_payments")
+}
+
+// Limite mensal por categoria. O orçamento do mês é a soma dos limites.
+// Um registro vale no seu mês; com `repeat`, continua valendo nos meses
+// seguintes até o próximo registro com `repeat`. amount null = sem limite.
+model BudgetLimit {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  categoryId String    @map("category_id") @db.Uuid
+  month      DateTime  @db.Date
+  amount     Decimal?  @db.Decimal(12, 2)
+  repeat     Boolean   @default(true)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([categoryId, month], map: "unique_budget_limit_month")
+  @@index([userId, month], map: "idx_budget_limits_user_month")
+  @@map("budget_limits")
 }

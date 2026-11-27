@@ -33,6 +33,9 @@ const recurringSchema = z.object({
   endDate: z.iso.datetime().optional().or(z.literal('')).nullable(), // Pode vir vazio
   // Forma de pagamento da regra inteira (não versionada). null = À vista.
   cardId: z.uuid().nullable().optional(),
+  // Pausa por meses ('YYYY-MM', inclusive). null remove a pausa.
+  pausedFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable().optional(),
+  pausedUntil: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable().optional(),
 });
 
 const updateSchema = recurringSchema.partial().extend({
@@ -70,6 +73,8 @@ type RuleWithVersions = {
   startDate: Date;
   endDate: Date | null;
   cardId: string | null;
+  pausedFrom: Date | null;
+  pausedUntil: Date | null;
   versions: DbVersion[];
   category?: { id: string; name: string; color: string | null } | null;
 };
@@ -122,6 +127,8 @@ const formatRule = (rule: RuleWithVersions) => {
     startDate: rule.startDate.toISOString(),
     endDate: rule.endDate?.toISOString(),
     cardId: rule.cardId,
+    pausedFrom: rule.pausedFrom ? rule.pausedFrom.toISOString().slice(0, 7) : null,
+    pausedUntil: rule.pausedUntil ? rule.pausedUntil.toISOString().slice(0, 7) : null,
     categoryId: current.categoryId,
     category: current.category ?? null,
     versions: versions.map((v) => ({
@@ -401,6 +408,8 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
           startDate,
           endDate,
           cardId: body.cardId,
+          ...(body.pausedFrom !== undefined && { pausedFrom: body.pausedFrom ? new Date(`${body.pausedFrom}-01T00:00:00Z`) : null }),
+          ...(body.pausedUntil !== undefined && { pausedUntil: body.pausedUntil ? new Date(`${body.pausedUntil}-01T00:00:00Z`) : null }),
           amount: current.amount,
           categoryId: current.categoryId,
           dayOfMonth: current.dayOfMonth,

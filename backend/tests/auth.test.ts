@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { hash } from 'bcryptjs';
 import { sign } from 'hono/jwt';
 import authRoute from '../src/routes/auth.js';
-import usersRoute from '../src/routes/users.js';
+import accountRoute from '../src/routes/account.js';
 import { authMiddleware } from '../src/middleware/auth.js';
 import { prisma } from '../src/lib/prisma.js';
 
@@ -15,7 +15,6 @@ const user = {
   name: 'Usuário de teste',
   email: 'auth-regression@example.test',
   passwordHash: '',
-  tutorialCompleted: true,
   createdAt: new Date('2026-01-01T12:00:00Z'),
 };
 
@@ -37,13 +36,13 @@ after(() => {
 function makeApp() {
   const app = new Hono<{ Variables: { userId: string } }>();
   app.route('/auth', authRoute);
-  app.route('/users', usersRoute);
+  app.route('/me', accountRoute);
   app.use('/private/*', authMiddleware);
   app.get('/private/check', c => c.json({ userId: c.var.userId }));
   return app;
 }
 
-test('o cookie emitido no login autentica perfil, rotas protegidas e tutorial', async () => {
+test('o cookie emitido no login autentica perfil e rotas protegidas', async () => {
   prisma.user.findUnique = (() => Promise.resolve(user)) as unknown as typeof prisma.user.findUnique;
   prisma.user.update = (() => Promise.resolve(user)) as unknown as typeof prisma.user.update;
   const app = makeApp();
@@ -63,14 +62,8 @@ test('o cookie emitido no login autentica perfil, rotas protegidas e tutorial', 
   const protectedResponse = await app.request('/private/check', { headers: { Cookie: cookie } });
   assert.equal(protectedResponse.status, 200);
   assert.deepEqual(await protectedResponse.json(), { userId: user.id });
-  const tutorial = await app.request('/users/tutorial-status', { headers: { Cookie: cookie } });
-  assert.equal(tutorial.status, 200);
-  const update = await app.request('/users/tutorial-status', {
-    method: 'PATCH',
-    headers: { Cookie: cookie, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tutorialCompleted: true }),
-  });
-  assert.equal(update.status, 200);
+  const read = await app.request('/me/alerts/read', { method: 'POST', headers: { Cookie: cookie } });
+  assert.equal(read.status, 200, 'Rotas da conta devem aceitar o cookie.');
 });
 
 test('rotas protegidas rejeitam ausência de cookie, expiração, assinatura e algoritmo incorretos', async () => {

@@ -1,0 +1,6 @@
+
+# Capturas de tela (npm run shots)
+.shots
+
+# Testes e2e (npm run e2e)
+.e2e

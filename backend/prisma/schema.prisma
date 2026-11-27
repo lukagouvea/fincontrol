@@ -13,7 +13,16 @@ model User {
   name              String             @db.VarChar(255)
   email             String             @unique @db.VarChar(255)
   passwordHash      String             @map("password_hash") @db.VarChar(255)
-  tutorialCompleted Boolean            @default(false) @map("tutorial_completed")
+  // Fim da configuração inicial (primeiro cartão/orçamento). null = mostrar o fluxo.
+  onboardingCompletedAt DateTime?      @map("onboarding_completed_at") @db.Timestamp(6)
+  // Último mês fechado cuja "virada" a pessoa já viu ('YYYY-MM').
+  lastClosingSeen   String?            @map("last_closing_seen") @db.VarChar(7)
+  // Preferências da central de alertas (chave → ligado); ausente = padrão.
+  alertPrefs        Json?              @map("alert_prefs")
+  // Alertas com data até aqui já foram vistos (ponto no sino).
+  alertsReadAt      DateTime?          @map("alerts_read_at") @db.Timestamp(6)
+  // Ocorrências e parcelas À vista que venceram antes deste mês contam como pagas.
+  paymentsTrackedFrom DateTime @default(dbgenerated("(date_trunc('month'::text, now()))::date")) @map("payments_tracked_from") @db.Date
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações (CamelCase e Plural/Singular corretos)
@@ -21,8 +30,14 @@ model User {
   installmentGroups InstallmentGroup[]
   recurringRules    RecurringRule[]
   transactions      Transaction[]
-  investmentSetting InvestmentSetting?
-  investmentOverrides InvestmentOverride[]
+  cards             Card[]
+  invoicePayments   InvoicePayment[]
+  budgetLimits      BudgetLimit[]
+  goals             Goal[]
+  goalContributions GoalContribution[]
+  importBatches     ImportBatch[]
+
+  recurringPayments RecurringPayment[]
 
   @@map("users")
 }
@@ -34,6 +49,8 @@ model Category {
   description    String?         @db.VarChar(255)
   type           String          @db.VarChar(20)
   color          String?         @default("#888888") @db.VarChar(20)
+  // Chave do ícone (ex.: "utensils"); null = deduzido do nome no cliente.
+  icon           String?         @db.VarChar(40)
   active         Boolean?        @default(true)
   createdAt      DateTime?       @default(now()) @map("created_at") @db.Timestamp(6)
 
@@ -42,6 +59,7 @@ model Category {
   recurringRules RecurringRule[]
   recurringRuleVersions RecurringRuleVersion[]
   transactions   Transaction[]
+  budgetLimits   BudgetLimit[]
 
   @@unique([userId, name, type], map: "unique_category_per_user")
   @@map("categories")
@@ -53,10 +71,13 @@ model InstallmentGroup {
   description       String?       @db.VarChar(255)
   totalAmount       Decimal       @map("total_amount") @db.Decimal(12, 2)
   totalInstallments Int           @map("total_installments")
+  // Cartão da compra parcelada (as parcelas repetem o mesmo cardId).
+  cardId            String?       @map("card_id") @db.Uuid
   createdAt         DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  card              Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   transactions      Transaction[]
 
   @@map("installment_groups")
@@ -73,13 +94,20 @@ model RecurringRule {
   startDate    DateTime      @map("start_date")
   endDate      DateTime?     @map("end_date")
   active       Boolean?      @default(true)
+  // Espelho da forma de pagamento da versão vigente hoje (a fonte é a versão). null = À vista.
+  cardId       String?       @map("card_id") @db.Uuid
+  // Pausa: não lança de pausedFrom até pausedUntil (meses, dia 1, inclusive).
+  pausedFrom   DateTime?     @map("paused_from") @db.Date
+  pausedUntil  DateTime?     @map("paused_until") @db.Date
   createdAt    DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações
+  card         Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   category     Category?     @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   transactions Transaction[]
   versions     RecurringRuleVersion[]
+  payments     RecurringPayment[]
 
   @@index([userId, active], map: "idx_recurring_user_active")
   @@map("recurring_rules")
@@ -94,9 +122,12 @@ model RecurringRuleVersion {
   amount        Decimal       @db.Decimal(12, 2)
   categoryId    String?       @map("category_id") @db.Uuid
   dayOfMonth    Int           @map("day_of_month")
+  // Forma de pagamento a partir deste mês. null = À vista.
+  cardId        String?       @map("card_id") @db.Uuid
   createdAt     DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
 
   rule          RecurringRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  card          Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@unique([ruleId, effectiveFrom], map: "unique_recurring_version_month")
@@ -118,10 +149,20 @@ model Transaction {
   recurringRuleId    String?           @map("recurring_rule_id") @db.Uuid
   // Mês (dia 1) da ocorrência da regra que esta transação representa (variação).
   occurrenceMonth    DateTime?         @map("occurrence_month") @db.Date
+
+  // Forma de pagamento: cartão cadastrado ou null = À vista (Pix, dinheiro, débito).
+  cardId             String?           @map("card_id") @db.Uuid
+
+  // Importação de extrato que criou esta transação (para desfazer a importação).
+  importBatchId      String?           @map("import_batch_id") @db.Uuid
+  // Parcela À vista paga (contas a pagar). null = não marcada.
+  paidAt             DateTime?         @map("paid_at") @db.Timestamp(6)
   
   createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações
+  card               Card?             @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  importBatch        ImportBatch?      @relation(fields: [importBatchId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   category           Category?         @relation(fields: [categoryId], references: [id], onUpdate: NoAction)
   installmentGroup   InstallmentGroup? @relation(fields: [installmentGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   recurringRule      RecurringRule?    @relation(fields: [recurringRuleId], references: [id], onUpdate: NoAction)
@@ -129,34 +170,147 @@ model Transaction {
 
   @@index([userId, categoryId], map: "idx_transactions_user_category")
   @@index([userId, date], map: "idx_transactions_user_date")
+  @@index([cardId, date], map: "idx_transactions_card_date")
+  @@index([importBatchId], map: "idx_transactions_import_batch")
   @@unique([recurringRuleId, occurrenceMonth], map: "unique_recurring_occurrence")
   @@map("transactions")
 }
 
-model InvestmentSetting {
-  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId               String   @unique @map("user_id") @db.Uuid
-  defaultMonthlyAmount Decimal  @map("default_monthly_amount") @db.Decimal(12, 2)
-  createdAt            DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt            DateTime? @updatedAt @map("updated_at") @db.Timestamp(6)
+// Cartão de crédito. A fatura não é guardada: é derivada das transações pela
+// data de fechamento (design/PRODUCT_RULES.md). Nunca guarda o número completo.
+model Card {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  name        String    @db.VarChar(60)
+  last4       String    @map("last4") @db.VarChar(4)
+  limit       Decimal   @map("credit_limit") @db.Decimal(12, 2)
+  closingDay  Int       @map("closing_day")
+  dueDay      Int       @map("due_day")
+  // Chave da paleta (verde, azul, laranja, grafite); a cor real vem dos tokens.
+  color       String    @default("verde") @db.VarChar(20)
+  archivedAt  DateTime? @map("archived_at") @db.Timestamp(6)
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transactions      Transaction[]
+  installmentGroups InstallmentGroup[]
+  recurringRules    RecurringRule[]
+  ruleVersions      RecurringRuleVersion[]
+  payments          InvoicePayment[]
+  importBatches     ImportBatch[]
 
-  @@map("investment_settings")
+  @@index([userId], map: "idx_cards_user")
+  @@map("cards")
 }
 
-model InvestmentOverride {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  year      Int
-  month     Int
-  amount    Decimal  @db.Decimal(12, 2)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp(6)
+// Pagamento de fatura: libera o limite. Não é um gasto novo — as compras já
+// contam no mês em que foram feitas.
+model InvoicePayment {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  cardId       String    @map("card_id") @db.Uuid
+  // Mês da fatura (dia 1): a fatura que fecha naquele mês.
+  invoiceMonth DateTime  @map("invoice_month") @db.Date
+  amount       Decimal   @db.Decimal(12, 2)
+  paidAt       DateTime  @map("paid_at")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([userId, year, month], map: "unique_investment_override")
-  @@index([userId, year, month], map: "idx_investment_override_user_month")
-  @@map("investment_overrides")
+  @@index([cardId, invoiceMonth], map: "idx_invoice_payments_card_month")
+  @@map("invoice_payments")
+}
+
+// Limite mensal por categoria. O orçamento do mês é a soma dos limites.
+// Um registro vale no seu mês; com `repeat`, continua valendo nos meses
+// seguintes até o próximo registro com `repeat`. amount null = sem limite.
+model BudgetLimit {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  // null = limite "Geral": parte do orçamento ainda não dividida por categoria.
+  categoryId String?   @map("category_id") @db.Uuid
+  month      DateTime  @db.Date
+  amount     Decimal?  @db.Decimal(12, 2)
+  repeat     Boolean   @default(true)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  // Também há um índice único parcial (user_id, month) WHERE category_id IS NULL, na migração.
+  @@unique([categoryId, month], map: "unique_budget_limit_month")
+  @@index([userId, month], map: "idx_budget_limits_user_month")
+  @@map("budget_limits")
+}
+
+// Meta de economia. O "já guardado" é a soma das contribuições.
+model Goal {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  name      String    @db.VarChar(80)
+  target    Decimal   @db.Decimal(12, 2)
+  // Mês do prazo (dia 1); opcional.
+  deadline  DateTime? @db.Date
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contributions GoalContribution[]
+
+  @@index([userId], map: "idx_goals_user")
+  @@map("goals")
+}
+
+// "Guardar na meta" (valor positivo) ou "Retirar" (negativo).
+model GoalContribution {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  goalId    String    @map("goal_id") @db.Uuid
+  amount    Decimal   @db.Decimal(12, 2)
+  date      DateTime
+  // Mês fechado de onde veio a sobra (Fechamento do mês), quando for o caso.
+  sourceMonth DateTime? @map("source_month") @db.Date
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([goalId, date], map: "idx_goal_contributions_goal_date")
+  @@map("goal_contributions")
+}
+
+// Importação de extrato (CSV/OFX lido no cliente). Desfazer apaga as
+// transações criadas por ela.
+model ImportBatch {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  cardId    String?   @map("card_id") @db.Uuid
+  fileName  String    @map("file_name") @db.VarChar(255)
+  count     Int
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  card         Card?         @relation(fields: [cardId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  transactions Transaction[]
+
+  @@index([userId], map: "idx_import_batches_user")
+  @@map("import_batches")
+}
+
+/// Pagamento de uma ocorrência de recorrente À vista (regra + mês).
+model RecurringPayment {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  ruleId    String        @map("rule_id") @db.Uuid
+  /// Dia 1 do mês da ocorrência.
+  month     DateTime      @db.Date
+  paidAt    DateTime      @map("paid_at") @db.Timestamp(6)
+  createdAt DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rule      RecurringRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([ruleId, month], map: "unique_recurring_payment_month")
+  @@index([userId], map: "idx_recurring_payments_user")
+  @@map("recurring_payments")
 }

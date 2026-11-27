@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc --outDir dist",

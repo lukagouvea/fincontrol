@@ -19,18 +19,31 @@ const categorySchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional(),
   type: z.enum(['income', 'expense']),
-  color: z.string().optional().default('#888888'),
+  color: z.string().optional(),
+  icon: z.string().regex(/^[a-z0-9-]{1,40}$/, 'Ícone inválido').nullable().optional(),
 });
+
+// O padrão da cor fica só na criação (ver cards.ts: `.partial()` manteria o `.default()`).
+const createSchema = categorySchema.extend({ color: z.string().optional().default('#888888') });
+
+const updateSchema = categorySchema.partial().extend({
+  // true restaura uma categoria arquivada.
+  active: z.boolean().optional(),
+});
+
+const mergeSchema = z.object({ targetId: z.uuid() });
 
 // 1. Listar Categorias (GET /categories)
 app.get('/', async (c) => {
   const userId = c.var.userId; // Pegamos do middleware!
   const type = c.req.query('type'); // Opcional: ?type=income
+  // ?all=1 inclui as arquivadas (active=false): o histórico continua com o nome.
+  const all = c.req.query('all') === '1';
 
   const categories = await prisma.category.findMany({
     where: {
       userId: userId,
-      active: true, // Só traz as ativas
+      ...(!all && { active: true }),
       ...(type && { type: type as 'income' | 'expense' })
     },
     orderBy: { name: 'asc' }
@@ -40,7 +53,7 @@ app.get('/', async (c) => {
 });
 
 // 2. Criar Categoria (POST /categories)
-app.post('/', zValidator('json', categorySchema), async (c) => {
+app.post('/', zValidator('json', createSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
 
@@ -67,7 +80,8 @@ app.post('/', zValidator('json', categorySchema), async (c) => {
       data: {
         active: true,
         color: body.color,
-        description: body.description
+        description: body.description,
+        ...(body.icon !== undefined && { icon: body.icon }),
       }
     });
 
@@ -83,6 +97,7 @@ app.post('/', zValidator('json', categorySchema), async (c) => {
         description: body.description,
         type: body.type,
         color: body.color,
+        icon: body.icon ?? null,
         active: true
       }
     });
@@ -95,7 +110,7 @@ app.post('/', zValidator('json', categorySchema), async (c) => {
 });
 
 // 3. Atualizar Categoria (PUT /categories/:id)
-app.put('/:id', zValidator('json', categorySchema.partial()), async (c) => {
+app.put('/:id', zValidator('json', updateSchema), async (c) => {
   const userId = c.var.userId;
   const id = c.req.param('id');
   const body = c.req.valid('json');
@@ -115,6 +130,8 @@ app.put('/:id', zValidator('json', categorySchema.partial()), async (c) => {
       name: body.name,
       description: body.description,
       color: body.color,
+      icon: body.icon,
+      active: body.active,
       // Não permitimos mudar o 'type' depois de criada para não quebrar histórico
     }
   });
@@ -143,6 +160,33 @@ app.delete('/:id', async (c) => {
   });
 
   return c.json({ message: 'Categoria removida com sucesso' });
+});
+
+// 5. Mesclar (POST /categories/:id/merge): move lançamentos, recorrências e
+// versões de recorrência para a categoria de destino e arquiva a de origem.
+// O histórico continua somando nos relatórios, dentro do destino.
+app.post('/:id/merge', zValidator('json', mergeSchema), async (c) => {
+  const userId = c.var.userId;
+  const id = c.req.param('id');
+  const { targetId } = c.req.valid('json');
+  if (id === targetId) return c.json({ error: 'Escolha outra categoria de destino' }, 400);
+
+  const [source, target] = await Promise.all([
+    prisma.category.findFirst({ where: { id, userId } }),
+    prisma.category.findFirst({ where: { id: targetId, userId } }),
+  ]);
+  if (!source || !target) return c.json({ error: 'Categoria não encontrada' }, 404);
+  if (source.type !== target.type) return c.json({ error: 'As categorias precisam ser do mesmo tipo' }, 400);
+  if (target.active === false) return c.json({ error: 'A categoria de destino está arquivada' }, 400);
+
+  const [moved] = await prisma.$transaction([
+    prisma.transaction.updateMany({ where: { userId, categoryId: id }, data: { categoryId: targetId } }),
+    prisma.recurringRule.updateMany({ where: { userId, categoryId: id }, data: { categoryId: targetId } }),
+    prisma.recurringRuleVersion.updateMany({ where: { categoryId: id, rule: { userId } }, data: { categoryId: targetId } }),
+    prisma.category.update({ where: { id }, data: { active: false } }),
+  ]);
+
+  return c.json({ moved: moved.count, targetId });
 });
 
 export default app;

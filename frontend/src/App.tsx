@@ -1,35 +1,115 @@
 import { Suspense, lazy, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
-import { Layout } from "./components/Layout/Layout";
-import { LoadingState } from "./components/Shared/UI";
+import { ProtectedRoute } from "./app/ProtectedRoute";
+import { TransactionEditorProvider } from "./app/TransactionEditor";
+import { PendingDeletesProvider } from "./app/PendingDeletes";
+import { OfflineQueueProvider } from "./app/OfflineQueue";
+import { MonthProvider } from "./app/MonthContext";
+import { ErrorBoundary } from "./app/ErrorBoundary";
 import { useViewport } from "./hooks/useViewport";
-import { ErrorBoundary } from "./components/Shared/ErrorBoundary";
+import { AppShell } from "./app/AppShell";
+import { ToastProvider } from "./ui/Toast";
+import { ButtonLink } from "./ui/Button";
+import { LoadingCard } from "./ui/Skeleton";
 
-const Dashboard = lazy(() =>
-  import("./pages/Dashboard").then((m) => ({ default: m.Dashboard })),
-);
-const Transactions = lazy(() =>
-  import("./pages/Transactions").then((m) => ({ default: m.Transactions })),
-);
-const Reports = lazy(() =>
-  import("./pages/Reports").then((m) => ({ default: m.Reports })),
-);
-const Calendar = lazy(() =>
-  import("./pages/Calendar").then((m) => ({ default: m.Calendar })),
-);
-const Categories = lazy(() =>
-  import("./pages/Categories").then((m) => ({ default: m.Categories })),
-);
-const LoginPage = lazy(() =>
-  import("./pages/Auth/LoginPage").then((m) => ({ default: m.LoginPage })),
-);
-const SignupPage = lazy(() =>
-  import("./pages/Auth/SignupPage").then((m) => ({ default: m.SignupPage })),
-);
+const named = <K extends string>(
+  loader: () => Promise<Record<K, React.ComponentType>>,
+  name: K,
+) => lazy(() => loader().then((m) => ({ default: m[name] })));
+
+const Home = named(() => import("./pages/Home"), "Home");
+const Transactions = named(() => import("./pages/Transactions"), "Transactions");
+const Recurring = named(() => import("./pages/Recurring"), "Recurring");
+const Reports = named(() => import("./pages/Reports"), "Reports");
+const Categories = named(() => import("./pages/Categories"), "Categories");
+const Settings = named(() => import("./pages/Settings"), "Settings");
+const Cards = named(() => import("./pages/Cards"), "Cards");
+const Invoice = named(() => import("./pages/Invoice"), "Invoice");
+const Commitments = named(() => import("./pages/Commitments"), "Commitments");
+const Budget = named(() => import("./pages/Budget"), "Budget");
+const Goals = named(() => import("./pages/Goals"), "Goals");
+const History = named(() => import("./pages/History"), "History");
+const MonthClosing = named(() => import("./pages/MonthClosing"), "MonthClosing");
+const Import = named(() => import("./pages/Import"), "Import");
+const Alerts = named(() => import("./pages/Alerts"), "Alerts");
+const AlertSettings = named(() => import("./pages/AlertSettings"), "AlertSettings");
+const DataSettings = named(() => import("./pages/DataSettings"), "DataSettings");
+const Shortcuts = named(() => import("./pages/Shortcuts"), "Shortcuts");
+const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
+const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
+const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
+const Welcome = named(() => import("./pages/Onboarding/Welcome"), "Welcome");
+const Setup = named(() => import("./pages/Onboarding/Setup"), "Setup");
+
+/** Redireciona mantendo a query string (?tipo=…&aba=…). */
+function RedirectKeepingSearch({ to, extra }: { to: string; extra?: string }) {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  if (extra) new URLSearchParams(extra).forEach((value, key) => params.set(key, value));
+  const query = params.toString();
+  return <Navigate replace to={query ? `${to}?${query}` : to} />;
+}
+
+/** /lancamentos?grupo=fixas virou Recorrentes; o resto virou Transações. */
+function LegacyEntries() {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const fixed = params.get("grupo") === "fixas";
+  params.delete("grupo");
+  const query = params.toString();
+  const to = fixed ? "/recorrentes" : "/transacoes";
+  return <Navigate replace to={query ? `${to}?${query}` : to} />;
+}
+
+/** Conta nova ainda sem configuração inicial vai para /configurar. */
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const { currentUser } = useAuth();
+  if (currentUser && currentUser.onboardingCompletedAt === null) return <Navigate to="/configurar" replace />;
+  return <>{children}</>;
+}
+
+function ShellLayout() {
+  return (
+    <OnboardingGate>
+    <MonthProvider>
+      <PendingDeletesProvider>
+        <OfflineQueueProvider>
+          <TransactionEditorProvider>
+            <AppShell />
+          </TransactionEditorProvider>
+        </OfflineQueueProvider>
+      </PendingDeletesProvider>
+    </MonthProvider>
+    </OnboardingGate>
+  );
+}
+
+function PageFallback() {
+  return <LoadingCard label="Carregando a página…" />;
+}
+
+function NotFound() {
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-bg px-5 text-center text-ink">
+      <p className="text-sm font-semibold text-muted">ERRO 404</p>
+      <h1 className="font-num text-[28px] font-semibold">Página não encontrada</h1>
+      <p className="text-[15px] text-muted">Esse endereço não está disponível.</p>
+      <ButtonLink to="/" size="lg" className="mt-2">
+        Voltar ao início
+      </ButtonLink>
+    </main>
+  );
+}
 
 export function App() {
   useViewport();
@@ -43,96 +123,64 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <ErrorBoundary>
-            <BrowserRouter
-              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-            >
-              <Suspense fallback={<LoadingState />}>
-                <Routes>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route element={<ProtectedRoute />}>
-                    <Route element={<Layout />}>
-                      <Route index element={<Dashboard />} />
-                      <Route path="/lancamentos" element={<Transactions />} />
-                      <Route path="/calendario" element={<Calendar />} />
-                      <Route path="/categorias" element={<Categories />} />
-                      <Route path="/relatorio-mensal" element={<Reports />} />
-                      <Route
-                        path="/despesas-variaveis"
-                        element={
-                          <Navigate
-                            replace
-                            to="/lancamentos?tipo=despesa&grupo=variaveis"
-                          />
-                        }
-                      />
-                      <Route
-                        path="/despesas-fixas"
-                        element={
-                          <Navigate
-                            replace
-                            to="/lancamentos?tipo=despesa&grupo=fixas"
-                          />
-                        }
-                      />
-                      <Route
-                        path="/rendas-variaveis"
-                        element={
-                          <Navigate
-                            replace
-                            to="/lancamentos?tipo=receita&grupo=variaveis"
-                          />
-                        }
-                      />
-                      <Route
-                        path="/rendas-fixas"
-                        element={
-                          <Navigate
-                            replace
-                            to="/lancamentos?tipo=receita&grupo=fixas"
-                          />
-                        }
-                      />
-                      <Route
-                        path="/historico-despesas"
-                        element={
-                          <Navigate
-                            replace
-                            to="/relatorio-mensal?aba=despesas"
-                          />
-                        }
-                      />
-                      <Route
-                        path="/historico-rendas"
-                        element={
-                          <Navigate
-                            replace
-                            to="/relatorio-mensal?aba=receitas"
-                          />
-                        }
-                      />
+          <ToastProvider>
+            <ErrorBoundary>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <Suspense fallback={<PageFallback />}>
+                  <Routes>
+                    <Route path="/boas-vindas" element={<Welcome />} />
+                    <Route path="/entrar" element={<LoginPage />} />
+                    <Route path="/criar-conta" element={<SignupPage />} />
+                    <Route path="/login" element={<Navigate replace to="/entrar" />} />
+                    <Route path="/signup" element={<Navigate replace to="/criar-conta" />} />
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/configurar" element={<Setup />} />
+                      <Route element={<ShellLayout />}>
+                        <Route
+                          element={
+                            <Suspense fallback={<PageFallback />}>
+                              <Outlet />
+                            </Suspense>
+                          }
+                        >
+                          <Route index element={<Home />} />
+                          <Route path="/transacoes" element={<Transactions />} />
+                          <Route path="/importar" element={<Import />} />
+                          <Route path="/recorrentes" element={<Recurring />} />
+                          <Route path="/relatorios" element={<Reports />} />
+                          <Route path="/relatorios/historico" element={<History />} />
+                          <Route path="/relatorios/historico/:month" element={<MonthClosing />} />
+                          <Route path="/categorias" element={<Categories />} />
+                          <Route path="/ajustes" element={<Settings />} />
+                          <Route path="/ajustes/aparencia" element={<AppearanceSettings />} />
+                          <Route path="/cartoes" element={<Cards />} />
+                          <Route path="/cartoes/:cardId/fatura" element={<Invoice />} />
+                          <Route path="/compromissos" element={<Commitments />} />
+                          <Route path="/orcamento" element={<Budget />} />
+                          <Route path="/metas" element={<Goals />} />
+                          <Route path="/alertas" element={<Alerts />} />
+                          <Route path="/ajustes/alertas" element={<AlertSettings />} />
+                          <Route path="/ajustes/dados" element={<DataSettings />} />
+                          <Route path="/ajustes/atalhos" element={<Shortcuts />} />
+                        </Route>
+                        {/* Endereços antigos */}
+                        <Route path="/lancamentos" element={<LegacyEntries />} />
+                        <Route path="/calendario" element={<Navigate replace to="/transacoes" />} />
+                        <Route path="/relatorio-mensal" element={<RedirectKeepingSearch to="/relatorios" />} />
+                        <Route path="/despesas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=despesa" />} />
+                        <Route path="/despesas-fixas" element={<RedirectKeepingSearch to="/recorrentes" extra="tipo=despesa" />} />
+                        <Route path="/rendas-variaveis" element={<RedirectKeepingSearch to="/transacoes" extra="tipo=receita" />} />
+                        <Route path="/rendas-fixas" element={<RedirectKeepingSearch to="/recorrentes" extra="tipo=receita" />} />
+                        <Route path="/historico-despesas" element={<RedirectKeepingSearch to="/relatorios" extra="aba=despesas" />} />
+                        <Route path="/historico-rendas" element={<RedirectKeepingSearch to="/relatorios" extra="aba=receitas" />} />
+                      </Route>
                     </Route>
-                  </Route>
-                  <Route
-                    path="*"
-                    element={
-                      <div className="not-found">
-                        <p className="subtle">ERRO 404</p>
-                        <h1>Página não encontrada</h1>
-                        <p className="subtle">
-                          Esse endereço não está disponível.
-                        </p>
-                        <Link className="button button-primary" to="/">
-                          Voltar ao início
-                        </Link>
-                      </div>
-                    }
-                  />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </ErrorBoundary>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </ErrorBoundary>
+          </ToastProvider>
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>

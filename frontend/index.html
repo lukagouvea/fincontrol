@@ -11,7 +11,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#f5f6f5" />
+    <meta name="theme-color" content="#F5F2EA" />
     <meta
       name="description"
       content="Suas finanças, com clareza. Organize receitas, despesas e seu planejamento mensal no FinControl."
@@ -19,12 +19,13 @@
     <script>
       try {
         const t = localStorage.getItem("theme");
-        document.documentElement.classList.toggle(
-          "dark",
+        const dark =
           t === "dark" ||
-            (!t && matchMedia("(prefers-color-scheme: dark)").matches),
-        );
-      } catch {}
+          (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
     </script>
     <title>FinControl — Suas finanças, com clareza</title>
   </head>

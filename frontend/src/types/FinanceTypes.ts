@@ -4,6 +4,8 @@ export type Category = {
   type: 'income' | 'expense';
   description?: string;
   color: string;
+  /** Chave do ícone; null/ausente = deduzido do nome. */
+  icon?: string | null;
   active: boolean
 };
 
@@ -15,6 +17,10 @@ export interface TransactionBase {
   categoryId: string;
   recurringRuleId?: string | null;
   type: 'income' | 'expense';
+  /** Cartão usado; null/ausente = À vista. */
+  cardId?: string | null;
+  /** Parcela À vista paga (contas a pagar); null/ausente = não marcada. */
+  paidAt?: string | null;
 }
 
 export interface VariableTransaction extends TransactionBase {
@@ -28,12 +34,19 @@ export interface FixedVersion {
   amount: number;
   categoryId: string | null;
   day: number;
+  /** Forma de pagamento a partir deste mês (null = À vista). Ausente em respostas antigas. */
+  cardId?: string | null;
 }
 
 export interface FixedTransaction extends TransactionBase {
   day: number;
   startDate: string; // ISO UTC
   endDate?: string | null;  // ISO UTC
+  /** Pausa ('YYYY-MM', inclusive): não lança nesses meses. */
+  pausedFrom?: string | null;
+  pausedUntil?: string | null;
+  /** Cartão em que a recorrência é cobrada; null = À vista. */
+  cardId?: string | null;
   /** Histórico de valores/categoria/dia, em ordem de vigência. */
   versions?: FixedVersion[];
 }
@@ -80,3 +93,57 @@ export type MonthlyVariation = {
 };
 
 export type Transaction = VariableIncome | VariableExpense | Parcela;
+
+export type CardColor = 'verde' | 'azul' | 'laranja' | 'grafite';
+
+export type CardPayment = {
+  id: string;
+  /** 'YYYY-MM': a fatura que fecha naquele mês. */
+  invoiceMonth: string;
+  amount: number;
+  paidAt: string;
+};
+
+export type Card = {
+  id: string;
+  name: string;
+  last4: string;
+  limit: number;
+  closingDay: number;
+  dueDay: number;
+  color: CardColor;
+  archived: boolean;
+  /** ISO. Faturas vencidas antes do cadastro são tratadas como pagas. */
+  createdAt?: string;
+  payments: CardPayment[];
+};
+
+/** Limite de uma categoria num mês. Com `repeat`, vale também nos meses seguintes. */
+export type BudgetLimit = {
+  /** null = limite "Geral" (parte do orçamento ainda não dividida). */
+  categoryId: string | null;
+  /** 'YYYY-MM' */
+  month: string;
+  /** null = sem limite */
+  amount: number | null;
+  repeat: boolean;
+};
+
+export type GoalContribution = {
+  id: string;
+  /** Positivo = guardou; negativo = retirou. */
+  amount: number;
+  date: string;
+  sourceMonth: string | null;
+};
+
+export type Goal = {
+  id: string;
+  name: string;
+  target: number;
+  /** 'YYYY-MM' ou null */
+  deadline: string | null;
+  saved: number;
+  createdAt: string;
+  contributions: GoalContribution[];
+};

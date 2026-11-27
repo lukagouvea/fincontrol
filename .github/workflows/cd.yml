@@ -30,8 +30,11 @@ jobs:
   test-frontend:
     uses: ./.github/workflows/_test-frontend.yml
 
+  test-e2e:
+    uses: ./.github/workflows/_test-e2e.yml
+
   build-and-push:
-    needs: [ test-backend, test-frontend ]
+    needs: [ test-backend, test-frontend, test-e2e ]
     uses: ./.github/workflows/_docker-build.yml
     with:
       push: true

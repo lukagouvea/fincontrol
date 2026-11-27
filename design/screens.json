@@ -1,0 +1,1836 @@
+[
+ {
+  "id": "Main",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Início",
+  "kind": "tela",
+  "file": "screens/Main.html",
+  "dark": "screens/MainDark.html",
+  "width": 390,
+  "height": 1130,
+  "opens": [
+   "Alertas",
+   "Cartoes",
+   "Config",
+   "Metas",
+   "Nova",
+   "Orcamento",
+   "Recorrentes",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "Transacoes",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Transações",
+  "kind": "tela",
+  "file": "screens/Transacoes.html",
+  "dark": "screens/TransacoesDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Detalhe",
+   "Filtros",
+   "Main",
+   "Nova",
+   "Orcamento",
+   "Relatorios",
+   "TransacoesSelecao"
+  ]
+ },
+ {
+  "id": "Nova",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Nova transação",
+  "kind": "tela",
+  "file": "screens/Nova.html",
+  "dark": "screens/NovaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Main",
+   "MaisCategorias",
+   "Parcelar"
+  ]
+ },
+ {
+  "id": "NovaAVista",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Nova transação — à vista",
+  "kind": "tela",
+  "file": "screens/NovaAVista.html",
+  "dark": "screens/NovaAVistaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Main",
+   "MaisCategorias"
+  ]
+ },
+ {
+  "id": "NovaReceita",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Nova transação — receita (cashback)",
+  "kind": "tela",
+  "file": "screens/NovaReceita.html",
+  "dark": "screens/NovaReceitaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Main"
+  ]
+ },
+ {
+  "id": "Detalhe",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Detalhe da transação",
+  "kind": "tela",
+  "file": "screens/Detalhe.html",
+  "dark": "screens/DetalheDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "ExcluirTransacao",
+   "Nova",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "Parcelar",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Parcelar compra",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/Parcelar.html",
+  "dark": "screens/ParcelarDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Main",
+   "MaisCategorias",
+   "NovaParcelada"
+  ]
+ },
+ {
+  "id": "NovaParcelada",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Nova transação — parcelada",
+  "kind": "tela",
+  "file": "screens/NovaParcelada.html",
+  "dark": "screens/NovaParceladaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Main",
+   "MaisCategorias",
+   "Parcelar"
+  ]
+ },
+ {
+  "id": "Filtros",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Filtros",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/Filtros.html",
+  "dark": "screens/FiltrosDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Detalhe",
+   "Main",
+   "Nova",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes",
+   "TransacoesFiltrada",
+   "TransacoesSelecao"
+  ]
+ },
+ {
+  "id": "TransacoesFiltrada",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Transações filtradas",
+  "kind": "tela",
+  "file": "screens/TransacoesFiltrada.html",
+  "dark": "screens/TransacoesFiltradaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Filtros",
+   "Main",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "TransacoesSelecao",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Seleção em lote",
+  "kind": "tela",
+  "file": "screens/TransacoesSelecao.html",
+  "dark": "screens/TransacoesSelecaoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "LoteCategoria",
+   "LoteExcluir",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "LoteCategoria",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Mudar categoria em lote",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/LoteCategoria.html",
+  "dark": "screens/LoteCategoriaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "LoteExcluir",
+   "MaisCategorias",
+   "Transacoes",
+   "TransacoesSelecao"
+  ]
+ },
+ {
+  "id": "LoteExcluir",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Excluir em lote",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/LoteExcluir.html",
+  "dark": "screens/LoteExcluirDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "LoteCategoria",
+   "Transacoes",
+   "TransacoesDesfazer",
+   "TransacoesSelecao"
+  ]
+ },
+ {
+  "id": "ExcluirTransacao",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Excluir transação",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/ExcluirTransacao.html",
+  "dark": "screens/ExcluirTransacaoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Detalhe",
+   "Nova",
+   "Transacoes",
+   "TransacoesDesfazer"
+  ]
+ },
+ {
+  "id": "TransacoesDesfazer",
+  "section": "Início e transações",
+  "platform": "mobile",
+  "title": "Transação excluída (desfazer)",
+  "kind": "toast / estado de sucesso",
+  "file": "screens/TransacoesDesfazer.html",
+  "dark": "screens/TransacoesDesfazerDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Main",
+   "Nova",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "DeskInicio",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Início",
+  "kind": "tela",
+  "file": "screens/DeskInicio.html",
+  "dark": "screens/DeskInicioDark.html",
+  "width": 1280,
+  "height": 1280,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskTransacoes",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Transações",
+  "kind": "tela",
+  "file": "screens/DeskTransacoes.html",
+  "dark": "screens/DeskTransacoesDark.html",
+  "width": 1280,
+  "height": 1080,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskExcluir",
+   "DeskFiltros",
+   "DeskImportar",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao"
+  ]
+ },
+ {
+  "id": "DeskNova",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Nova transação (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskNova.html",
+  "dark": "screens/DeskNovaDark.html",
+  "width": 1280,
+  "height": 1080,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskExcluir",
+   "DeskFiltros",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskParcelar",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskParcelar",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Nova compra parcelada (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskParcelar.html",
+  "dark": "screens/DeskParcelarDark.html",
+  "width": 1280,
+  "height": 1080,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskCompromissos",
+   "DeskConfig",
+   "DeskExcluir",
+   "DeskFiltros",
+   "DeskImportar",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskFiltros",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Filtros (painel)",
+  "kind": "painel/popover",
+  "file": "screens/DeskFiltros.html",
+  "dark": "screens/DeskFiltrosDark.html",
+  "width": 1280,
+  "height": 1080,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskExcluir",
+   "DeskImportar",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskSelecao",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Seleção em lote",
+  "kind": "tela",
+  "file": "screens/DeskSelecao.html",
+  "dark": "screens/DeskSelecaoDark.html",
+  "width": 1280,
+  "height": 980,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskLoteCategoria",
+   "DeskLoteExcluir",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskLoteCategoria",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Mudar categoria (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskLoteCategoria.html",
+  "dark": "screens/DeskLoteCategoriaDark.html",
+  "width": 1280,
+  "height": 980,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskLoteExcluir",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskLoteExcluir",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Excluir em lote (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskLoteExcluir.html",
+  "dark": "screens/DeskLoteExcluirDark.html",
+  "width": 1280,
+  "height": 980,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskDesfazer",
+   "DeskInicio",
+   "DeskLoteCategoria",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskExcluir",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Excluir transação (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskExcluir.html",
+  "dark": "screens/DeskExcluirDark.html",
+  "width": 1280,
+  "height": 1080,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskDesfazer",
+   "DeskFiltros",
+   "DeskImportar",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskDesfazer",
+  "section": "Início e transações",
+  "platform": "desktop",
+  "title": "Desktop — Transação excluída (desfazer)",
+  "kind": "toast / estado de sucesso",
+  "file": "screens/DeskDesfazer.html",
+  "dark": "screens/DeskDesfazerDark.html",
+  "width": 1280,
+  "height": 1080,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskExcluir",
+   "DeskFiltros",
+   "DeskImportar",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskSelecao",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Cartoes",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Cartões",
+  "kind": "tela",
+  "file": "screens/Cartoes.html",
+  "dark": "screens/CartoesDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Compromissos",
+   "Fatura",
+   "Main",
+   "NovoCartao",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "NovoCartao",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Novo cartão",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/NovoCartao.html",
+  "dark": "screens/NovoCartaoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes"
+  ]
+ },
+ {
+  "id": "Fatura",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Fatura do cartão",
+  "kind": "tela",
+  "file": "screens/Fatura.html",
+  "dark": "screens/FaturaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "PagarFatura"
+  ]
+ },
+ {
+  "id": "PagarFatura",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Pagar fatura",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/PagarFatura.html",
+  "dark": "screens/PagarFaturaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Fatura",
+   "FaturaPaga"
+  ]
+ },
+ {
+  "id": "FaturaPaga",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Fatura paga",
+  "kind": "toast / estado de sucesso",
+  "file": "screens/FaturaPaga.html",
+  "dark": "screens/FaturaPagaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Fatura"
+  ]
+ },
+ {
+  "id": "Compromissos",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Compromissos futuros",
+  "kind": "tela",
+  "file": "screens/Compromissos.html",
+  "dark": "screens/CompromissosDark.html",
+  "width": 390,
+  "height": 960,
+  "opens": [
+   "Cartoes",
+   "Nova",
+   "ParcelaDetalhe",
+   "Recorrentes"
+  ]
+ },
+ {
+  "id": "ParcelaDetalhe",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "mobile",
+  "title": "Compra parcelada",
+  "kind": "tela",
+  "file": "screens/ParcelaDetalhe.html",
+  "dark": "screens/ParcelaDetalheDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Compromissos"
+  ]
+ },
+ {
+  "id": "DeskCartoes",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "desktop",
+  "title": "Desktop — Cartões",
+  "kind": "tela",
+  "file": "screens/DeskCartoes.html",
+  "dark": "screens/DeskCartoesDark.html",
+  "width": 1280,
+  "height": 900,
+  "opens": [
+   "DeskAlertas",
+   "DeskCategorias",
+   "DeskCompromissos",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNovoCartao",
+   "DeskOrcamento",
+   "DeskPagarFatura",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskNovoCartao",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "desktop",
+  "title": "Desktop — Novo cartão (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskNovoCartao.html",
+  "dark": "screens/DeskNovoCartaoDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskCompromissos",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskPagarFatura",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskPagarFatura",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "desktop",
+  "title": "Desktop — Pagar fatura (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskPagarFatura.html",
+  "dark": "screens/DeskPagarFaturaDark.html",
+  "width": 1280,
+  "height": 900,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskCompromissos",
+   "DeskConfig",
+   "DeskFaturaPaga",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNovoCartao",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskFaturaPaga",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "desktop",
+  "title": "Desktop — Fatura paga",
+  "kind": "toast / estado de sucesso",
+  "file": "screens/DeskFaturaPaga.html",
+  "dark": "screens/DeskFaturaPagaDark.html",
+  "width": 1280,
+  "height": 900,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskCompromissos",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNovoCartao",
+   "DeskOrcamento",
+   "DeskPagarFatura",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskCompromissos",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "desktop",
+  "title": "Desktop — Compromissos futuros",
+  "kind": "tela",
+  "file": "screens/DeskCompromissos.html",
+  "dark": "screens/DeskCompromissosDark.html",
+  "width": 1280,
+  "height": 980,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskParcelaDetalhe",
+   "DeskParcelar",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskParcelaDetalhe",
+  "section": "Cartões, faturas e compromissos",
+  "platform": "desktop",
+  "title": "Desktop — Compra parcelada (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskParcelaDetalhe.html",
+  "dark": "screens/DeskParcelaDetalheDark.html",
+  "width": 1280,
+  "height": 980,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskCompromissos",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskParcelar",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Recorrentes",
+  "section": "Recorrentes",
+  "platform": "mobile",
+  "title": "Recorrentes",
+  "kind": "tela",
+  "file": "screens/Recorrentes.html",
+  "dark": "screens/RecorrentesDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "EditarRecorrencia",
+   "Main",
+   "Nova"
+  ]
+ },
+ {
+  "id": "EditarRecorrencia",
+  "section": "Recorrentes",
+  "platform": "mobile",
+  "title": "Editar recorrência",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/EditarRecorrencia.html",
+  "dark": "screens/EditarRecorrenciaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "EncerrarRecorrencia",
+   "Recorrentes"
+  ]
+ },
+ {
+  "id": "EncerrarRecorrencia",
+  "section": "Recorrentes",
+  "platform": "mobile",
+  "title": "Pausar ou encerrar recorrência",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/EncerrarRecorrencia.html",
+  "dark": "screens/EncerrarRecorrenciaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "EditarRecorrencia",
+   "Recorrentes"
+  ]
+ },
+ {
+  "id": "DeskRecorrentes",
+  "section": "Recorrentes",
+  "platform": "desktop",
+  "title": "Desktop — Recorrentes",
+  "kind": "tela",
+  "file": "screens/DeskRecorrentes.html",
+  "dark": "screens/DeskRecorrentesDark.html",
+  "width": 1280,
+  "height": 760,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskEditarRecorrencia",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskEditarRecorrencia",
+  "section": "Recorrentes",
+  "platform": "desktop",
+  "title": "Desktop — Editar recorrência (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskEditarRecorrencia.html",
+  "dark": "screens/DeskEditarRecorrenciaDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskEncerrarRecorrencia",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskEncerrarRecorrencia",
+  "section": "Recorrentes",
+  "platform": "desktop",
+  "title": "Desktop — Pausar ou encerrar (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskEncerrarRecorrencia.html",
+  "dark": "screens/DeskEncerrarRecorrenciaDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskEditarRecorrencia",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Orcamento",
+  "section": "Orçamento e metas",
+  "platform": "mobile",
+  "title": "Orçamento",
+  "kind": "tela",
+  "file": "screens/Orcamento.html",
+  "dark": "screens/OrcamentoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "DefinirOrcamento",
+   "Main",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "DefinirOrcamento",
+  "section": "Orçamento e metas",
+  "platform": "mobile",
+  "title": "Definir limites",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/DefinirOrcamento.html",
+  "dark": "screens/DefinirOrcamentoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Categorias",
+   "NovaCategoria",
+   "Orcamento"
+  ]
+ },
+ {
+  "id": "Metas",
+  "section": "Orçamento e metas",
+  "platform": "mobile",
+  "title": "Metas",
+  "kind": "tela",
+  "file": "screens/Metas.html",
+  "dark": "screens/MetasDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "GuardarMeta",
+   "Main",
+   "NovaMeta",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "NovaMeta",
+  "section": "Orçamento e metas",
+  "platform": "mobile",
+  "title": "Nova meta",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/NovaMeta.html",
+  "dark": "screens/NovaMetaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Metas"
+  ]
+ },
+ {
+  "id": "GuardarMeta",
+  "section": "Orçamento e metas",
+  "platform": "mobile",
+  "title": "Guardar na meta",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/GuardarMeta.html",
+  "dark": "screens/GuardarMetaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Metas"
+  ]
+ },
+ {
+  "id": "DeskOrcamento",
+  "section": "Orçamento e metas",
+  "platform": "desktop",
+  "title": "Desktop — Orçamento",
+  "kind": "tela",
+  "file": "screens/DeskOrcamento.html",
+  "dark": "screens/DeskOrcamentoDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNovaCategoria",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskMetas",
+  "section": "Orçamento e metas",
+  "platform": "desktop",
+  "title": "Desktop — Metas",
+  "kind": "tela",
+  "file": "screens/DeskMetas.html",
+  "dark": "screens/DeskMetasDark.html",
+  "width": 1280,
+  "height": 560,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskNovaMeta",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskNovaMeta",
+  "section": "Orçamento e metas",
+  "platform": "desktop",
+  "title": "Desktop — Nova meta (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskNovaMeta.html",
+  "dark": "screens/DeskNovaMetaDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Categorias",
+  "section": "Categorias",
+  "platform": "mobile",
+  "title": "Categorias",
+  "kind": "tela",
+  "file": "screens/Categorias.html",
+  "dark": "screens/CategoriasDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "ApagarCategoria",
+   "DefinirOrcamento",
+   "NovaCategoria"
+  ]
+ },
+ {
+  "id": "MaisCategorias",
+  "section": "Categorias",
+  "platform": "mobile",
+  "title": "Escolher categoria",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/MaisCategorias.html",
+  "dark": "screens/MaisCategoriasDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Categorias",
+   "Nova",
+   "NovaCategoria"
+  ]
+ },
+ {
+  "id": "NovaCategoria",
+  "section": "Categorias",
+  "platform": "mobile",
+  "title": "Nova categoria",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/NovaCategoria.html",
+  "dark": "screens/NovaCategoriaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Nova"
+  ]
+ },
+ {
+  "id": "ApagarCategoria",
+  "section": "Categorias",
+  "platform": "mobile",
+  "title": "Apagar categoria",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/ApagarCategoria.html",
+  "dark": "screens/ApagarCategoriaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Categorias"
+  ]
+ },
+ {
+  "id": "DeskCategorias",
+  "section": "Categorias",
+  "platform": "desktop",
+  "title": "Desktop — Categorias",
+  "kind": "tela",
+  "file": "screens/DeskCategorias.html",
+  "dark": "screens/DeskCategoriasDark.html",
+  "width": 1280,
+  "height": 760,
+  "opens": [
+   "DeskAlertas",
+   "DeskApagarCategoria",
+   "DeskCartoes",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNovaCategoria",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskNovaCategoria",
+  "section": "Categorias",
+  "platform": "desktop",
+  "title": "Desktop — Nova categoria (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskNovaCategoria.html",
+  "dark": "screens/DeskNovaCategoriaDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskApagarCategoria",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskApagarCategoria",
+  "section": "Categorias",
+  "platform": "desktop",
+  "title": "Desktop — Apagar categoria (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskApagarCategoria.html",
+  "dark": "screens/DeskApagarCategoriaDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNovaCategoria",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Relatorios",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "mobile",
+  "title": "Relatórios",
+  "kind": "tela",
+  "file": "screens/Relatorios.html",
+  "dark": "screens/RelatoriosDark.html",
+  "width": 390,
+  "height": 2780,
+  "opens": [
+   "Cartoes",
+   "Historico",
+   "Main",
+   "Orcamento",
+   "Recorrentes",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "Historico",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "mobile",
+  "title": "Histórico",
+  "kind": "tela",
+  "file": "screens/Historico.html",
+  "dark": "screens/HistoricoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Fechamento",
+   "Relatorios"
+  ]
+ },
+ {
+  "id": "Fechamento",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "mobile",
+  "title": "Fechamento do mês",
+  "kind": "tela",
+  "file": "screens/Fechamento.html",
+  "dark": "screens/FechamentoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "GuardarMeta",
+   "Historico",
+   "Relatorios"
+  ]
+ },
+ {
+  "id": "ViradaMes",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "mobile",
+  "title": "Virada de mês",
+  "kind": "tela",
+  "file": "screens/ViradaMes.html",
+  "dark": "screens/ViradaMesDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "DefinirOrcamento",
+   "Main"
+  ]
+ },
+ {
+  "id": "DeskRelatorios",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "desktop",
+  "title": "Desktop — Relatórios",
+  "kind": "tela",
+  "file": "screens/DeskRelatorios.html",
+  "dark": "screens/DeskRelatoriosDark.html",
+  "width": 1280,
+  "height": 1800,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskHistorico",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskHistorico",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "desktop",
+  "title": "Desktop — Histórico",
+  "kind": "tela",
+  "file": "screens/DeskHistorico.html",
+  "dark": "screens/DeskHistoricoDark.html",
+  "width": 1280,
+  "height": 1020,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskFechamento",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskFechamento",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "desktop",
+  "title": "Desktop — Fechamento do mês",
+  "kind": "tela",
+  "file": "screens/DeskFechamento.html",
+  "dark": "screens/DeskFechamentoDark.html",
+  "width": 1280,
+  "height": 760,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskHistorico",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskVirada",
+  "section": "Relatórios, histórico e virada de mês",
+  "platform": "desktop",
+  "title": "Desktop — Virada de mês (diálogo)",
+  "kind": "diálogo",
+  "file": "screens/DeskVirada.html",
+  "dark": "screens/DeskViradaDark.html",
+  "width": 1280,
+  "height": 900,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Importar",
+  "section": "Importar e atalhos",
+  "platform": "mobile",
+  "title": "Importar extrato",
+  "kind": "tela",
+  "file": "screens/Importar.html",
+  "dark": "screens/ImportarDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Dados",
+   "ImportarRevisar"
+  ]
+ },
+ {
+  "id": "ImportarRevisar",
+  "section": "Importar e atalhos",
+  "platform": "mobile",
+  "title": "Revisar importação",
+  "kind": "tela",
+  "file": "screens/ImportarRevisar.html",
+  "dark": "screens/ImportarRevisarDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Importar",
+   "ImportarOk"
+  ]
+ },
+ {
+  "id": "ImportarOk",
+  "section": "Importar e atalhos",
+  "platform": "mobile",
+  "title": "Importação concluída",
+  "kind": "tela",
+  "file": "screens/ImportarOk.html",
+  "dark": "screens/ImportarOkDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Importar",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "Atalhos",
+  "section": "Importar e atalhos",
+  "platform": "mobile",
+  "title": "Atalhos e widget",
+  "kind": "tela",
+  "file": "screens/Atalhos.html",
+  "dark": "screens/AtalhosDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Config",
+   "Rapido"
+  ]
+ },
+ {
+  "id": "Rapido",
+  "section": "Importar e atalhos",
+  "platform": "mobile",
+  "title": "Gasto rápido",
+  "kind": "folha (bottom sheet)",
+  "file": "screens/Rapido.html",
+  "dark": "screens/RapidoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Detalhe",
+   "Filtros",
+   "Main",
+   "Nova",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes",
+   "TransacoesSelecao"
+  ]
+ },
+ {
+  "id": "DeskImportar",
+  "section": "Importar e atalhos",
+  "platform": "desktop",
+  "title": "Desktop — Importar extrato",
+  "kind": "tela",
+  "file": "screens/DeskImportar.html",
+  "dark": "screens/DeskImportarDark.html",
+  "width": 1280,
+  "height": 960,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Boasvindas",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Boas-vindas",
+  "kind": "fluxo de entrada",
+  "file": "screens/Boasvindas.html",
+  "dark": "screens/BoasvindasDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "CriarConta",
+   "Entrar"
+  ]
+ },
+ {
+  "id": "Entrar",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Entrar",
+  "kind": "fluxo de entrada",
+  "file": "screens/Entrar.html",
+  "dark": "screens/EntrarDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Boasvindas",
+   "CriarConta",
+   "Main",
+   "RecuperarSenha"
+  ]
+ },
+ {
+  "id": "CriarConta",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Criar conta",
+  "kind": "fluxo de entrada",
+  "file": "screens/CriarConta.html",
+  "dark": "screens/CriarContaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Boasvindas",
+   "Entrar",
+   "SetupCartao"
+  ]
+ },
+ {
+  "id": "RecuperarSenha",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Recuperar senha",
+  "kind": "fluxo de entrada",
+  "file": "screens/RecuperarSenha.html",
+  "dark": "screens/RecuperarSenhaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Entrar"
+  ]
+ },
+ {
+  "id": "SetupCartao",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Primeiro cartão",
+  "kind": "fluxo de entrada",
+  "file": "screens/SetupCartao.html",
+  "dark": "screens/SetupCartaoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "SetupOrcamento"
+  ]
+ },
+ {
+  "id": "SetupOrcamento",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Orçamento inicial",
+  "kind": "fluxo de entrada",
+  "file": "screens/SetupOrcamento.html",
+  "dark": "screens/SetupOrcamentoDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "InicioVazio",
+   "SetupCartao"
+  ]
+ },
+ {
+  "id": "InicioVazio",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Início vazio",
+  "kind": "estado vazio",
+  "file": "screens/InicioVazio.html",
+  "dark": "screens/InicioVazioDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "DefinirOrcamento",
+   "Main",
+   "Nova",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "TransacoesVazio",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Transações vazio",
+  "kind": "estado vazio",
+  "file": "screens/TransacoesVazio.html",
+  "dark": "screens/TransacoesVazioDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Main",
+   "Nova",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "CartoesVazio",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "mobile",
+  "title": "Cartões vazio",
+  "kind": "estado vazio",
+  "file": "screens/CartoesVazio.html",
+  "dark": "screens/CartoesVazioDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Cartoes",
+   "Main",
+   "NovoCartao",
+   "Orcamento",
+   "Relatorios",
+   "Transacoes"
+  ]
+ },
+ {
+  "id": "DeskEntrar",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "desktop",
+  "title": "Desktop — Entrar",
+  "kind": "fluxo de entrada",
+  "file": "screens/DeskEntrar.html",
+  "dark": "screens/DeskEntrarDark.html",
+  "width": 1280,
+  "height": 820,
+  "opens": [
+   "DeskCriarConta",
+   "DeskInicio",
+   "DeskRecuperarSenha"
+  ]
+ },
+ {
+  "id": "DeskCriarConta",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "desktop",
+  "title": "Desktop — Criar conta",
+  "kind": "fluxo de entrada",
+  "file": "screens/DeskCriarConta.html",
+  "dark": "screens/DeskCriarContaDark.html",
+  "width": 1280,
+  "height": 820,
+  "opens": [
+   "DeskEntrar",
+   "DeskSetup"
+  ]
+ },
+ {
+  "id": "DeskRecuperarSenha",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "desktop",
+  "title": "Desktop — Recuperar senha",
+  "kind": "fluxo de entrada",
+  "file": "screens/DeskRecuperarSenha.html",
+  "dark": "screens/DeskRecuperarSenhaDark.html",
+  "width": 1280,
+  "height": 820,
+  "opens": [
+   "DeskEntrar"
+  ]
+ },
+ {
+  "id": "DeskSetup",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "desktop",
+  "title": "Desktop — Configuração inicial",
+  "kind": "fluxo de entrada",
+  "file": "screens/DeskSetup.html",
+  "dark": "screens/DeskSetupDark.html",
+  "width": 1280,
+  "height": 760,
+  "opens": [
+   "DeskInicioVazio"
+  ]
+ },
+ {
+  "id": "DeskInicioVazio",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "desktop",
+  "title": "Desktop — Início vazio",
+  "kind": "estado vazio",
+  "file": "screens/DeskInicioVazio.html",
+  "dark": "screens/DeskInicioVazioDark.html",
+  "width": 1280,
+  "height": 860,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskTransacoesVazio",
+  "section": "Primeiro uso e estados vazios",
+  "platform": "desktop",
+  "title": "Desktop — Transações vazio",
+  "kind": "estado vazio",
+  "file": "screens/DeskTransacoesVazio.html",
+  "dark": "screens/DeskTransacoesVazioDark.html",
+  "width": 1280,
+  "height": 780,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskFiltros",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "Config",
+  "section": "Ajustes e alertas",
+  "platform": "mobile",
+  "title": "Ajustes",
+  "kind": "tela",
+  "file": "screens/Config.html",
+  "dark": "screens/ConfigDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Aparencia",
+   "Atalhos",
+   "ConfigAlertas",
+   "Dados",
+   "Entrar",
+   "Main"
+  ]
+ },
+ {
+  "id": "Aparencia",
+  "section": "Ajustes e alertas",
+  "platform": "mobile",
+  "title": "Aparência",
+  "kind": "tela",
+  "file": "screens/Aparencia.html",
+  "dark": "screens/AparenciaDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Config"
+  ]
+ },
+ {
+  "id": "ConfigAlertas",
+  "section": "Ajustes e alertas",
+  "platform": "mobile",
+  "title": "Alertas (ajustes)",
+  "kind": "tela",
+  "file": "screens/ConfigAlertas.html",
+  "dark": "screens/ConfigAlertasDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Config"
+  ]
+ },
+ {
+  "id": "Alertas",
+  "section": "Ajustes e alertas",
+  "platform": "mobile",
+  "title": "Central de alertas",
+  "kind": "tela",
+  "file": "screens/Alertas.html",
+  "dark": "screens/AlertasDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "ConfigAlertas",
+   "Main"
+  ]
+ },
+ {
+  "id": "Dados",
+  "section": "Ajustes e alertas",
+  "platform": "mobile",
+  "title": "Segurança e dados",
+  "kind": "tela",
+  "file": "screens/Dados.html",
+  "dark": "screens/DadosDark.html",
+  "width": 390,
+  "height": 844,
+  "opens": [
+   "Config",
+   "Importar"
+  ]
+ },
+ {
+  "id": "DeskConfig",
+  "section": "Ajustes e alertas",
+  "platform": "desktop",
+  "title": "Desktop — Ajustes",
+  "kind": "tela",
+  "file": "screens/DeskConfig.html",
+  "dark": "screens/DeskConfigDark.html",
+  "width": 1280,
+  "height": 1500,
+  "opens": [
+   "DeskAlertas",
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskEntrar",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ },
+ {
+  "id": "DeskAlertas",
+  "section": "Ajustes e alertas",
+  "platform": "desktop",
+  "title": "Desktop — Alertas",
+  "kind": "painel/popover",
+  "file": "screens/DeskAlertas.html",
+  "dark": "screens/DeskAlertasDark.html",
+  "width": 1280,
+  "height": 1280,
+  "opens": [
+   "DeskCartoes",
+   "DeskCategorias",
+   "DeskConfig",
+   "DeskInicio",
+   "DeskMetas",
+   "DeskNova",
+   "DeskOrcamento",
+   "DeskRecorrentes",
+   "DeskRelatorios",
+   "DeskTransacoes"
+  ]
+ }
+]

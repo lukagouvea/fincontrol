@@ -1,3 +1,5 @@
+> **Documento histórico.** Descreve a renovação visual anterior (`feat/new-ui`). A interface atual vem do redesign da branch `feat/redesign`. Decisões, divergências e o estado de cada fase estão em [`design/GAP.md`](../design/GAP.md).
+
 # Renovação visual — implementação e validação
 
 Branch: `feat/new-ui`, derivada da `main` no commit `098bc28`.

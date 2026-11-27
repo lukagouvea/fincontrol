@@ -5,6 +5,8 @@ export type VersionValues = {
   amount: number;
   categoryId: string | null;
   dayOfMonth: number;
+  /** Forma de pagamento: cartão, ou null = À vista. */
+  cardId: string | null;
 };
 
 export type Version = VersionValues & {
@@ -60,7 +62,8 @@ const byMonth = (a: Version, b: Version) => a.effectiveFrom - b.effectiveFrom;
 const sameValues = (a: VersionValues, b: VersionValues) =>
   a.amount === b.amount &&
   a.categoryId === b.categoryId &&
-  a.dayOfMonth === b.dayOfMonth;
+  a.dayOfMonth === b.dayOfMonth &&
+  a.cardId === b.cardId;
 
 /**
  * Versão vigente em um mês: a mais recente com effectiveFrom <= mês.

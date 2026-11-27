@@ -1,5 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 import { getCookie } from 'hono/cookie';
+import { AUTH_COOKIE } from '../lib/authCookie.js';
 import { verify } from 'hono/jwt';
 import { getJwtSecret } from '../lib/jwt.js';
 
@@ -11,7 +12,7 @@ type Env = {
 };
 
 export const authMiddleware = createMiddleware<Env>(async (c, next) => {
-  const token = getCookie(c, 'auth_token');
+  const token = getCookie(c, AUTH_COOKIE);
 
   if (!token) {
     return c.json({ error: 'Não autorizado: Token não encontrado' }, 401);

@@ -1,0 +1,55 @@
+/* Regras globais mínimas. Todo o resto vem de tokens.css + utilitários Tailwind. */
+@layer base {
+  html {
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-width: 320px;
+    margin: 0;
+    color: var(--ink);
+    background: var(--bg);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* fieldset nasce com min-width: min-content: uma fila rolável dentro dele
+     (ex.: "Pago com") esticava o formulário além da tela no celular. */
+  fieldset {
+    min-width: 0;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  /* Foco visível em tudo que é interativo (DESIGN.md › Estados). */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+  [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

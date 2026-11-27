@@ -36,19 +36,24 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
       "/recurring?type=income": [],
       "/recurring?type=expense": [],
       "/recurring/variations": [],
-      "/investment": { defaultMonthlyAmount: 200 },
-      "/investment/effective": {
-        defaultMonthlyAmount: 200,
-        overrideMonthlyAmount: null,
-        effectiveMonthlyAmount: 200,
-      },
-      "/users/tutorial-status": { tutorialCompleted: true },
+      "/recurring/payments": [],
+      "/cards": [],
+      "/budgets": [],
+      "/goals": [],
+      "/transactions/installments/active": [],
       ...overrides,
     };
     const response =
       responses[(config.method || "get") + " " + url] ?? responses[url] ?? {};
-    const data = typeof response === "function" ? response(config) : response;
-    if (data instanceof Error) throw data;
+    // Erros levam o config da requisição, como os do axios.
+    const fail = (error: Error) => Object.assign(error, { config: (error as { config?: unknown }).config ?? config });
+    let data: unknown;
+    try {
+      data = typeof response === "function" ? await response(config) : response;
+    } catch (error) {
+      throw error instanceof Error ? fail(error) : error;
+    }
+    if (data instanceof Error) throw fail(data);
     return { config, data, status: 200, statusText: "OK", headers: {} };
   };
   api.defaults.adapter = adapter;

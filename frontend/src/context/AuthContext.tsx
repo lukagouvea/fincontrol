@@ -14,12 +14,21 @@ import { useQueryClient } from "@tanstack/react-query";
 type AuthContextType = {
   currentUser: User | null;
   isAuthenticated: boolean;
+  /** A pessoa saiu de propósito (ou excluiu a conta) nesta aba. */
+  signedOut: boolean;
   isLoading: boolean; // Adicionado estado de loading global
   sessionVersion: number;
   isCurrentSession: (version: number) => boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  /** Marca a configuração inicial como concluída (sem recarregar o usuário). */
+  markOnboarded: (at: string) => void;
+  markClosingSeen: (month: string) => void;
+  /** Atualiza campos do usuário em memória depois de salvar no servidor. */
+  patchUser: (patch: Partial<User>) => void;
+  /** Encerra a sessão local sem chamar o servidor (ex.: conta excluída). */
+  clearSession: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [signedOut, setSignedOut] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Começa true para verificar localStorage
 
   // Verifica autenticação ao carregar (Persistência no Refresh)
@@ -59,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (user) {
           setCurrentUser(user);
           setIsAuthenticated(true);
+      setSignedOut(false);
         }
       } catch (error) {
         // Se der erro, apenas segue como deslogado
@@ -81,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Atualiza estado
       setCurrentUser(user);
       setIsAuthenticated(true);
+      setSignedOut(false);
     } catch (error) {
       throw error; // Repassa o erro para o componente tratar (ex: mostrar mensagem)
     } finally {
@@ -96,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setCurrentUser(user);
       setIsAuthenticated(true);
+      setSignedOut(false);
     } catch (error) {
       throw error;
     } finally {
@@ -108,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     resetSessionCache();
     setCurrentUser(null);
     setIsAuthenticated(false);
+    setSignedOut(true);
   };
 
   const value = useMemo(
@@ -120,8 +134,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       login,
       signup,
       logout,
+      markOnboarded: (at: string) => setCurrentUser((user) => (user ? { ...user, onboardingCompletedAt: at } : user)),
+      markClosingSeen: (month: string) => setCurrentUser((user) => (user ? { ...user, lastClosingSeen: month } : user)),
+      patchUser: (patch: Partial<User>) => setCurrentUser((user) => (user ? { ...user, ...patch } : user)),
+      clearSession: () => {
+        resetSessionCache();
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+        setSignedOut(true);
+      },
+      signedOut,
     }),
-    [currentUser, isAuthenticated, isLoading, sessionVersion, isCurrentSession],
+    [currentUser, isAuthenticated, signedOut, isLoading, sessionVersion, isCurrentSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

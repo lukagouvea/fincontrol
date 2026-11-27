@@ -24,13 +24,31 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        theme_color: '#166b52',
-        background_color: '#f5f6f5',
+        theme_color: '#1E4D3B',
+        background_color: '#F5F2EA',
         categories: ['finance', 'productivity'],
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+        // Atalhos ao segurar o ícone do app instalado (Android/desktop).
+        // Abrem o Início com a ação já aberta (TransactionEditorProvider).
+        shortcuts: [
+          {
+            name: 'Gasto rápido',
+            short_name: 'Gasto',
+            description: 'Lançar um gasto em três toques',
+            url: '/?rapido=1',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Nova receita',
+            short_name: 'Receita',
+            description: 'Registrar uma entrada',
+            url: '/?nova=receita',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
+          },
         ],
       },
       workbox: {
@@ -52,7 +70,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         // Nome do serviço no docker-compose + porta interna
-        target: 'http://backend:3001',
+        target: process.env.API_PROXY_TARGET ?? 'http://backend:3001',
         changeOrigin: true,
         secure: false,
         // Remove o '/api' da frente antes de mandar pro backend

@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { isOwnCard } from '../lib/cards.js';
+import { CATEGORY_NOT_FOUND, isOwnCategory } from '../lib/categories.js';
 import {
   type Version,
   dateOfMonthIndex,
@@ -29,10 +31,15 @@ const recurringSchema = z.object({
   categoryId: z.uuid().optional().or(z.literal('')), // Pode vir vazio
   startDate: z.iso.datetime(), // Front manda ISO
   endDate: z.iso.datetime().optional().or(z.literal('')).nullable(), // Pode vir vazio
+  // Forma de pagamento (versionada como valor/categoria/dia). null = À vista.
+  cardId: z.uuid().nullable().optional(),
+  // Pausa por meses ('YYYY-MM', inclusive). null remove a pausa.
+  pausedFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable().optional(),
+  pausedUntil: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).nullable().optional(),
 });
 
 const updateSchema = recurringSchema.partial().extend({
-  // 'from': valor/categoria/dia valem a partir de `effectiveFrom`.
+  // 'from': valor/categoria/dia/cartão valem a partir de `effectiveFrom`.
   // 'all': corrige todo o histórico.
   scope: z.enum(['from', 'all']).default('from'),
   effectiveFrom: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM').optional(),
@@ -53,6 +60,7 @@ type DbVersion = {
   amount: unknown;
   categoryId: string | null;
   dayOfMonth: number;
+  cardId: string | null;
   category?: { id: string; name: string; color: string | null } | null;
 };
 
@@ -65,6 +73,9 @@ type RuleWithVersions = {
   dayOfMonth: number;
   startDate: Date;
   endDate: Date | null;
+  cardId: string | null;
+  pausedFrom: Date | null;
+  pausedUntil: Date | null;
   versions: DbVersion[];
   category?: { id: string; name: string; color: string | null } | null;
 };
@@ -75,6 +86,7 @@ const toVersion = (v: DbVersion): Version & { id?: string; category?: DbVersion[
   amount: Number(v.amount),
   categoryId: v.categoryId,
   dayOfMonth: v.dayOfMonth,
+  cardId: v.cardId,
   category: v.category,
 });
 
@@ -87,6 +99,7 @@ const versionsOf = (rule: RuleWithVersions) =>
         amount: Number(rule.amount),
         categoryId: rule.categoryId,
         dayOfMonth: rule.dayOfMonth,
+        cardId: rule.cardId,
         category: rule.category,
       }];
 
@@ -116,6 +129,10 @@ const formatRule = (rule: RuleWithVersions) => {
     day: current.dayOfMonth, // Banco (day_of_month) -> Front (day)
     startDate: rule.startDate.toISOString(),
     endDate: rule.endDate?.toISOString(),
+    // Forma de pagamento vigente no mês de referência (cada mês usa a da sua versão).
+    cardId: current.cardId,
+    pausedFrom: rule.pausedFrom ? rule.pausedFrom.toISOString().slice(0, 7) : null,
+    pausedUntil: rule.pausedUntil ? rule.pausedUntil.toISOString().slice(0, 7) : null,
     categoryId: current.categoryId,
     category: current.category ?? null,
     versions: versions.map((v) => ({
@@ -124,6 +141,7 @@ const formatRule = (rule: RuleWithVersions) => {
       amount: v.amount,
       categoryId: v.categoryId,
       day: v.dayOfMonth,
+      cardId: v.cardId,
     })),
   };
 };
@@ -143,6 +161,7 @@ async function writeVersions(tx: Tx, ruleId: string, desired: Version[]) {
       amount: v.amount,
       categoryId: v.categoryId,
       dayOfMonth: v.dayOfMonth,
+      cardId: v.cardId,
     };
     await tx.recurringRuleVersion.upsert({
       where: {
@@ -249,6 +268,38 @@ app.get('/variations', async (c) => {
 });
 
 // 3. CRIAR/ATUALIZAR VARIAÇÃO (POST /recurring/:id/variation)
+// Contas a pagar: pagamentos das ocorrências de recorrentes À vista, por mês.
+app.get('/payments', async (c) => {
+  const payments = await prisma.recurringPayment.findMany({
+    where: { userId: c.var.userId },
+    orderBy: { month: 'asc' },
+  });
+  return c.json(payments.map((p) => ({ ruleId: p.ruleId, month: p.month.toISOString().slice(0, 7), paidAt: p.paidAt.toISOString() })));
+});
+
+const paymentSchema = z.object({ paidAt: z.iso.datetime().nullable() });
+// Marca (ou desmarca, com null) a ocorrência do mês ('YYYY-MM') como paga.
+app.put('/:id/payments/:month', zValidator('json', paymentSchema), async (c) => {
+  const userId = c.var.userId;
+  const key = c.req.param('month');
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(key)) return c.json({ error: 'Use YYYY-MM' }, 400);
+  const rule = await prisma.recurringRule.findFirst({ where: { id: c.req.param('id'), userId } });
+  if (!rule) return c.json({ error: 'Regra não encontrada' }, 404);
+  if (rule.type !== 'expense') return c.json({ error: 'Só despesas têm pagamento a marcar' }, 400);
+  const month = new Date(`${key}-01T00:00:00Z`);
+  const { paidAt } = c.req.valid('json');
+  if (!paidAt) {
+    await prisma.recurringPayment.deleteMany({ where: { ruleId: rule.id, month } });
+    return c.json({ ruleId: rule.id, month: key, paidAt: null });
+  }
+  const saved = await prisma.recurringPayment.upsert({
+    where: { ruleId_month: { ruleId: rule.id, month } },
+    update: { paidAt: new Date(paidAt) },
+    create: { userId, ruleId: rule.id, month, paidAt: new Date(paidAt) },
+  });
+  return c.json({ ruleId: rule.id, month: key, paidAt: saved.paidAt.toISOString() });
+});
+
 app.post('/:id/variation', zValidator('json', variationSchema), async (c) => {
   const userId = c.var.userId;
   const ruleId = c.req.param('id');
@@ -308,6 +359,8 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
   const body = c.req.valid('json');
   const startDate = new Date(body.startDate);
   const categoryId = body.categoryId || null;
+  if (!(await isOwnCard(userId, body.cardId))) return c.json({ error: 'Cartão não encontrado' }, 404);
+  if (!(await isOwnCategory(userId, categoryId, body.type))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   try {
     const rule = await prisma.recurringRule.create({
@@ -320,12 +373,14 @@ app.post('/', zValidator('json', recurringSchema), async (c) => {
         startDate,
         endDate: body.endDate ? new Date(body.endDate) : null,
         categoryId,
+        cardId: body.cardId ?? null,
         versions: {
           create: {
             effectiveFrom: dateOfMonthIndex(monthIndexOfDate(startDate)),
             amount: body.amount,
             categoryId,
             dayOfMonth: body.day,
+            cardId: body.cardId ?? null,
           },
         },
       },
@@ -358,6 +413,8 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
   });
 
   if (!existing) return c.json({ error: 'Regra não encontrada' }, 404);
+  if (!(await isOwnCard(userId, body.cardId))) return c.json({ error: 'Cartão não encontrado' }, 404);
+  if (!(await isOwnCategory(userId, body.categoryId, existing.type))) return c.json(CATEGORY_NOT_FOUND, 404);
 
   const startDate = body.startDate ? new Date(body.startDate) : existing.startDate;
   const endDate = body.endDate
@@ -373,6 +430,8 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
       amount: body.amount,
       categoryId: body.categoryId === '' ? null : body.categoryId,
       dayOfMonth: body.day,
+      // Trocar o cartão vale a partir do mês escolhido: as faturas antigas ficam como estavam.
+      cardId: body.cardId,
     },
     body.scope,
     body.effectiveFrom ? parseMonthKey(body.effectiveFrom) : currentMonthIndex(),
@@ -389,6 +448,9 @@ app.put('/:id', zValidator('json', updateSchema), async (c) => {
           description,
           startDate,
           endDate,
+          cardId: current.cardId,
+          ...(body.pausedFrom !== undefined && { pausedFrom: body.pausedFrom ? new Date(`${body.pausedFrom}-01T00:00:00Z`) : null }),
+          ...(body.pausedUntil !== undefined && { pausedUntil: body.pausedUntil ? new Date(`${body.pausedUntil}-01T00:00:00Z`) : null }),
           amount: current.amount,
           categoryId: current.categoryId,
           dayOfMonth: current.dayOfMonth,

@@ -47,10 +47,13 @@ export const generateParcelas = (valorTotal: number, numeroParcelas: number, des
 
 type FixedItemLike = {
   day: number;
+  pausedFrom?: string | null;
+  pausedUntil?: string | null;
   startDate: string;
   endDate?: string | null;
   amount?: number;
   categoryId?: string | null;
+  cardId?: string | null;
   versions?: FixedVersion[];
 };
 
@@ -58,6 +61,8 @@ export type FixedItemValues = {
   amount: number;
   categoryId: string | null;
   day: number;
+  /** Forma de pagamento vigente no mês (null = À vista). */
+  cardId: string | null;
 };
 
 const monthIndex = (year: number, month: number) => year * 12 + month;
@@ -86,6 +91,7 @@ export const getFixedItemVersion = (
     amount: item.amount ?? 0,
     categoryId: item.categoryId ?? null,
     day: item.day,
+    cardId: item.cardId ?? null,
   };
   if (!item.versions?.length) return fallback;
   const target = monthIndex(year, month);
@@ -97,7 +103,9 @@ export const getFixedItemVersion = (
     if (versionMonthIndex(v.effectiveFrom) <= target) current = v;
     else break;
   }
-  return { amount: current.amount, categoryId: current.categoryId ?? null, day: current.day };
+  // Versões de antes do cartão versionado não trazem cardId: usa o da regra.
+  const cardId = current.cardId === undefined ? fallback.cardId : current.cardId ?? null;
+  return { amount: current.amount, categoryId: current.categoryId ?? null, day: current.day, cardId };
 };
 
 export const getActualFixedItemAmount = (
@@ -125,6 +133,9 @@ export const isItemActiveInMonth = (
 ): boolean => {
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
+  // Pausada nesse mês: não lança.
+  const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+  if (item.pausedFrom && key >= item.pausedFrom && key <= (item.pausedUntil ?? item.pausedFrom)) return false;
   const { day } = getFixedItemVersion(item, year, month);
   // 1. Cria a data exata da ocorrência para o mês e ano alvo.
   // Ex: Se targetDate é Outubro/2025 e o dia é 10, cria a data "10/10/2025".

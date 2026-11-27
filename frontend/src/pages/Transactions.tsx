@@ -20,7 +20,7 @@ import { applyFilters, EMPTY_FILTERS, filterChips, hasFilters, periodRange, type
 import { cx } from "../lib/cx";
 import { formatRelativeDay, monthLabel, monthNames } from "../lib/dates";
 import { formatMoney, sumMoney } from "../lib/money";
-import { Button, IconButton } from "../ui/Button";
+import { Button, ButtonLink, IconButton } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Chip, Badge } from "../ui/Chip";
 import { ConfirmSheet } from "../ui/ConfirmSheet";
@@ -245,6 +245,11 @@ export function Transactions() {
           <Button variant="secondary" onClick={() => setSelecting(true)} disabled={!pickable.length}>
             Selecionar
           </Button>
+          {desktop && (
+            <ButtonLink to="/importar" variant="secondary">
+              Importar extrato
+            </ButtonLink>
+          )}
           {desktop ? (
             <Button size="md" icon={<Plus size={18} aria-hidden="true" />} onClick={() => editor.create()}>
               Nova transação

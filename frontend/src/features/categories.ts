@@ -76,8 +76,8 @@ export const CATEGORY_ICONS: Record<string, { icon: LucideIcon; label: string }>
 const rules: Array<[RegExp, string]> = [
   [/aliment|comida|restaur|padaria|lanche|refei|ifood|delivery/i, "utensils"],
   [/mercad|supermerc/i, "shopping-cart"],
-  [/morad|aluguel|casa|condom|lar\b/i, "house"],
-  [/transp|combust|gasolina|uber|carro|ve[ií]culo|estacion|ônibus|onibus/i, "car"],
+  [/morad|aluguel|\bcasa\b|condom|\blar\b/i, "house"],
+  [/transp|combust|gasolina|posto|uber|99 ?pop|carro|ve[ií]culo|estacion|ped[aá]gio|ônibus|onibus/i, "car"],
   [/lazer|divers|cinema|entreten|jogo|show/i, "play"],
   [/sa[uú]de|farm[aá]c|m[eé]dic|hospital|plano/i, "heart"],
   [/academ|esporte|fitness/i, "dumbbell"],

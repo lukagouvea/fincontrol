@@ -39,6 +39,7 @@ const Budget = named(() => import("./pages/Budget"), "Budget");
 const Goals = named(() => import("./pages/Goals"), "Goals");
 const History = named(() => import("./pages/History"), "History");
 const MonthClosing = named(() => import("./pages/MonthClosing"), "MonthClosing");
+const Import = named(() => import("./pages/Import"), "Import");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
@@ -144,6 +145,7 @@ export function App() {
                         >
                           <Route index element={<Home />} />
                           <Route path="/transacoes" element={<Transactions />} />
+                          <Route path="/importar" element={<Import />} />
                           <Route path="/recorrentes" element={<Recurring />} />
                           <Route path="/relatorios" element={<Reports />} />
                           <Route path="/relatorios/historico" element={<History />} />

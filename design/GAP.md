@@ -205,3 +205,24 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
   - **Excluir:** pede confirmação, e uma parcela exclui a compra inteira.
   - **Desfazer:** mudanças voltam cada transação ao valor anterior. Exclusões só chamam a API quando o aviso some.
 - **Backend:** `POST /transactions/batch` é tudo ou nada, até 500 por vez.
+
+### Fase 3h: importar extrato (concluída)
+- **Leitura no navegador** (`features/import/parse.ts`). O arquivo não sai do aparelho.
+  - OFX nos formatos SGML (sem tags de fechamento) e XML.
+  - CSV com detecção de separador, de cabeçalho (inclusive com linhas antes dele), de colunas de crédito e débito separadas e de arquivo sem cabeçalho, deduzido pelo conteúdo.
+  - Números no formato brasileiro e internacional e sufixos D/C.
+  - Linhas de saldo são descartadas.
+  - Se o arquivo não for UTF-8, usa Windows-1252. Limite de 5 MB.
+- **Não calibrado com extratos reais:** o dono não tinha arquivos de exemplo, então os formatos foram testados com amostras construídas (Nubank, conta corrente com ";", débito/crédito separados, OFX). Ajustar quando aparecer um arquivo real que não leia.
+- **Tipo pelo sinal:**
+  - No cartão, o sinal da maioria dos lançamentos é o das compras.
+  - À vista (extrato de conta), negativo é despesa.
+  - No cartão, créditos com cara de "pagamento" são marcados como pagamento da fatura e ignorados, porque não são gasto.
+- **Já lançada:** mesma data, mesmo valor em centavos e mesma descrição normalizada que uma transação existente. Vem desmarcada.
+- **Sugestão de categoria:**
+  - descrição igual já usada no histórico do mês do arquivo e dos 3 meses anteriores;
+  - senão, a mesma primeira palavra;
+  - senão, o assunto (o mesmo dicionário dos ícones de categoria).
+  - Sem sugestão, o item vem "sem categoria", desmarcado até escolher.
+- **Importação tudo ou nada:** até 2.000 lançamentos por vez. "Desfazer importação" apaga todos os lançamentos criados por ela.
+- **Correção colateral:** a regra de ícone de "Moradia" casava "lar" no fim de palavras ("Farmácia Popu*lar*") e agora exige a palavra inteira.

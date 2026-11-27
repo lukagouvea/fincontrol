@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Flag, Moon, Repeat, Tag } from "lucide-react";
+import { ChevronRight, Download, Flag, Moon, Repeat, Tag } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme, type ThemePreference } from "../context/ThemeContext";
 import { useMediaQuery } from "../hooks/useMediaQuery";
@@ -157,6 +157,7 @@ export function Settings() {
           <SettingsLink to="/categorias" icon={<Tag size={20} />} title="Categorias" subtitle="Organize seus gastos" />
           <SettingsLink to="/recorrentes" icon={<Repeat size={20} />} title="Recorrentes" subtitle="Lançamentos automáticos" />
           <SettingsLink to="/metas" icon={<Flag size={20} />} title="Metas" subtitle="Seus objetivos" />
+          <SettingsLink to="/importar" icon={<Download size={20} />} title="Importar extrato" subtitle="CSV ou OFX do banco" />
         </ul>
         <Button variant="secondary" size="lg" block loading={leaving} onClick={signOut} className="mt-4 !text-expense">
           Sair da conta

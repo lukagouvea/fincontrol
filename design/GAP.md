@@ -17,7 +17,7 @@ Fase = fase do plano em que a tela entra (ver final do documento).
 |---|---|---|---|---|
 | Início `Main` / `DeskInicio` | F | `pages/Dashboard.tsx` + `components/Dashboard/*` | 2 → 3c | Layout fixo; os módulos dnd saem. "Esta semana" e "Faturas abertas" dependem de 3a/3c. |
 | Transações `Transacoes` / `DeskTransacoes` | F | `pages/Transactions.tsx`, `Shared/{Fixed,Variable}Transactions.tsx` | 2 | Lista única: variáveis + recorrentes projetadas + parcelas. Tabela no desktop. Chip de pagamento em 3a. |
-| Nova transação `Nova`, `NovaAVista`, `NovaReceita` / `DeskNova` | F | `Shared/TransactionForm.tsx`, `Layout/QuickAdd.tsx` | 2 → 3a | O campo "Pago com" depende de 3a. |
+| Nova transação `Nova`, `NovaAVista`, `NovaReceita` / `DeskNova` | F | `Shared/TransactionForm.tsx`, `Layout/QuickAdd.tsx` | 2 → 3a | O campo "Pago com" depende de 3a. **Divergência (pedido do dono):** no desktop o formulário segue o layout do celular (categorias em blocos com ícone, grade de 3, "Repetir todo mês" em cartão), não os chips de texto do `DeskNova`. Do desktop ficam só o diálogo, o "Cancelar" e o "Pago com" quebrando linha. |
 | Detalhe `Detalhe` / painel em `DeskTransacoes` | N | — | 2 | Hoje a edição abre direto no modal. |
 | Parcelar `Parcelar`, `NovaParcelada` / `DeskParcelar` | F | `TransactionForm` (modo parcelado) | 2 → 3a | Precisa do cartão. |
 | Excluir + desfazer `ExcluirTransacao`, `TransacoesDesfazer` / `DeskExcluir`, `DeskDesfazer` | N | `ConfirmationModal.tsx` | 2 | O desfazer usa commit adiado no cliente. |

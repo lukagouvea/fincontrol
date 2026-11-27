@@ -287,7 +287,7 @@ export function TransactionSheet({
                 Não foi possível carregar as categorias.
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-wrap">
+              <div className="grid grid-cols-3 gap-2">
                 {quick.map((category) => (
                   <CategoryChoice
                     key={category.id}
@@ -304,7 +304,7 @@ export function TransactionSheet({
                     "border-dashed border-border-strong text-ink-2 hover:bg-surface-2",
                   )}
                 >
-                  <MoreHorizontal size={20} aria-hidden="true" className="lg:hidden" />
+                  <MoreHorizontal size={20} aria-hidden="true" />
                   <span>{categories.length > QUICK_CATEGORIES ? "Mais" : "+ Nova"}</span>
                 </button>
               </div>
@@ -362,7 +362,7 @@ export function TransactionSheet({
           )}
 
           {canRepeat && (
-            <div className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface p-4 lg:border-0 lg:p-0">
+            <div className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface p-4">
               <div className="min-w-0">
                 <span className="block text-[15px] font-semibold">Repetir todo mês</span>
                 <span className="block text-[13px] text-muted">
@@ -396,8 +396,7 @@ export function TransactionSheet({
 
 const choiceBase =
   "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl border px-2 text-sm font-semibold " +
-  "lg:min-h-tap lg:flex-row lg:rounded-full lg:px-4 " +
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 function CategoryChoice({
   category,
@@ -416,11 +415,11 @@ function CategoryChoice({
       className={cx(
         choiceBase,
         selected
-          ? "border-primary bg-primary-tint text-primary lg:bg-primary lg:text-on-primary"
+          ? "border-primary bg-primary-tint text-primary"
           : "border-border bg-surface text-ink hover:bg-surface-2",
       )}
     >
-      <CategoryIcon category={category} className="!size-6 !bg-transparent lg:hidden" />
+      <CategoryIcon category={category} className="!size-6 !bg-transparent" />
       <span className="max-w-full truncate">{category.name}</span>
     </button>
   );

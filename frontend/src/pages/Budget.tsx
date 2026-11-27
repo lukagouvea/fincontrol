@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, PieChart, Plus } from "lucide-react";
-import CurrencyInput from "react-currency-input-field";
 import { useCategories } from "../hooks/useCategories";
 import { useSaveBudget } from "../hooks/useBudget";
 import { useMediaQuery } from "../hooks/useMediaQuery";
@@ -25,41 +24,38 @@ import { Toggle } from "../ui/Toggle";
 import { LoadingCard } from "../ui/Skeleton";
 import { CategoryIcon } from "../ui/CategoryIcon";
 import { useToast } from "../ui/Toast";
-import { inputClass } from "../ui/Field";
+import { MoneyInput } from "../ui/MoneyInput";
 
 /** Chave do rascunho: o limite "Geral" não tem categoria. */
 const rowKey = (id: string | null) => id ?? "geral";
 const GENERAL_NAME = "Geral";
 
-/** Rascunho dos limites (texto do campo + número) por categoria. */
+/** Rascunho dos limites por categoria. */
 function useLimitDraft(rows: CategoryBudget[], resetKey: string) {
-  const [values, setValues] = useState<Record<string, { text?: string; value: number | null }>>({});
+  const [values, setValues] = useState<Record<string, number | null>>({});
   useEffect(() => {
-    setValues(Object.fromEntries(rows.map((row) => [rowKey(row.categoryId), { text: row.limit ? String(row.limit).replace(".", ",") : undefined, value: row.limit }])));
+    setValues(Object.fromEntries(rows.map((row) => [rowKey(row.categoryId), row.limit])));
     // Reinicia ao trocar de mês ou quando os dados salvos mudam.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
-  const total = fromCents(Object.values(values).reduce((sum, item) => sum + (item.value && item.value > 0 ? toCents(item.value) : 0), 0));
-  const dirty = rows.some((row) => (values[rowKey(row.categoryId)]?.value ?? null) !== row.limit);
+  const total = fromCents(Object.values(values).reduce<number>((sum, value) => sum + (value && value > 0 ? toCents(value) : 0), 0));
+  const dirty = rows.some((row) => (values[rowKey(row.categoryId)] ?? null) !== row.limit);
   const payload = rows.map((row) => {
-    const value = values[rowKey(row.categoryId)]?.value ?? null;
+    const value = values[rowKey(row.categoryId)] ?? null;
     return { categoryId: row.categoryId, amount: value && value > 0 ? value : null };
   });
-  const set = (id: string | null, text: string | undefined, value: number | null) => setValues((current) => ({ ...current, [rowKey(id)]: { text, value } }));
+  const set = (id: string | null, value: number | null) => setValues((current) => ({ ...current, [rowKey(id)]: value }));
   return { values, set, total, dirty, payload };
 }
 
-function LimitInput({ label, text, onChange, className }: { label: string; text?: string; onChange: (text: string | undefined, value: number | null) => void; className?: string }) {
+function LimitInput({ label, value, onChange, className }: { label: string; value: number | null; onChange: (value: number | null) => void; className?: string }) {
   return (
-    <CurrencyInput
+    <MoneyInput
       aria-label={label}
-      intlConfig={{ locale: "pt-BR", currency: "BRL" }}
-      decimalsLimit={2}
-      inputMode="decimal"
       placeholder="Sem limite"
-      value={text}
-      onValueChange={(value, _name, values) => onChange(value, values?.float ?? null)}
-      className={inputClass(false, cx("h-12 text-right font-num font-semibold", className))}
+      value={value}
+      onValueChange={onChange}
+      className={cx("h-12 text-right", className)}
     />
   );
 }
@@ -146,8 +142,8 @@ export function Budget() {
               </span>
               <LimitInput
                 label={`Limite de ${cat?.name ?? GENERAL_NAME}`}
-                text={draft.values[rowKey(row.categoryId)]?.text}
-                onChange={(text, value) => draft.set(row.categoryId, text, value)}
+                value={draft.values[rowKey(row.categoryId)] ?? null}
+                onChange={(value) => draft.set(row.categoryId, value)}
                 className="!w-40"
               />
             </li>
@@ -260,7 +256,7 @@ export function Budget() {
             <tbody>
               {editable.map((row) => {
                 const cat = category(row.categoryId);
-                const limit = draft.values[rowKey(row.categoryId)]?.value ?? null;
+                const limit = draft.values[rowKey(row.categoryId)] ?? null;
                 return (
                   <tr key={rowKey(row.categoryId)} className="border-b border-border">
                     <th scope="row" className="py-2 pr-3 text-left text-[15px] font-semibold">
@@ -276,7 +272,7 @@ export function Budget() {
                       <Money value={row.spent} size="sm" />
                     </td>
                     <td className="py-2 pl-4">
-                      <LimitInput label={`Limite de ${cat?.name ?? GENERAL_NAME}`} text={draft.values[rowKey(row.categoryId)]?.text} onChange={(text, value) => draft.set(row.categoryId, text, value)} />
+                      <LimitInput label={`Limite de ${cat?.name ?? GENERAL_NAME}`} value={draft.values[rowKey(row.categoryId)] ?? null} onChange={(value) => draft.set(row.categoryId, value)} />
                     </td>
                   </tr>
                 );

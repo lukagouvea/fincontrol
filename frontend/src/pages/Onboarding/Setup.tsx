@@ -10,7 +10,8 @@ import { formatMoney } from "../../lib/money";
 import { cx } from "../../lib/cx";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
-import { Field, MoneyInput, TextInput } from "../../ui/Field";
+import { Field, TextInput } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { BigMoneyInput } from "../../ui/BigMoneyInput";
 import { IconTile } from "../../ui/ListRow";
 
@@ -40,12 +41,10 @@ export function Setup() {
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [last4, setLast4] = useState("");
-  const [limitText, setLimitText] = useState<string>();
   const [limit, setLimit] = useState<number | null>(null);
   const [closingDay, setClosingDay] = useState("");
   const [dueDay, setDueDay] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [budgetText, setBudgetText] = useState<string>();
   const [budget, setBudget] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [finishing, setFinishing] = useState(false);
@@ -111,7 +110,7 @@ export function Setup() {
                 <TextInput value={last4} onChange={(e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="0000" />
               </Field>
               <Field label="Limite" error={errors.limit}>
-                <MoneyInput value={limitText} onValueChange={(v) => setLimitText(v)} onNumberChange={setLimit} />
+                <MoneyInput value={limit} onValueChange={setLimit} />
               </Field>
               <Field label="Fecha no dia" error={errors.closingDay}>
                 <TextInput type="number" inputMode="numeric" min={1} max={31} value={closingDay} onChange={(e) => setClosingDay(e.target.value)} />
@@ -137,21 +136,15 @@ export function Setup() {
             </div>
             <BigMoneyInput
               label="Orçamento mensal"
-              text={budgetText}
-              onChange={(text, value) => {
-                setBudgetText(text);
-                setBudget(value);
-              }}
+              value={budget}
+              onChange={setBudget}
             />
             <div className="flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((value) => (
                 <Chip
                   key={value}
                   selected={budget === value}
-                  onClick={() => {
-                    setBudget(value);
-                    setBudgetText(String(value));
-                  }}
+                  onClick={() => setBudget(value)}
                 >
                   {formatMoney(value, { cents: false })}
                 </Chip>

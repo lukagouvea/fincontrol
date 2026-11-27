@@ -5,7 +5,8 @@ import { monthNames } from "../../lib/dates";
 import { formatMoney } from "../../lib/money";
 import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
-import { Field, MoneyInput, TextInput } from "../../ui/Field";
+import { Field, TextInput } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { BigMoneyInput } from "../../ui/BigMoneyInput";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
 import { useToast } from "../../ui/Toast";
@@ -22,10 +23,8 @@ export function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: Goal 
   const remove = useDeleteGoal();
   const showToast = useToast();
   const [name, setName] = useState("");
-  const [targetText, setTargetText] = useState<string>();
   const [target, setTarget] = useState<number | null>(null);
   const [deadline, setDeadline] = useState("");
-  const [initialText, setInitialText] = useState<string>();
   const [initial, setInitial] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
@@ -35,10 +34,8 @@ export function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: Goal 
     if (!open) return;
     setName(goal?.name ?? "");
     setTarget(goal?.target ?? null);
-    setTargetText(goal ? String(goal.target).replace(".", ",") : undefined);
     setDeadline(goal?.deadline ?? "");
     setInitial(null);
-    setInitialText(undefined);
     setErrors({});
     setSubmitError("");
   }, [open, goal]);
@@ -94,12 +91,9 @@ export function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: Goal 
           </Field>
           <BigMoneyInput
             label="Quanto você quer juntar"
-            text={targetText}
+            value={target}
             error={errors.target}
-            onChange={(text, value) => {
-              setTargetText(text);
-              setTarget(value);
-            }}
+            onChange={setTarget}
           />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Prazo" hint="Opcional">
@@ -111,7 +105,7 @@ export function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: Goal 
               </Field>
             ) : (
               <Field label="Já guardado">
-                <MoneyInput value={initialText} onValueChange={(value) => setInitialText(value)} onNumberChange={setInitial} placeholder="R$ 0,00" />
+                <MoneyInput value={initial} onValueChange={setInitial} />
               </Field>
             )}
           </div>

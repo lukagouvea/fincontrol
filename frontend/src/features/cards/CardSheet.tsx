@@ -6,7 +6,8 @@ import { formatMoney } from "../../lib/money";
 import { cx } from "../../lib/cx";
 import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
-import { Field, MoneyInput, TextInput } from "../../ui/Field";
+import { Field, TextInput } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
 import { useToast } from "../../ui/Toast";
 import { CARD_COLORS, cardVars } from "./cardStyle";
@@ -31,7 +32,6 @@ export function CardSheet({
   const showToast = useToast();
   const [name, setName] = useState("");
   const [last4, setLast4] = useState("");
-  const [limitText, setLimitText] = useState<string>();
   const [limit, setLimit] = useState<number | null>(null);
   const [closingDay, setClosingDay] = useState("");
   const [dueDay, setDueDay] = useState("");
@@ -45,7 +45,6 @@ export function CardSheet({
     setName(card?.name ?? "");
     setLast4(card?.last4 ?? "");
     setLimit(card?.limit ?? null);
-    setLimitText(card ? String(card.limit).replace(".", ",") : undefined);
     setClosingDay(card ? String(card.closingDay) : "");
     setDueDay(card ? String(card.dueDay) : "");
     setColor(card?.color ?? "verde");
@@ -134,7 +133,7 @@ export function CardSheet({
               />
             </Field>
             <Field label="Limite" error={errors.limit}>
-              <MoneyInput value={limitText} onValueChange={(value) => setLimitText(value)} onNumberChange={setLimit} />
+              <MoneyInput value={limit} onValueChange={setLimit} />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">

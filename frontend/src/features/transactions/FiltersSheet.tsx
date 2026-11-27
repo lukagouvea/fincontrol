@@ -3,7 +3,8 @@ import type { Card, Category } from "../../types/FinanceTypes";
 import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
-import { Field, MoneyInput, TextInput } from "../../ui/Field";
+import { Field, TextInput } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { EMPTY_FILTERS, type Period, type TransactionFilters } from "./filters";
 
 const PERIODS: Array<{ value: Period; label: string }> = [
@@ -39,14 +40,10 @@ export function FiltersSheet({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<TransactionFilters>(value);
-  const [minText, setMinText] = useState<string>();
-  const [maxText, setMaxText] = useState<string>();
 
   useEffect(() => {
     if (!open) return;
     setDraft(value);
-    setMinText(value.min != null ? String(value.min).replace(".", ",") : undefined);
-    setMaxText(value.max != null ? String(value.max).replace(".", ",") : undefined);
   }, [open, value]);
 
   const update = (next: TransactionFilters) => {
@@ -72,11 +69,7 @@ export function FiltersSheet({
             size="lg"
             block
             className="lg:w-auto"
-            onClick={() => {
-              update(EMPTY_FILTERS);
-              setMinText(undefined);
-              setMaxText(undefined);
-            }}
+            onClick={() => update(EMPTY_FILTERS)}
           >
             Limpar
           </Button>
@@ -139,17 +132,15 @@ export function FiltersSheet({
           <MoneyInput
             aria-label="Valor mínimo"
             placeholder="Mínimo"
-            value={minText}
-            onValueChange={(text) => setMinText(text)}
-            onNumberChange={(min) => update({ ...draft, min })}
+            value={draft.min ?? null}
+            onValueChange={(min) => update({ ...draft, min })}
           />
           <span className="text-sm text-muted">até</span>
           <MoneyInput
             aria-label="Valor máximo"
             placeholder="Máximo"
-            value={maxText}
-            onValueChange={(text) => setMaxText(text)}
-            onNumberChange={(max) => update({ ...draft, max })}
+            value={draft.max ?? null}
+            onValueChange={(max) => update({ ...draft, max })}
           />
         </div>
       </fieldset>

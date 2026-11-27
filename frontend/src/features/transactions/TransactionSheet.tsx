@@ -19,7 +19,7 @@ import { Segmented } from "../../ui/Segmented";
 import { Toggle } from "../../ui/Toggle";
 import { useToast } from "../../ui/Toast";
 import { CategoryIcon } from "../../ui/CategoryIcon";
-import { CentsInput } from "../../ui/CentsInput";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { CategoryPicker } from "./CategoryPicker";
 import type { EntryType, LedgerEntry } from "../ledger";
 
@@ -232,17 +232,15 @@ export function TransactionSheet({
             <label htmlFor={`${formId}-amount`} className="text-sm text-muted">
               Valor{isInstallment ? " total" : ""}
             </label>
-            <CentsInput
+            <MoneyInput
               id={`${formId}-amount`}
+              mode="cents"
+              appearance="big"
               value={amount}
               onValueChange={setAmount}
-              aria-invalid={errors.amount ? true : undefined}
+              invalid={!!errors.amount}
               aria-describedby={errors.amount ? `${formId}-amount-error` : undefined}
-              className={cx(
-                "min-h-[64px] w-full rounded-field border-0 bg-transparent p-0 text-center font-num text-[42px] font-semibold leading-tight tracking-[-0.02em] text-ink placeholder:text-muted-2",
-                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus",
-                type === "expense" ? "caret-expense" : "caret-income",
-              )}
+              className={type === "expense" ? "caret-expense" : "caret-income"}
             />
             {errors.amount && (
               <p id={`${formId}-amount-error`} className="text-[13px] text-expense">

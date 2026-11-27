@@ -31,7 +31,6 @@ export function SaveToGoalSheet({
   const undo = useRemoveContribution();
   const showToast = useToast();
   const [mode, setMode] = useState<"guardar" | "retirar">("guardar");
-  const [text, setText] = useState<string>();
   const [value, setValue] = useState<number | null>(null);
   const [date, setDate] = useState(toDateKey(new Date()));
   const [error, setError] = useState("");
@@ -39,7 +38,6 @@ export function SaveToGoalSheet({
   useEffect(() => {
     if (!goal) return;
     setMode("guardar");
-    setText(initialAmount ? String(initialAmount).replace(".", ",") : undefined);
     setValue(initialAmount ?? null);
     setDate(toDateKey(new Date()));
     setError("");
@@ -105,12 +103,9 @@ export function SaveToGoalSheet({
       />
       <BigMoneyInput
         label="Valor"
-        text={text}
+        value={value}
         error={error || undefined}
-        onChange={(next, number) => {
-          setText(next);
-          setValue(number);
-        }}
+        onChange={setValue}
       />
       <Field label="Data">
         <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} />

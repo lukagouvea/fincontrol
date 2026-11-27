@@ -10,7 +10,8 @@ import { formatMoney } from "../../lib/money";
 import { cx } from "../../lib/cx";
 import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
-import { Field, MoneyInput, SelectInput, TextInput } from "../../ui/Field";
+import { Field, SelectInput, TextInput } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { Pause, Square } from "lucide-react";
 import { useToast } from "../../ui/Toast";
@@ -59,7 +60,6 @@ export function RecurringSheet({
 
   const [type, setType] = useState<EntryType>("expense");
   const [description, setDescription] = useState("");
-  const [amountText, setAmountText] = useState<string>();
   const [amount, setAmount] = useState<number | null>(null);
   const [day, setDay] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -80,7 +80,6 @@ export function RecurringSheet({
     setType(state.type);
     setDescription(item?.description ?? "");
     setAmount(item?.amount ?? null);
-    setAmountText(item ? String(item.amount).replace(".", ",") : undefined);
     setDay(item ? String(item.day) : String(new Date().getDate()));
     setCategoryId(item?.categoryId ?? "");
     setCardId(item?.cardId ?? "");
@@ -258,7 +257,7 @@ export function RecurringSheet({
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Valor" error={errors.amount}>
-              <MoneyInput value={amountText} onValueChange={(value) => setAmountText(value)} onNumberChange={setAmount} />
+              <MoneyInput value={amount} onValueChange={setAmount} />
             </Field>
             <Field label="Todo dia" error={errors.day}>
               <TextInput type="number" inputMode="numeric" min={1} max={31} value={day} onChange={(e) => setDay(e.target.value)} />

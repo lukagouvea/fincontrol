@@ -8,7 +8,6 @@ import {
   type ReactNode,
   type SelectHTMLAttributes,
 } from "react";
-import CurrencyInput, { type CurrencyInputProps } from "react-currency-input-field";
 import { cx } from "../lib/cx";
 
 export const inputClass = (invalid?: boolean, className?: string) =>
@@ -78,27 +77,3 @@ export const SelectInput = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HT
     return <select ref={ref} className={inputClass(invalid, cx("appearance-auto", className))} {...props} />;
   },
 );
-
-/** Campo de valor em reais (pt-BR). `onNumberChange` recebe o número ou null. */
-export function MoneyInput({
-  invalid,
-  className,
-  onNumberChange,
-  onValueChange,
-  ...props
-}: Omit<CurrencyInputProps, "intlConfig"> &
-  Invalid & { onNumberChange?: (value: number | null) => void }) {
-  return (
-    <CurrencyInput
-      intlConfig={{ locale: "pt-BR", currency: "BRL" }}
-      decimalsLimit={2}
-      inputMode="decimal"
-      className={inputClass(invalid, cx("font-num text-base font-semibold", className))}
-      {...props}
-      onValueChange={(value, name, values) => {
-        onValueChange?.(value, name, values);
-        onNumberChange?.(values?.float ?? null);
-      }}
-    />
-  );
-}

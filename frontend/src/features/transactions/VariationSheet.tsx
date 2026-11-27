@@ -4,7 +4,8 @@ import { monthNames } from "../../lib/dates";
 import { formatMoney } from "../../lib/money";
 import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
-import { Field, MoneyInput } from "../../ui/Field";
+import { Field } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { useToast } from "../../ui/Toast";
 import type { LedgerEntry } from "../ledger";
 
@@ -22,13 +23,11 @@ export function VariationSheet({
   const addVariation = useAddMonthlyVariation();
   const deleteVariation = useDeleteMonthlyVariation();
   const showToast = useToast();
-  const [text, setText] = useState<string>();
   const [value, setValue] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!entry) return;
-    setText(String(entry.amount).replace(".", ","));
     setValue(entry.amount);
     setError("");
   }, [entry]);
@@ -83,7 +82,7 @@ export function VariationSheet({
       }
     >
       <Field label="Valor neste mês" error={error}>
-        <MoneyInput value={text} onValueChange={(next) => setText(next)} onNumberChange={setValue} />
+        <MoneyInput value={value} onValueChange={setValue} />
       </Field>
     </Sheet>
   );

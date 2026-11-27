@@ -6,7 +6,8 @@ import { dateKeyToIso, toDateKey } from "../../lib/dates";
 import { formatMoney, fromCents, toCents } from "../../lib/money";
 import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
-import { Field, MoneyInput, TextInput } from "../../ui/Field";
+import { Field, TextInput } from "../../ui/Field";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { Money } from "../../ui/Money";
 import { useToast } from "../../ui/Toast";
@@ -29,7 +30,6 @@ export function PayInvoiceSheet({
   const deletePayment = useDeletePayment();
   const showToast = useToast();
   const [mode, setMode] = useState<"total" | "outro">("total");
-  const [text, setText] = useState<string>();
   const [value, setValue] = useState<number | null>(null);
   const [date, setDate] = useState(toDateKey(new Date()));
   const [error, setError] = useState("");
@@ -37,7 +37,6 @@ export function PayInvoiceSheet({
   useEffect(() => {
     if (!invoice) return;
     setMode("total");
-    setText(undefined);
     setValue(null);
     setDate(toDateKey(new Date()));
     setError("");
@@ -104,7 +103,7 @@ export function PayInvoiceSheet({
       />
       {mode === "outro" && (
         <Field label="Valor pago" error={error || undefined}>
-          <MoneyInput value={text} onValueChange={(next) => setText(next)} onNumberChange={setValue} autoFocus />
+          <MoneyInput value={value} onValueChange={setValue} autoFocus />
         </Field>
       )}
       <Field label="Data do pagamento">

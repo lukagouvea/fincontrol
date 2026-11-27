@@ -170,6 +170,15 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
         }
         onFocus?.(event);
       }}
+      onSelect={(event) => {
+        // Modo centavos: o cursor mora no fim. Tocar no meio do número e apagar
+        // tiraria um dígito do meio; selecionar tudo (para substituir) continua valendo.
+        if (mode !== "cents") return;
+        const input = event.currentTarget;
+        const end = input.value.length;
+        const all = input.selectionStart === 0 && input.selectionEnd === end;
+        if (!all && (input.selectionStart !== end || input.selectionEnd !== end)) input.setSelectionRange(end, end);
+      }}
       onChange={(event) => {
         if (mode === "cents") {
           const cents = digitsToCents(event.target.value);

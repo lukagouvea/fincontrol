@@ -83,6 +83,18 @@ describe("valor no modo centavos", () => {
     expect(input).toHaveValue("");
     expect(screen.getByTestId("value")).toHaveTextContent("null");
   });
+
+  it("tocar no meio do número não muda de onde o apagar tira", async () => {
+    render(<Harness mode="cents" initial={45.9} />);
+    const user = userEvent.setup();
+    const input = screen.getByLabelText("Valor") as HTMLInputElement;
+    await user.click(input);
+    input.setSelectionRange(4, 4);
+    fireEvent.select(input);
+    expect(input.selectionStart).toBe(input.value.length);
+    await user.keyboard("{Backspace}");
+    expect(input).toHaveValue("R$ 4,59");
+  });
 });
 
 describe("colar", () => {

@@ -185,8 +185,11 @@ test("exclui com desfazer e depois exclui de vez", async () => {
 
   await removeRacao();
   await expect(page.getByText("Ração")).toHaveCount(0);
-  // Espera o aviso sumir: só então a exclusão vai para o servidor.
+  // A exclusão só vai para o servidor quando o aviso some. Espera a resposta
+  // antes de recarregar: no WebKit o reload cancelava o pedido ainda em voo.
+  const deleted = page.waitForResponse((r) => r.request().method() === "DELETE" && /\/api\/transactions\/[^/?]+$/.test(r.url()), { timeout: 15_000 });
   await expect(page.getByRole("button", { name: "Desfazer" })).toBeHidden({ timeout: 15_000 });
+  expect((await deleted).ok()).toBe(true);
   await page.reload();
   await expect(row(page, "Geladeira")).toBeVisible();
   await expect(page.getByText("Ração")).toHaveCount(0);

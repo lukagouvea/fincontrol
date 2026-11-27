@@ -21,7 +21,7 @@ test.beforeAll(async ({ browser }, info) => {
 });
 
 test.afterAll(async () => {
-  await page.close();
+  await page?.close();
   // Se algum passo falhou antes de "exclui a conta", não deixa a conta no banco.
   await deleteAccountViaApi(baseURL, user.email, user.password);
 });

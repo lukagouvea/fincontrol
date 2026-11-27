@@ -1,6 +1,6 @@
 name: CI
 
-# Validação de pull requests para a main: testes + build das imagens (sem publicar).
+# Validação de pull requests para a main: testes (unitários e e2e) + build das imagens (sem publicar).
 # Só roda o que foi afetado pela mudança. O deploy fica no cd.yml.
 on:
   pull_request:
@@ -46,6 +46,12 @@ jobs:
     if: needs.changes.outputs.frontend == 'true'
     uses: ./.github/workflows/_test-frontend.yml
 
+  # Roteiro de uso completo (app + backend + banco): depende dos dois lados.
+  test-e2e:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/_test-e2e.yml
+
   docker-build:
     needs: [ changes, test-backend, test-frontend ]
     # Roda mesmo se um dos testes foi pulado pelo filtro, mas não se algum falhou.
@@ -62,7 +68,7 @@ jobs:
   # Jobs pulados pelo filtro contam como OK; falhas e cancelamentos não.
   ci-ok:
     name: ci-ok
-    needs: [ changes, test-backend, test-frontend, docker-build ]
+    needs: [ changes, test-backend, test-frontend, test-e2e, docker-build ]
     if: always()
     runs-on: ubuntu-latest
     steps:

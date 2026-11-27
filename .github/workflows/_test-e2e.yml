@@ -1,0 +1,93 @@
+name: Testes e2e
+
+# Roteiro de uso completo (frontend/e2e) contra o app e o backend de verdade:
+# Postgres vazio como serviço, migrações do Prisma, backend e Vite no runner.
+on:
+  workflow_call:
+
+jobs:
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      db:
+        # Mesma versão do docker-compose de dev.
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: e2e
+          POSTGRES_DB: fincontrol_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e -d fincontrol_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://e2e:e2e@localhost:5432/fincontrol_e2e
+      JWT_SECRET: e2e-only-not-a-secret
+      FRONTEND_URL: http://localhost:5174
+      PORT: "3001"
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Instalar dependências do backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Migrar o banco e gerar o Prisma Client
+        working-directory: backend
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Subir o backend
+        working-directory: backend
+        run: |
+          nohup npx tsx src/index.ts > "$RUNNER_TEMP/backend.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -sf http://localhost:3001/ > /dev/null && exit 0
+            sleep 1
+          done
+          echo "O backend não respondeu em 60 s."
+          cat "$RUNNER_TEMP/backend.log"
+          exit 1
+
+      - name: Instalar dependências do frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Instalar o Chromium do Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # O Playwright sobe o Vite (webServer em playwright.config.ts).
+      - name: Rodar o roteiro e2e (360px e 1280px)
+        working-directory: frontend
+        run: npm run e2e
+
+      - name: Log do backend
+        if: failure()
+        run: cat "$RUNNER_TEMP/backend.log"
+
+      - name: Guardar relatório, capturas e traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            frontend/.e2e/report
+            frontend/.e2e/results
+          retention-days: 14

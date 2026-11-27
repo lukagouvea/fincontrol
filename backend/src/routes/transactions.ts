@@ -90,6 +90,68 @@ app.get('/installments/active', async (c) => {
   return c.json(transactions.map(formatListed));
 });
 
+const batchSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('update'),
+    ids: z.array(z.uuid()).min(1).max(500),
+    data: z
+      .object({
+        categoryId: z.uuid().optional(),
+        // null = À vista
+        cardId: z.uuid().nullable().optional(),
+      })
+      .refine((d) => d.categoryId !== undefined || d.cardId !== undefined, 'Nada para alterar'),
+  }),
+  z.object({ action: z.literal('delete'), ids: z.array(z.uuid()).min(1).max(500) }),
+]);
+
+// Lote (Seleção em lote): mudar categoria, mudar pagamento ou excluir várias
+// transações de uma vez. Tudo ou nada: se algum id não for do usuário, nada muda.
+app.post('/batch', zValidator('json', batchSchema), async (c) => {
+  const userId = c.var.userId;
+  const body = c.req.valid('json');
+  const ids = [...new Set(body.ids)];
+  const rows = await prisma.transaction.findMany({
+    where: { id: { in: ids }, userId },
+    select: { id: true, type: true, installmentGroupId: true },
+  });
+  if (rows.length !== ids.length) return c.json({ error: 'Transação não encontrada' }, 404);
+  const groups = [...new Set(rows.map((r) => r.installmentGroupId).filter((g): g is string => !!g))];
+
+  if (body.action === 'delete') {
+    const singles = rows.filter((r) => !r.installmentGroupId).map((r) => r.id);
+    await prisma.$transaction([
+      prisma.transaction.deleteMany({ where: { id: { in: singles }, userId } }),
+      // Parcela excluída = compra parcelada inteira (como no DELETE /:id).
+      prisma.installmentGroup.deleteMany({ where: { id: { in: groups }, userId } }),
+    ]);
+    return c.json({ deleted: singles.length, groupsDeleted: groups.length });
+  }
+
+  const { categoryId, cardId } = body.data;
+  if (categoryId !== undefined) {
+    const types = [...new Set(rows.map((r) => r.type))];
+    if (types.length > 1) return c.json({ error: 'Selecione só despesas ou só receitas para mudar a categoria' }, 400);
+    if (!(await isOwnCategory(userId, categoryId, types[0]))) return c.json(CATEGORY_NOT_FOUND, 404);
+  }
+  if (cardId !== undefined && !(await isOwnCard(userId, cardId))) return c.json(CARD_NOT_FOUND, 404);
+
+  await prisma.$transaction([
+    prisma.transaction.updateMany({
+      where: { id: { in: ids }, userId },
+      data: { ...(categoryId !== undefined && { categoryId }), ...(cardId !== undefined && { cardId }) },
+    }),
+    // O cartão vale para a compra parcelada inteira.
+    ...(cardId !== undefined && groups.length
+      ? [
+          prisma.transaction.updateMany({ where: { installmentGroupId: { in: groups }, userId }, data: { cardId } }),
+          prisma.installmentGroup.updateMany({ where: { id: { in: groups }, userId }, data: { cardId } }),
+        ]
+      : []),
+  ]);
+  return c.json({ updated: ids.length });
+});
+
 // 1. LISTAR (GET /transactions?month=11&year=2025)
 app.get('/', async (c) => {
   const userId = c.var.userId;

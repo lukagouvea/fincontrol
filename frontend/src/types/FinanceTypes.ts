@@ -38,6 +38,9 @@ export interface FixedTransaction extends TransactionBase {
   day: number;
   startDate: string; // ISO UTC
   endDate?: string | null;  // ISO UTC
+  /** Pausa ('YYYY-MM', inclusive): não lança nesses meses. */
+  pausedFrom?: string | null;
+  pausedUntil?: string | null;
   /** Cartão em que a recorrência é cobrada; null = À vista. */
   cardId?: string | null;
   /** Histórico de valores/categoria/dia, em ordem de vigência. */
@@ -109,4 +112,14 @@ export type Card = {
   /** ISO. Faturas vencidas antes do cadastro são tratadas como pagas. */
   createdAt?: string;
   payments: CardPayment[];
+};
+
+/** Limite de uma categoria num mês. Com `repeat`, vale também nos meses seguintes. */
+export type BudgetLimit = {
+  categoryId: string;
+  /** 'YYYY-MM' */
+  month: string;
+  /** null = sem limite */
+  amount: number | null;
+  repeat: boolean;
 };

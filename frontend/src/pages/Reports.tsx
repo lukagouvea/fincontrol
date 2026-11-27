@@ -4,6 +4,9 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { useCategories } from "../hooks/useCategories";
 import { useCards } from "../hooks/useCards";
 import { cardVars } from "../features/cards/cardStyle";
+import { useMonthBudget } from "../features/useMonthBudget";
+import { MonthPaceCard, WeekPaceCard, WeeksCard } from "../features/budgetui/PaceCards";
+import { todayKey } from "../features/useLedger";
 import { useSelectedMonth } from "../app/MonthContext";
 import { useMonthLedger, useMonthsSummary } from "../features/useLedger";
 import { summarizeLedger, type CategoryTotal } from "../features/ledger";
@@ -65,6 +68,9 @@ export function Reports() {
     ];
   }, [ledger.entries, cardsQuery.data]);
   const hasCards = (cardsQuery.data ?? []).length > 0;
+  const budget = useMonthBudget(month, year, ledger.entries, !ledger.isLoading && !ledger.isError).data;
+  const today = todayKey();
+  const isCurrent = budget ? today.startsWith(budget.key) : false;
   const savingsRate = summary.income > 0 ? summary.balance / summary.income : null;
   const previous = fromMonthIndex(monthIndex(year, month) - 1);
   const previousSummary = evolution.data.length >= 2 ? evolution.data[evolution.data.length - 2].summary : null;
@@ -131,6 +137,16 @@ export function Reports() {
           )}
         </Card>
       </section>
+
+      {budget?.hasBudget && (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+            <MonthPaceCard points={budget.monthBurn} variable={budget.variable} monthEnd={budget.monthBurn.at(-1)?.x ?? `${budget.key}-28`} />
+            {isCurrent && budget.week && <WeekPaceCard week={budget.week} points={budget.weekBurn} />}
+          </div>
+          <WeeksCard weeks={budget.weeks} today={today} />
+        </>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6">
         <Card>

@@ -7,6 +7,9 @@ import { usePendingDeletes } from "../app/PendingDeletes";
 import { useTransactionEditor } from "../app/TransactionEditor";
 import { useMonthLedger, todayKey } from "../features/useLedger";
 import { useCardInvoices } from "../features/useCardInvoices";
+import { useMonthBudget } from "../features/useMonthBudget";
+import { WeekCard } from "../features/budgetui/WeekCard";
+import { ProgressBar } from "../ui/ProgressBar";
 import { summarizeLedger, type LedgerEntry } from "../features/ledger";
 import { chartColorVar, makeCategoryLookup, type CategoryLookup } from "../features/categories";
 import { cx } from "../lib/cx";
@@ -47,6 +50,8 @@ export function Home() {
   const toPay = sumMoney(upcoming.filter((entry) => entry.type === "expense").map((entry) => entry.amount));
   const recent = entries.filter((entry) => !entry.upcoming).slice(0, 5);
   const nextRecurring = upcoming.find((entry) => entry.source === "recurring");
+  const budget = useMonthBudget(month, year, entries, !ledger.isLoading && !ledger.isError).data;
+  const hasBudget = !!budget?.hasBudget;
 
   // Faturas: o que falta pagar das faturas aberta/fechada/vencida de cada cartão.
   const cardInvoices = useCardInvoices();
@@ -151,8 +156,11 @@ export function Home() {
             <span className="text-[15px] text-ink-2">{spentLabel}</span>
             <Money value={summary.expense} size="hero" />
             <span className="rounded-full bg-primary-tint px-3 py-1.5 text-sm font-semibold text-primary">
-              {sobrou >= 0 ? `Sobrou ${formatMoney(sobrou)}` : `Faltou ${formatMoney(-sobrou)}`}
-              {period === "current" ? " até agora" : ""}
+              {hasBudget
+                ? budget!.remaining >= 0
+                  ? `Restam ${formatMoney(budget!.remaining)} do orçamento`
+                  : `${formatMoney(-budget!.remaining)} acima do orçamento`
+                : `${sobrou >= 0 ? `Sobrou ${formatMoney(sobrou)}` : `Faltou ${formatMoney(-sobrou)}`}${period === "current" ? " até agora" : ""}`}
             </span>
           </div>
         )}
@@ -162,18 +170,33 @@ export function Home() {
         <Card tone="hero" className="gap-2.5">
           <span className="text-sm text-on-hero-muted">{spentLabel}</span>
           {ledger.isLoading ? <Skeleton className="h-8 w-40 !bg-hero-track" /> : <Money value={summary.expense} size="lg" />}
-          <span className="text-[13px] text-on-hero-muted">
-            {summary.fixedExpense > 0
-              ? `${formatMoney(summary.fixedExpense)} em recorrentes`
-              : "Nenhuma recorrente no período"}
-          </span>
+          {hasBudget ? (
+            <>
+              <ProgressBar value={summary.expense} max={budget!.total} tone="hero" label={`${Math.round((summary.expense / budget!.total) * 100)}% do orçamento usado`} />
+              <span className="text-[13px] text-on-hero-muted">
+                {Math.round((summary.expense / budget!.total) * 100)}% do orçamento de {formatMoney(budget!.total)}
+              </span>
+            </>
+          ) : (
+            <span className="text-[13px] text-on-hero-muted">
+              {summary.fixedExpense > 0 ? `${formatMoney(summary.fixedExpense)} em recorrentes` : "Nenhuma recorrente no período"}
+            </span>
+          )}
         </Card>
         <Kpi label="Entradas" loading={ledger.isLoading} value={summary.income} kind="income">
           {period === "current" ? "Recebido até hoje" : `Total de ${name}`}
         </Kpi>
-        <Kpi label={sobrou >= 0 ? "Sobrou" : "Faltou"} loading={ledger.isLoading} value={Math.abs(sobrou)} kind={sobrou >= 0 ? "neutral" : "expense"}>
-          Entradas menos gastos{period === "current" ? " até agora" : ""}
-        </Kpi>
+        {hasBudget ? (
+          <Kpi label={budget!.remaining >= 0 ? "Restam do orçamento" : "Acima do orçamento"} loading={false} value={Math.abs(budget!.remaining)} kind={budget!.remaining >= 0 ? "neutral" : "expense"}>
+            {period === "current" && budget!.daysLeft > 0
+              ? `${budget!.daysLeft} ${budget!.daysLeft === 1 ? "dia" : "dias"} até o fim do mês, cerca de ${formatMoney(Math.max(0, budget!.remaining) / budget!.daysLeft, { cents: false })} por dia`
+              : `Orçamento de ${formatMoney(budget!.total)}`}
+          </Kpi>
+        ) : (
+          <Kpi label={sobrou >= 0 ? "Sobrou" : "Faltou"} loading={ledger.isLoading} value={Math.abs(sobrou)} kind={sobrou >= 0 ? "neutral" : "expense"}>
+            Entradas menos gastos{period === "current" ? " até agora" : ""}
+          </Kpi>
+        )}
         {hasCards ? (
           <Kpi label="Faturas em aberto" loading={cardInvoices.isLoading} value={invoicesTotal} kind="neutral">
             {nextDue
@@ -188,6 +211,22 @@ export function Home() {
           </Kpi>
         )}
       </section>
+
+      {period === "current" &&
+        (budget?.week ? (
+          <WeekCard week={budget.week} today={today} layout="wide" />
+        ) : budget && !hasBudget ? (
+          <Link
+            to="/orcamento"
+            className="flex items-center justify-between gap-3 rounded-card border border-dashed border-border-strong p-4 text-sm hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
+          >
+            <span>
+              <span className="block text-[15px] font-semibold">Defina seu orçamento</span>
+              <span className="block text-muted">Com os limites por categoria, o app calcula quanto dá para gastar por semana.</span>
+            </span>
+            <span className="shrink-0 font-semibold text-primary">Definir</span>
+          </Link>
+        ) : null)}
 
       {/* Mobile: atalhos */}
       <div className="grid grid-cols-2 gap-3 lg:hidden">

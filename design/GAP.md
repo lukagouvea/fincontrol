@@ -161,3 +161,14 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Sem categoria "Outros" fixa:** diverge do design, que tem uma "Outros" fixa. Não criei categorias automaticamente; se existir uma chamada "Outros", ela é o destino padrão da mescla.
 - **Dono e tipo da categoria:** transações e recorrentes recusam categoria de outro usuário ou do tipo errado.
 - **Limite por categoria:** o campo "Limite mensal" da Nova categoria fica para a fase 3c (orçamento).
+
+### Fase 3c: orçamento, limite da semana e pausa (concluída)
+- **Orçamento = soma dos limites por categoria**, como em DefinirOrcamento.html ("Soma dos limites abaixo"). Não há um "total" separado, então o plano de `BudgetVersion` + `CategoryLimitVersion` virou uma tabela única, `budget_limits`.
+  - Um limite vale no seu mês.
+  - Com "Repetir nos próximos meses", vale também nos meses seguintes, até o próximo limite repetido.
+  - Limite vazio = sem limite.
+- **Orçamento variável** = orçamento − recorrentes fixas de despesa do mês. As parcelas contam no variável.
+- **Limite da semana:** fórmula escolhida pelo dono. Na segunda-feira, a semana recebe (variável que resta ÷ dias restantes do mês) × os dias dela que caem no mês. O valor fica fixo até domingo. Semanas que cruzam a virada do mês são cortadas no último dia do mês. Avisa aos 80% e quando passa do limite.
+- **Burndown do mês e da semana:** linhas real, ideal e "se mantiver o ritmo". "Semana a semana" compara o gasto variável com o limite de cada semana.
+- **Pausar recorrência:** pausa um mês, o do próximo lançamento, que não é gerado nesse mês. Tem "Retomar" e "Desfazer". As pausadas aparecem em "Pausadas em <mês>".
+- **Pendente para a fase 3i (alertas):** o "Avisar ao chegar em 80%" de DefinirOrcamento. Por enquanto o aviso aparece só no card da semana.

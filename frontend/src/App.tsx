@@ -35,6 +35,7 @@ const Settings = named(() => import("./pages/Settings"), "Settings");
 const Cards = named(() => import("./pages/Cards"), "Cards");
 const Invoice = named(() => import("./pages/Invoice"), "Invoice");
 const Commitments = named(() => import("./pages/Commitments"), "Commitments");
+const Budget = named(() => import("./pages/Budget"), "Budget");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
@@ -92,7 +93,6 @@ function NotFound() {
 }
 
 const soon = {
-  orcamento: "Orçamento mensal, limites por categoria e limite da semana chegam numa próxima etapa.",
   metas: "Metas e “Guardar na meta” chegam numa próxima etapa.",
   alertas: "A central de alertas chega numa próxima etapa.",
 };
@@ -137,7 +137,7 @@ export function App() {
                           <Route path="/cartoes" element={<Cards />} />
                           <Route path="/cartoes/:cardId/fatura" element={<Invoice />} />
                           <Route path="/compromissos" element={<Commitments />} />
-                          <Route path="/orcamento" element={<ComingSoon title="Orçamento" description={soon.orcamento} />} />
+                          <Route path="/orcamento" element={<Budget />} />
                           <Route path="/metas" element={<ComingSoon title="Metas" description={soon.metas} />} />
                           <Route path="/alertas" element={<ComingSoon title="Alertas" description={soon.alertas} />} />
                         </Route>

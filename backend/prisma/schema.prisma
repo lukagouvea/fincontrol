@@ -16,6 +16,8 @@ model User {
   tutorialCompleted Boolean            @default(false) @map("tutorial_completed")
   // Fim da configuração inicial (primeiro cartão/orçamento). null = mostrar o fluxo.
   onboardingCompletedAt DateTime?      @map("onboarding_completed_at") @db.Timestamp(6)
+  // Último mês fechado cuja "virada" a pessoa já viu ('YYYY-MM').
+  lastClosingSeen   String?            @map("last_closing_seen") @db.VarChar(7)
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações (CamelCase e Plural/Singular corretos)

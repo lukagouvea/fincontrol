@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { hash, compare } from 'bcryptjs';
 import { sign, verify } from 'hono/jwt';
-import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
+import { getCookie } from 'hono/cookie';
+import { AUTH_COOKIE, clearAuthCookie, setAuthCookie } from '../lib/authCookie.js';
 import { prisma } from '../lib/prisma.js'; // Certifique-se que o caminho está certo
 import { getJwtSecret } from '../lib/jwt.js';
 
@@ -63,13 +64,7 @@ app.post('/signup', zValidator('json', signupSchema), async (c) => {
   const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret, 'HS256'); // 7 dias
 
   // 5. Define o Cookie HttpOnly (Segurança Máxima)
-  setCookie(c, 'auth_token', token, {
-    httpOnly: true, // JS do front não acessa (protege contra XSS)
-    secure: false, //process.env.NODE_ENV === 'production', // Só HTTPS em produção
-    sameSite: 'Lax', // Protege contra CSRF básico
-    path: '/', // Válido para todo o site
-    maxAge: 60 * 60 * 24 * 7, // 7 dias
-  });
+  setAuthCookie(c, token);
 
   // 6. Retorna o usuário limpo (sem senha)
   return c.json({ user: excludePassword(user, ['passwordHash']) }, 201);
@@ -98,13 +93,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
   const token = await sign({ id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 }, secret, 'HS256');
 
   // 4. Cookie
-  setCookie(c, 'auth_token', token, {
-    httpOnly: true,
-    secure: false, //process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  setAuthCookie(c, token);
 
   return c.json({ user: excludePassword(user, ['passwordHash']) });
 });
@@ -113,7 +102,7 @@ app.post('/login', zValidator('json', loginSchema), async (c) => {
 // ROTA 3: LOGOUT
 // ==========================================
 app.post('/logout', (c) => {
-  deleteCookie(c, 'auth_token');
+  clearAuthCookie(c);
   return c.json({ message: 'Logout realizado com sucesso' });
 });
 
@@ -122,7 +111,7 @@ app.post('/logout', (c) => {
 // Usado para verificar se o usuário está logado ao recarregar a página
 // ==========================================
 app.get('/me', async (c) => {
-  const token = getCookie(c, 'auth_token');
+  const token = getCookie(c, AUTH_COOKIE);
   
   if (!token) {
     return c.json({ user: null }, 401);

@@ -15,6 +15,7 @@ import onboardingRoute from './routes/onboarding.js';
 import monthsRoute from './routes/months.js';
 import importsRoute from './routes/imports.js';
 import accountRoute from './routes/account.js';
+import { warnIfInsecureProduction } from './lib/authCookie.js';
 import { getJwtSecret } from './lib/jwt.js';
 
 // Falha na inicialização se o segredo não estiver configurado.
@@ -54,3 +55,4 @@ serve({
 });
 
 console.log('🔥 Servidor rodando em ' + process.env.PORT);
+warnIfInsecureProduction();

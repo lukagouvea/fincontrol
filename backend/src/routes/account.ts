@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { compare } from 'bcryptjs';
-import { deleteCookie } from 'hono/cookie';
+import { clearAuthCookie } from '../lib/authCookie.js';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -86,7 +86,7 @@ app.delete('/', zValidator('json', z.object({ password: z.string().min(1) })), a
   if (!user) return c.json({ error: 'Usuário não encontrado' }, 404);
   if (!(await compare(c.req.valid('json').password, user.passwordHash))) return c.json({ error: 'Senha incorreta' }, 403);
   await prisma.user.delete({ where: { id: userId } });
-  deleteCookie(c, 'auth_token', { path: '/' });
+  clearAuthCookie(c);
   return c.json({ deleted: true });
 });
 

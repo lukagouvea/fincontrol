@@ -76,6 +76,29 @@ describe("Recorrentes", () => {
     expect(within(form).queryByRole("button", { name: "Encerrar recorrência" })).not.toBeInTheDocument();
   });
 
+  it("troca a categoria a partir do mês atual mesmo com o lançamento do mês já feito", async () => {
+    const gym = { id: "gym", name: "Academia", type: "expense", active: true, color: "#5d6b80" };
+    const health = { id: "health", name: "Saúde", type: "expense", active: true, color: "#16836b" };
+    const plan = {
+      ...rentWithVersions,
+      id: "plan",
+      description: "Plano",
+      day: 1,
+      categoryId: "health",
+      versions: [{ effectiveFrom: "2026-01-01", amount: 1500, categoryId: "health", day: 1 }],
+    };
+    const user = renderRecurring({ "/recurring?type=expense": [plan], "/categories": [health, gym] });
+    await user.click(await screen.findByRole("button", { name: "Editar Plano" }));
+    const form = await screen.findByRole("dialog", { name: "Editar recorrência" });
+    await user.selectOptions(within(form).getByLabelText("Categoria"), "gym");
+    // Lançamento do dia 1 já aconteceu em 3/nov, e ainda assim o padrão é novembro.
+    expect(within(form).getByLabelText("Mês de início da alteração")).toHaveValue("2026-11");
+    await user.click(within(form).getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    const put = requests.find((r) => r.method === "put" && r.url === "/recurring/plan");
+    expect(put?.data).toMatchObject({ categoryId: "gym", scope: "from", effectiveFrom: "2026-11" });
+  });
+
   it("edita o valor a partir de um mês, sem reescrever o histórico", async () => {
     const user = renderRecurring({ "/recurring?type=expense": [rentWithVersions] });
     await user.click(await screen.findByRole("button", { name: "Editar Aluguel" }));
@@ -89,7 +112,7 @@ describe("Recorrentes", () => {
     await user.type(within(form).getByLabelText("Valor"), "1650");
     expect(within(form).getByText("Quando a alteração vale")).toBeInTheDocument();
     expect(within(form).getAllByRole("radio")[0]).toBeChecked();
-    // Lançamento do dia 10 ainda não aconteceu em 3/nov: começa em novembro.
+    // Padrão: o mês atual.
     expect(within(form).getByLabelText("Mês de início da alteração")).toHaveValue("2026-11");
     await user.selectOptions(within(form).getByLabelText("Mês de início da alteração"), "2026-12");
     await user.click(within(form).getByRole("button", { name: "Salvar alterações" }));

@@ -172,3 +172,11 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Burndown do mês e da semana:** linhas real, ideal e "se mantiver o ritmo". "Semana a semana" compara o gasto variável com o limite de cada semana.
 - **Pausar recorrência:** pausa um mês, o do próximo lançamento, que não é gerado nesse mês. Tem "Retomar" e "Desfazer". As pausadas aparecem em "Pausadas em <mês>".
 - **Pendente para a fase 3i (alertas):** o "Avisar ao chegar em 80%" de DefinirOrcamento. Por enquanto o aviso aparece só no card da semana.
+
+### Fase 3d: metas (concluída)
+- O "já guardado" é a soma das contribuições. "Guardar" grava um valor positivo e "Retirar" um negativo, e não dá para retirar mais do que está guardado. Os dois têm "Desfazer".
+- A contribuição tem um `sourceMonth` opcional, já pronto para o "guardar a sobra" do Fechamento do mês (fase 3f).
+- **"Para chegar lá":** a sugestão de aporte divide o que falta em parcelas iguais, do mês que vem até o prazo. O valor é arredondado para cima no centavo (R$ 1.428,58 em vez de R$ 1.428,57), para que a soma das parcelas alcance a meta.
+- **Sem ícone por meta:** o design não mostra ícone, então a meta não tem esse campo.
+- **Pendente para a fase 3i (alertas):** o "Lembrar de guardar todo mês".
+- **Onde aparecem:** a tela Metas pode ser aberta pelo Início (atalho no mobile, cartão no desktop) e por Ajustes.

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, Bell, CalendarClock, ChartNoAxesColumn, CreditCard, Plus, Repeat, Settings } from "lucide-react";
+import { ArrowDown, Bell, CalendarClock, CreditCard, Flag, Plus, Repeat, Settings } from "lucide-react";
 import { useCategories } from "../hooks/useCategories";
 import { useSelectedMonth } from "../app/MonthContext";
 import { usePendingDeletes } from "../app/PendingDeletes";
@@ -8,6 +8,8 @@ import { useTransactionEditor } from "../app/TransactionEditor";
 import { useMonthLedger, todayKey } from "../features/useLedger";
 import { useCardInvoices } from "../features/useCardInvoices";
 import { useMonthBudget } from "../features/useMonthBudget";
+import { useGoals } from "../hooks/useGoals";
+import { goalProgress } from "../features/goals";
 import { WeekCard } from "../features/budgetui/WeekCard";
 import { ProgressBar } from "../ui/ProgressBar";
 import { summarizeLedger, type LedgerEntry } from "../features/ledger";
@@ -52,6 +54,8 @@ export function Home() {
   const nextRecurring = upcoming.find((entry) => entry.source === "recurring");
   const budget = useMonthBudget(month, year, entries, !ledger.isLoading && !ledger.isError).data;
   const hasBudget = !!budget?.hasBudget;
+  const goals = useGoals();
+  const activeGoals = (goals.data ?? []).filter((goal) => goal.saved < goal.target);
 
   // Faturas: o que falta pagar das faturas aberta/fechada/vencida de cada cartão.
   const cardInvoices = useCardInvoices();
@@ -252,8 +256,8 @@ export function Home() {
         <TileLink to="/recorrentes" icon={<Repeat size={20} />} title="Recorrentes">
           {nextRecurring ? `Próxima: ${formatRelativeDay(nextRecurring.date, today, { short: true }).toLowerCase()}` : "Nada previsto"}
         </TileLink>
-        <TileLink to="/relatorios" icon={<ChartNoAxesColumn size={20} />} title="Relatórios">
-          Ver o mês
+        <TileLink to="/metas" icon={<Flag size={20} />} title="Metas">
+          {goals.data?.length ? `${activeGoals.length} em andamento` : "Criar uma meta"}
         </TileLink>
       </div>
 
@@ -318,6 +322,7 @@ export function Home() {
         </Card>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-6">
       <Card>
         <CardHeader title="Últimas transações" action={{ label: "Ver todas", to: "/transacoes" }} />
         {ledger.isLoading ? (
@@ -340,6 +345,25 @@ export function Home() {
           </ul>
         )}
       </Card>
+      <Card className="hidden lg:flex" aria-label="Metas">
+        <CardHeader title="Metas" action={{ label: goals.data?.length ? "Ver metas" : "Criar meta", to: "/metas" }} />
+        {!goals.data?.length ? (
+          <p className="text-sm text-muted">Crie uma meta e vá guardando aos poucos.</p>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {goals.data.slice(0, 4).map((goal) => (
+              <li key={goal.id} className="flex flex-col gap-1.5">
+                <span className="flex justify-between gap-3 text-[15px]">
+                  <span className="truncate font-semibold">{goal.name}</span>
+                  <span className="text-[13px] text-muted">{Math.round(goalProgress(goal.saved, goal.target) * 100)}%</span>
+                </span>
+                <ProgressBar value={goal.saved} max={goal.target} label={`${goal.name}: ${Math.round(goalProgress(goal.saved, goal.target) * 100)}%`} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+      </div>
     </>
   );
 }

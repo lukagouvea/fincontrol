@@ -110,7 +110,7 @@ function BottomNav() {
 }
 
 /** Telas com ação principal própria no cabeçalho não mostram o botão flutuante. */
-const NO_FAB = ["/transacoes", "/categorias", "/recorrentes", "/ajustes", "/alertas", "/cartoes", "/compromissos"];
+const NO_FAB = ["/transacoes", "/categorias", "/recorrentes", "/ajustes", "/alertas", "/cartoes", "/compromissos", "/metas", "/orcamento"];
 
 function Fab() {
   const { create } = useTransactionEditor();

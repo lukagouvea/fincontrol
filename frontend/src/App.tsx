@@ -36,6 +36,7 @@ const Cards = named(() => import("./pages/Cards"), "Cards");
 const Invoice = named(() => import("./pages/Invoice"), "Invoice");
 const Commitments = named(() => import("./pages/Commitments"), "Commitments");
 const Budget = named(() => import("./pages/Budget"), "Budget");
+const Goals = named(() => import("./pages/Goals"), "Goals");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
@@ -93,7 +94,6 @@ function NotFound() {
 }
 
 const soon = {
-  metas: "Metas e “Guardar na meta” chegam numa próxima etapa.",
   alertas: "A central de alertas chega numa próxima etapa.",
 };
 
@@ -138,7 +138,7 @@ export function App() {
                           <Route path="/cartoes/:cardId/fatura" element={<Invoice />} />
                           <Route path="/compromissos" element={<Commitments />} />
                           <Route path="/orcamento" element={<Budget />} />
-                          <Route path="/metas" element={<ComingSoon title="Metas" description={soon.metas} />} />
+                          <Route path="/metas" element={<Goals />} />
                           <Route path="/alertas" element={<ComingSoon title="Alertas" description={soon.alertas} />} />
                         </Route>
                         {/* Endereços antigos */}

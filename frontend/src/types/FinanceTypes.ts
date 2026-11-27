@@ -123,3 +123,22 @@ export type BudgetLimit = {
   amount: number | null;
   repeat: boolean;
 };
+
+export type GoalContribution = {
+  id: string;
+  /** Positivo = guardou; negativo = retirou. */
+  amount: number;
+  date: string;
+  sourceMonth: string | null;
+};
+
+export type Goal = {
+  id: string;
+  name: string;
+  target: number;
+  /** 'YYYY-MM' ou null */
+  deadline: string | null;
+  saved: number;
+  createdAt: string;
+  contributions: GoalContribution[];
+};

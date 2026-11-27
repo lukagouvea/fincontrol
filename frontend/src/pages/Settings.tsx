@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Moon, Repeat, Tag } from "lucide-react";
+import { ChevronRight, Flag, Moon, Repeat, Tag } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme, type ThemePreference } from "../context/ThemeContext";
 import { useMediaQuery } from "../hooks/useMediaQuery";
@@ -156,6 +156,7 @@ export function Settings() {
           <SettingsLink to="/ajustes/aparencia" icon={<Moon size={20} />} title="Aparência" subtitle={themeLabel[preference]} />
           <SettingsLink to="/categorias" icon={<Tag size={20} />} title="Categorias" subtitle="Organize seus gastos" />
           <SettingsLink to="/recorrentes" icon={<Repeat size={20} />} title="Recorrentes" subtitle="Lançamentos automáticos" />
+          <SettingsLink to="/metas" icon={<Flag size={20} />} title="Metas" subtitle="Seus objetivos" />
         </ul>
         <Button variant="secondary" size="lg" block loading={leaving} onClick={signOut} className="mt-4 !text-expense">
           Sair da conta

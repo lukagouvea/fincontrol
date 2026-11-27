@@ -38,6 +38,7 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
       "/recurring/variations": [],
       "/cards": [],
       "/budgets": [],
+      "/goals": [],
       "/transactions/installments/active": [],
       "/users/tutorial-status": { tutorialCompleted: true },
       ...overrides,

@@ -46,11 +46,11 @@ test('salvar com repetir apaga os meses seguintes e grava cada limite no mês', 
   mock(prisma.budgetLimit, 'deleteMany', (async (args: unknown) => (ops.push(`delete ${JSON.stringify(args)}`), { count: 1 })) as AnyFn);
   mock(prisma.budgetLimit, 'upsert', (async (args: { create: { categoryId: string; amount: number | null; repeat: boolean; month: Date } }) =>
     (ops.push(`upsert ${args.create.categoryId} ${args.create.amount} ${args.create.repeat} ${args.create.month.toISOString().slice(0, 10)}`), {})) as AnyFn);
-  mock(prisma, '$transaction', (async (list: Promise<unknown>[]) => Promise.all(list)) as AnyFn);
+  mock(prisma, '$transaction', (async (fn: (tx: typeof prisma) => unknown) => fn(prisma)) as AnyFn);
 
   const response = await put('2026-11', { repeat: true, limits: [{ categoryId: food, amount: 1200 }, { categoryId: fun, amount: null }] });
   assert.equal(response.status, 200);
-  assert.ok(ops[0].startsWith('delete') && ops[0].includes('"gt":"2026-11-01T00:00:00.000Z"'));
+  assert.ok(ops[0].startsWith('delete') && ops[0].includes('"gt":"2026-11-01T00:00:00.000Z"') && !ops[0].includes('null'));
   assert.deepEqual(ops.slice(1), [`upsert ${food} 1200 true 2026-11-01`, `upsert ${fun} null true 2026-11-01`]);
 });
 
@@ -59,7 +59,7 @@ test('só este mês não apaga os meses seguintes', async () => {
   let deleted = false;
   mock(prisma.budgetLimit, 'deleteMany', (async () => ((deleted = true), { count: 0 })) as AnyFn);
   mock(prisma.budgetLimit, 'upsert', (async () => ({})) as AnyFn);
-  mock(prisma, '$transaction', (async (list: Promise<unknown>[]) => Promise.all(list)) as AnyFn);
+  mock(prisma, '$transaction', (async (fn: (tx: typeof prisma) => unknown) => fn(prisma)) as AnyFn);
   assert.equal((await put('2026-12', { repeat: false, limits: [{ categoryId: food, amount: 900 }] })).status, 200);
   assert.equal(deleted, false);
 });
@@ -69,4 +69,18 @@ test('recusa categoria de outro usuário, valor negativo e mês inválido', asyn
   assert.equal((await put('2026-11', { repeat: true, limits: [{ categoryId: food, amount: 100 }] })).status, 404);
   assert.equal((await put('2026-11', { repeat: true, limits: [{ categoryId: food, amount: -1 }] })).status, 400);
   assert.equal((await put('2026-13', { repeat: true, limits: [] })).status, 400);
+});
+
+test('limite geral (sem categoria) é gravado à parte e também repete', async () => {
+  mock(prisma.category, 'count', (async () => 1) as AnyFn);
+  const ops: string[] = [];
+  mock(prisma.budgetLimit, 'deleteMany', (async (args: unknown) => (ops.push(`delete ${JSON.stringify(args)}`), { count: 0 })) as AnyFn);
+  mock(prisma.budgetLimit, 'upsert', (async () => (ops.push('upsert'), {})) as AnyFn);
+  mock(prisma.budgetLimit, 'findFirst', (async () => null) as AnyFn);
+  mock(prisma.budgetLimit, 'create', (async (args: { data: { categoryId: null; amount: number } }) => (ops.push(`create ${args.data.categoryId} ${args.data.amount}`), {})) as AnyFn);
+  mock(prisma, '$transaction', (async (fn: (tx: typeof prisma) => unknown) => fn(prisma)) as AnyFn);
+  const response = await put('2026-11', { repeat: true, limits: [{ categoryId: null, amount: 4150 }, { categoryId: food, amount: 1200 }] });
+  assert.equal(response.status, 200);
+  assert.ok(ops[0].includes('{"categoryId":null}'));
+  assert.deepEqual(ops.slice(1), ['create null 4150', 'upsert']);
 });

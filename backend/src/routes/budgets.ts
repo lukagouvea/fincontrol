@@ -17,7 +17,8 @@ const saveSchema = z.object({
   limits: z
     .array(
       z.object({
-        categoryId: z.uuid(),
+        // null = limite "Geral" (parte não dividida por categoria)
+        categoryId: z.uuid().nullable(),
         // null = sem limite
         amount: z.number().min(0).nullable(),
       }),
@@ -48,22 +49,39 @@ app.put('/:month', zValidator('json', saveSchema), async (c) => {
   const key = c.req.param('month');
   if (!MONTH.test(key)) return c.json({ error: 'Use YYYY-MM' }, 400);
   const { repeat, limits } = c.req.valid('json');
-  const ids = [...new Set(limits.map((l) => l.categoryId))];
-  if (ids.length !== limits.length) return c.json({ error: 'Categoria repetida' }, 400);
-  const owned = await prisma.category.count({ where: { id: { in: ids }, userId, type: 'expense' } });
+  const keys = limits.map((l) => l.categoryId ?? 'geral');
+  if (new Set(keys).size !== keys.length) return c.json({ error: 'Categoria repetida' }, 400);
+  const ids = limits.map((l) => l.categoryId).filter((id): id is string => !!id);
+  const owned = ids.length ? await prisma.category.count({ where: { id: { in: ids }, userId, type: 'expense' } }) : 0;
   if (owned !== ids.length) return c.json({ error: 'Categoria não encontrada' }, 404);
 
   const month = monthDate(key);
-  await prisma.$transaction([
-    ...(repeat ? [prisma.budgetLimit.deleteMany({ where: { userId, categoryId: { in: ids }, month: { gt: month } } })] : []),
-    ...limits.map((limit) =>
-      prisma.budgetLimit.upsert({
-        where: { categoryId_month: { categoryId: limit.categoryId, month } },
-        create: { userId, categoryId: limit.categoryId, month, amount: limit.amount, repeat },
-        update: { amount: limit.amount, repeat },
-      }),
-    ),
-  ]);
+  const general = limits.find((l) => l.categoryId === null);
+  await prisma.$transaction(async (tx) => {
+    if (repeat) {
+      await tx.budgetLimit.deleteMany({
+        where: {
+          userId,
+          month: { gt: month },
+          OR: [{ categoryId: { in: ids } }, ...(general ? [{ categoryId: null }] : [])],
+        },
+      });
+    }
+    for (const limit of limits) {
+      if (limit.categoryId) {
+        await tx.budgetLimit.upsert({
+          where: { categoryId_month: { categoryId: limit.categoryId, month } },
+          create: { userId, categoryId: limit.categoryId, month, amount: limit.amount, repeat },
+          update: { amount: limit.amount, repeat },
+        });
+      } else {
+        // Sem categoria não cabe no @@unique do Prisma (NULL); índice parcial no banco.
+        const existing = await tx.budgetLimit.findFirst({ where: { userId, categoryId: null, month } });
+        if (existing) await tx.budgetLimit.update({ where: { id: existing.id }, data: { amount: limit.amount, repeat } });
+        else await tx.budgetLimit.create({ data: { userId, categoryId: null, month, amount: limit.amount, repeat } });
+      }
+    }
+  });
   return c.json({ saved: limits.length, month: key, repeat });
 });
 

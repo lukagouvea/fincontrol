@@ -13,6 +13,7 @@ import usersRoute from './routes/users.js';
 import cardsRoute from './routes/cards.js';
 import budgetsRoute from './routes/budgets.js';
 import goalsRoute from './routes/goals.js';
+import onboardingRoute from './routes/onboarding.js';
 import { getJwtSecret } from './lib/jwt.js';
 
 // Falha na inicialização se o segredo não estiver configurado.
@@ -42,6 +43,7 @@ app.route('/users', usersRoute);
 app.route('/cards', cardsRoute);
 app.route('/budgets', budgetsRoute);
 app.route('/goals', goalsRoute);
+app.route('/onboarding', onboardingRoute);
 
 serve({
   fetch: app.fetch,

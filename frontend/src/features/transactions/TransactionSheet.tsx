@@ -2,13 +2,10 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import CurrencyInput from "react-currency-input-field";
 import { MoreHorizontal } from "lucide-react";
 import { useCategories } from "../../hooks/useCategories";
-import {
-  useAddCompraParcelada,
-  useAddTransaction,
-  useUpdateTransaction,
-} from "../../hooks/useTransactions";
+import { useAddCompraParcelada, useUpdateTransaction } from "../../hooks/useTransactions";
 import { useAddFixedExpense, useAddFixedIncome } from "../../hooks/useFixedTransactions";
 import { useCards } from "../../hooks/useCards";
+import { useOfflineQueue } from "../../app/OfflineQueue";
 import { cardVars } from "../cards/cardStyle";
 import { closingDateOf, invoiceKeyFor } from "../invoice";
 import { formatShortDate } from "../../lib/dates";
@@ -70,13 +67,13 @@ export function TransactionSheet({
   const formId = useId();
   const editing = mode.kind === "edit" ? mode.entry : null;
   const categoriesQuery = useCategories();
-  const addTransaction = useAddTransaction();
   const updateTransaction = useUpdateTransaction();
   const addInstallments = useAddCompraParcelada();
   const addFixedExpense = useAddFixedExpense();
   const addFixedIncome = useAddFixedIncome();
   const showToast = useToast();
   const cardsQuery = useCards();
+  const offline = useOfflineQueue();
   const activeCards = useMemo(() => (cardsQuery.data ?? []).filter((card) => !card.archived), [cardsQuery.data]);
 
   const [type, setType] = useState<EntryType>("expense");
@@ -142,8 +139,8 @@ export function TransactionSheet({
   }, [open, cardId, cardsQuery.data]);
   const effectiveCardId = card ? card.id : null;
 
-  const isInstallment = !editing && type === "expense" && installments > 1;
-  const canRepeat = !editing && !isInstallment;
+  const isInstallment = !editing && type === "expense" && installments > 1 && offline.online;
+  const canRepeat = !editing && !isInstallment && offline.online;
   const day = parseDateKey(date).getDate();
   const label = type === "income" ? "receita" : "despesa";
   const title = editing ? `Editar ${label}` : "Nova transação";
@@ -180,8 +177,12 @@ export function TransactionSheet({
         await (type === "income" ? addFixedIncome : addFixedExpense).mutateAsync(rule as never);
         showToast({ message: `Recorrente salva: todo dia ${day}` });
       } else {
-        await addTransaction.mutateAsync(payload as never);
-        showToast({ message: `${type === "income" ? "Receita" : "Despesa"} salva` });
+        const { queued } = await offline.submit(payload);
+        showToast({
+          message: queued
+            ? "Sem conexão: lançamento guardado. Será enviado quando a internet voltar."
+            : `${type === "income" ? "Receita" : "Despesa"} salva`,
+        });
       }
       if (type === "expense") saveLastPayment(effectiveCardId);
       onClose();
@@ -335,7 +336,12 @@ export function TransactionSheet({
             </Field>
           </div>
 
-          {!editing && type === "expense" && (
+          {!editing && !offline.online && (
+            <p className="rounded-field bg-surface-2 px-4 py-3 text-[13px] text-ink-2">
+              Sem conexão: este lançamento fica guardado no aparelho e é enviado quando a internet voltar. Parcelas e recorrências precisam de conexão.
+            </p>
+          )}
+          {!editing && type === "expense" && offline.online && (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <label htmlFor={`${formId}-installments`} className="text-[15px] font-semibold">

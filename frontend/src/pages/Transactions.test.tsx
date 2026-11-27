@@ -87,7 +87,7 @@ describe("Transações", () => {
   });
 
   it("mantém o preenchimento quando salvar falha", async () => {
-    renderAt("/transacoes", { "post /transactions": new Error("Sem conexão") });
+    renderAt("/transacoes", { "post /transactions": Object.assign(new Error("Erro do servidor"), { response: { status: 500 } }) });
     const user = userEvent.setup();
     await screen.findByText("Padaria");
     await user.click(screen.getAllByRole("button", { name: "Nova transação" })[0]);

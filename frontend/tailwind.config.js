@@ -3,7 +3,8 @@ const v = (name) => `var(--${name})`;
 
 export default {
   darkMode: ["selector", '[data-theme="dark"]'],
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  // Testes ficam de fora: textos de exemplo (ex.: "[-3:BRT]" de OFX) virariam CSS.
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}", "!./src/**/*.test.{ts,tsx}"],
   theme: {
     extend: {
       colors: {

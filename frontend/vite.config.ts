@@ -32,6 +32,24 @@ export default defineConfig({
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Atalhos ao segurar o ícone do app instalado (Android/desktop).
+        // Abrem o Início com a ação já aberta (TransactionEditorProvider).
+        shortcuts: [
+          {
+            name: 'Gasto rápido',
+            short_name: 'Gasto',
+            description: 'Lançar um gasto em três toques',
+            url: '/?rapido=1',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Nova receita',
+            short_name: 'Receita',
+            description: 'Registrar uma entrada',
+            url: '/?nova=receita',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         // Só o "casco" do app (HTML, JS, CSS, fontes, ícones) fica em cache.

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Bell, ChevronRight, Flag, Moon, Repeat, ShieldCheck, Tag } from "lucide-react";
+import { Bell, ChevronRight, Flag, Moon, Repeat, ShieldCheck, Tag, Zap } from "lucide-react";
 import { AlertToggles } from "./AlertSettings";
 import { DataActions } from "./DataSettings";
 import { useAuth } from "../context/AuthContext";
@@ -160,6 +160,7 @@ export function Settings() {
           <SettingsLink to="/recorrentes" icon={<Repeat size={20} />} title="Recorrentes" subtitle="Lançamentos automáticos" />
           <SettingsLink to="/metas" icon={<Flag size={20} />} title="Metas" subtitle="Seus objetivos" />
           <SettingsLink to="/ajustes/alertas" icon={<Bell size={20} />} title="Alertas" subtitle="O que avisar no sino" />
+          <SettingsLink to="/ajustes/atalhos" icon={<Zap size={20} />} title="Atalhos" subtitle="Instalar o app e lançar rápido" />
           <SettingsLink to="/ajustes/dados" icon={<ShieldCheck size={20} />} title="Segurança e dados" subtitle="Importar, exportar e apagar" />
         </ul>
         <Button variant="secondary" size="lg" block loading={leaving} onClick={signOut} className="mt-4 !text-expense">
@@ -195,6 +196,10 @@ export function Settings() {
         <Card>
           <CardHeader title="Alertas" />
           <AlertToggles />
+        </Card>
+        <Card>
+          <CardHeader title="Atalhos" action={{ label: "Ver atalhos", to: "/ajustes/atalhos" }} />
+          <p className="text-[15px] text-ink-2">Instale o app e use “Gasto rápido” e “Nova receita” direto do ícone.</p>
         </Card>
         <Card>
           <CardHeader title="Segurança e dados" />

@@ -13,6 +13,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { ProtectedRoute } from "./app/ProtectedRoute";
 import { TransactionEditorProvider } from "./app/TransactionEditor";
 import { PendingDeletesProvider } from "./app/PendingDeletes";
+import { OfflineQueueProvider } from "./app/OfflineQueue";
 import { MonthProvider } from "./app/MonthContext";
 import { ErrorBoundary } from "./app/ErrorBoundary";
 import { useViewport } from "./hooks/useViewport";
@@ -43,6 +44,7 @@ const Import = named(() => import("./pages/Import"), "Import");
 const Alerts = named(() => import("./pages/Alerts"), "Alerts");
 const AlertSettings = named(() => import("./pages/AlertSettings"), "AlertSettings");
 const DataSettings = named(() => import("./pages/DataSettings"), "DataSettings");
+const Shortcuts = named(() => import("./pages/Shortcuts"), "Shortcuts");
 const AppearanceSettings = named(() => import("./pages/Settings"), "AppearanceSettings");
 const LoginPage = named(() => import("./pages/Auth/AuthPages"), "LoginPage");
 const SignupPage = named(() => import("./pages/Auth/AuthPages"), "SignupPage");
@@ -81,9 +83,11 @@ function ShellLayout() {
     <OnboardingGate>
     <MonthProvider>
       <PendingDeletesProvider>
-        <TransactionEditorProvider>
-          <AppShell />
-        </TransactionEditorProvider>
+        <OfflineQueueProvider>
+          <TransactionEditorProvider>
+            <AppShell />
+          </TransactionEditorProvider>
+        </OfflineQueueProvider>
       </PendingDeletesProvider>
     </MonthProvider>
     </OnboardingGate>
@@ -157,6 +161,7 @@ export function App() {
                           <Route path="/alertas" element={<Alerts />} />
                           <Route path="/ajustes/alertas" element={<AlertSettings />} />
                           <Route path="/ajustes/dados" element={<DataSettings />} />
+                          <Route path="/ajustes/atalhos" element={<Shortcuts />} />
                         </Route>
                         {/* Endereços antigos */}
                         <Route path="/lancamentos" element={<LegacyEntries />} />

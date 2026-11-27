@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { cx } from "../lib/cx";
 import { useTransactionEditor } from "./TransactionEditor";
+import { OfflineBanner } from "./OfflineQueue";
 import { navigation, settingsItem, type NavItem } from "./navigation";
 
 const focusRing =
@@ -158,6 +159,7 @@ export function AppShell() {
           "lg:max-w-none lg:gap-6 lg:pl-[calc(var(--sidebar-w)+40px)] lg:pr-10 lg:pt-8 lg:pb-10",
         )}
       >
+        <OfflineBanner />
         <Outlet />
       </main>
       <Fab />

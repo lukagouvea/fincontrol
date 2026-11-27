@@ -237,3 +237,17 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Fora do escopo:** "Bloqueio com biometria" e "PIN" do design não se aplicam a um app web/PWA, então ficaram de fora.
 - **Push no aparelho:** fica para a fase 4 (PWA).
 - **Limpeza:** saíram as tabelas `investment_*`, a coluna `tutorial_completed` e as rotas `/investment`, `/users/tutorial-status` e o `dashboard.ts` que nunca foi montado. O backup automático do deploy roda antes das migrações.
+
+### Fase 4: PWA (concluída, sem push)
+- **Atalhos do manifest:** "Gasto rápido" (`/?rapido=1`) e "Nova receita" (`/?nova=receita`). Aparecem ao segurar o ícone do app instalado (Android e desktop) e abrem a ação já pronta.
+- **Gasto rápido** (Rapido.html): teclado numérico, que também aceita o teclado físico, as 4 categorias mais usadas no mês, forma de pagamento (lembra a última) e "Mais opções", que leva ao formulário completo com o que foi preenchido. A descrição fica com o nome da categoria.
+- **Atalhos** (Ajustes): botão "Instalar" quando o navegador oferece, instruções para o iPhone e a lista de atalhos.
+- **Fora do escopo:** widget de tela inicial, botão na tela de bloqueio e Siri/Assistente do design não existem para apps web.
+- **Fila offline:**
+  - Sem internet, ou se a rede cair no envio, lançamentos simples ficam no aparelho (`localStorage`, por usuário), com aviso fixo "Sem conexão".
+  - São enviados em ordem quando a conexão volta, ou pelo "Enviar agora".
+  - Erro 4xx descarta o item e avisa; rede ou 5xx mantêm na fila.
+  - Parcelas e recorrências pedem conexão.
+  - **Limitação:** os lançamentos guardados ainda não aparecem nas listas e totais até serem enviados.
+- **Push:** não implementado, por decisão do dono. Exigiria um serviço de envio no servidor e, no iPhone, só funciona com o app instalado.
+- **Correção:** o Tailwind lia os arquivos de teste e gerava CSS inválido a partir de textos de exemplo (`[-3:BRT]` do OFX). Os testes saíram da varredura.

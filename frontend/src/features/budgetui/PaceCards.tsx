@@ -68,7 +68,7 @@ export function WeeksCard({ weeks, today }: { weeks: WeekStatus[]; today: string
         <h2 className="text-[15px] font-semibold">Semana a semana</h2>
         <p className="text-[13px] text-muted">Gasto variável contra o limite de cada semana</p>
       </div>
-      <figure aria-label="Gasto por semana" className="flex items-end gap-3">
+      <figure aria-label="Gasto por semana" className="flex items-end gap-1.5 min-[400px]:gap-3">
         {weeks.map((w) => {
           const current = w.week.start <= today && today <= w.week.end;
           const label = `${parseDateKey(w.week.start).getDate()} a ${parseDateKey(w.week.end).getDate()}`;
@@ -82,8 +82,8 @@ export function WeeksCard({ weeks, today }: { weeks: WeekStatus[]; today: string
                   style={{ height: `${w.spent ? Math.max(4, (w.spent / max) * 100) : 0}%` }}
                 />
               </div>
-              <span aria-hidden="true" className={cx("text-xs", current ? "font-semibold text-ink" : "text-muted")}>
-                {label}
+              <span aria-hidden="true" className={cx("whitespace-nowrap text-xs", current ? "font-semibold text-ink" : "text-muted")}>
+                {parseDateKey(w.week.start).getDate()}–{parseDateKey(w.week.end).getDate()}
               </span>
             </div>
           );

@@ -65,7 +65,7 @@ export function Goals() {
           />
         </Card>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-3 lg:gap-4">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-4">
           {goals.data.map((goal) => {
             const progress = goalProgress(goal.saved, goal.target);
             const missing = fromCents(Math.max(0, toCents(goal.target) - toCents(goal.saved)));

@@ -241,7 +241,7 @@ export function Budget() {
   return (
     <>
       {header}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card>
           <CardHeader title="Limites por categoria" action={<span className="text-[13px] text-muted">Edite o limite direto na linha</span>} />
           <table className="w-full border-collapse">

@@ -137,7 +137,7 @@ export function Commitments() {
           </div>
         </Panel>
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
           <Panel>
             <span className="text-sm text-muted">Ainda a pagar em parcelas</span>
             <Money value={totalAhead} size="lg" />

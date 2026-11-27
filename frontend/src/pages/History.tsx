@@ -98,7 +98,7 @@ export function History() {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-6">
             <Card className={desktop ? "order-1" : "order-2"}>
               <CardHeader title="Gasto por mês" />
               <SpendChart rows={rows} />

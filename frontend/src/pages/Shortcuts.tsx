@@ -18,7 +18,7 @@ export function Shortcuts() {
     <>
       <PageHeader back="/ajustes" title="Atalhos" />
       <p className="max-w-[720px] text-[15px] text-muted">Lance um gasto sem abrir o app inteiro: instale o FinControl e segure o ícone para ver os atalhos.</p>
-      <div className="grid max-w-[720px] gap-4">
+      <div className="grid grid-cols-1 max-w-[720px] gap-4">
         <Card>
           <CardHeader title="App instalado" />
           {install.installed ? (

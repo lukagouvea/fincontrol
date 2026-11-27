@@ -54,7 +54,7 @@ function Radio({ checked }: { checked: boolean }) {
 export function AppearanceOptions({ layout = "list" }: { layout?: "list" | "tiles" }) {
   const { preference, setPreference } = useTheme();
   return (
-    <div role="radiogroup" aria-label="Tema" className={cx("grid gap-2.5", layout === "tiles" && "lg:grid-cols-3 lg:gap-3")}>
+    <div role="radiogroup" aria-label="Tema" className={cx("grid grid-cols-1 gap-2.5", layout === "tiles" && "lg:grid-cols-3 lg:gap-3")}>
       {themeOptions.map((option) => {
         const checked = preference === option.value;
         return (

@@ -156,7 +156,7 @@ export function Cards() {
   return (
     <>
       {header}
-      <div className="grid items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
           <div role="listbox" aria-label="Seus cartões" className="flex flex-col gap-4">
             {active.map((summary) => (

@@ -40,7 +40,8 @@ export function CardHeader({
 }) {
   const isLink = action && typeof action === "object" && "to" in action;
   return (
-    <div className="flex items-start justify-between gap-3">
+    // Quebra a ação para a linha de baixo quando título e ação não cabem lado a lado (celular estreito).
+    <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <h2 id={id} className="text-base font-semibold text-ink lg:text-[17px]">
           {title}

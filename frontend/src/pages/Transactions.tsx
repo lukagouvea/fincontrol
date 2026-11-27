@@ -277,7 +277,7 @@ export function Transactions() {
     <>
       {header}
 
-      <div className={cx("grid items-start gap-4 lg:gap-6", !selecting && "lg:grid-cols-[minmax(0,1fr)_340px]")}>
+      <div className={cx("grid grid-cols-1 items-start gap-4 lg:gap-6", !selecting && "lg:grid-cols-[minmax(0,1fr)_340px]")}>
         <div className={cx("flex min-w-0 flex-col gap-4", desktop && "rounded-card border border-border bg-surface p-5")}>
           {selecting && desktop && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-hero px-4 py-3 text-on-hero">

@@ -269,7 +269,7 @@ export function Home() {
         </TileLink>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
         <Card>
           <CardHeader title="Para onde foi o dinheiro" action={{ label: "Detalhes", to: "/relatorios" }} />
           {ledger.isLoading ? (
@@ -330,7 +330,7 @@ export function Home() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-6">
       <Card>
         <CardHeader title="Últimas transações" action={{ label: "Ver todas", to: "/transacoes" }} />
         {ledger.isLoading ? (

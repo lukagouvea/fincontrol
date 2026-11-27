@@ -151,7 +151,7 @@ export function Reports() {
 
       {budget?.hasBudget && (
         <>
-          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
             <MonthPaceCard points={budget.monthBurn} variable={budget.variable} monthEnd={budget.monthBurn.at(-1)?.x ?? `${budget.key}-28`} />
             {isCurrent && budget.week && <WeekPaceCard week={budget.week} points={budget.weekBurn} />}
           </div>
@@ -159,7 +159,7 @@ export function Reports() {
         </>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6">
         <Card>
           <CardHeader
             title="Evolução"
@@ -236,7 +236,7 @@ export function Reports() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6">
         <Card>
           <CardHeader
             title={breakdown === "expense" ? "Despesas por categoria" : "Receitas por categoria"}

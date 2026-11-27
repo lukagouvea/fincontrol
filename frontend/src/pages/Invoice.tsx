@@ -68,7 +68,7 @@ export function Invoice() {
     <>
       <PageHeader back="/cartoes" title={`Fatura ${card.name}`} eyebrow={<span className="hidden lg:inline">•••• {card.last4}</span>} />
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
         <div className="flex min-w-0 flex-col gap-4">
           <div className="flex items-center justify-between rounded-full border border-border bg-surface">
             <button type="button" className={nav} aria-label="Fatura anterior" onClick={() => go(-1)}>

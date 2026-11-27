@@ -71,7 +71,7 @@ export function MonthClosing() {
   return (
     <>
       <PageHeader back="/relatorios/historico" title={title} />
-      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-6">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 lg:gap-6">
         <div className="flex flex-col gap-4">
           <Card aria-label="Resultado do mês">
             <div className="flex items-center justify-between gap-3">

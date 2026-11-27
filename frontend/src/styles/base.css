@@ -22,6 +22,11 @@
   summary {
     -webkit-tap-highlight-color: transparent;
   }
+  /* fieldset nasce com min-width: min-content: uma fila rolável dentro dele
+     (ex.: "Pago com") esticava o formulário além da tela no celular. */
+  fieldset {
+    min-width: 0;
+  }
   button:not(:disabled) {
     cursor: pointer;
   }

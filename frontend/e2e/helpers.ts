@@ -30,6 +30,14 @@ export async function go(page: Page, name: string, path: string) {
     }
   }
   await expect(page).toHaveURL(new RegExp(`${path.replace(/\//g, "\\/")}(\\?|$)`));
+  // A URL muda antes de a tela nova aparecer: enquanto o código da rota carrega,
+  // o React mantém a tela anterior. Espera a tela de destino de fato (no CI,
+  // um clique logo depois caía na tela antiga).
+  const ready =
+    path === "/"
+      ? page.getByText(/^Gasto em /).filter({ visible: true }).first()
+      : page.getByRole("heading", { level: 1, name, exact: true });
+  await expect(ready).toBeVisible();
 }
 
 /** Abre "Nova transação" pelo botão que estiver na tela (topo, "+" flutuante ou cabeçalho). */

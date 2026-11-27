@@ -69,12 +69,13 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Instalar o Chromium do Playwright
+      # Chromium (Android 360px e desktop 1280px) e WebKit, o motor do Safari (iPhone 390px).
+      - name: Instalar os navegadores do Playwright
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       # O Playwright sobe o Vite (webServer em playwright.config.ts).
-      - name: Rodar o roteiro e2e (360px e 1280px)
+      - name: Rodar o roteiro e2e (Android 360px, iPhone 390px, desktop 1280px)
         working-directory: frontend
         run: npm run e2e
 

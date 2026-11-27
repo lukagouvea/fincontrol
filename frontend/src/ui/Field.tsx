@@ -9,6 +9,7 @@ import {
   type SelectHTMLAttributes,
 } from "react";
 import { cx } from "../lib/cx";
+import { useInSheetWithFooter } from "./Sheet";
 
 export const inputClass = (invalid?: boolean, className?: string) =>
   cx(
@@ -68,7 +69,8 @@ type Invalid = { invalid?: boolean };
 
 export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & Invalid>(
   function TextInput({ invalid, className, ...props }, ref) {
-    return <input ref={ref} className={inputClass(invalid, className)} {...props} />;
+    const inSheet = useInSheetWithFooter();
+    return <input ref={ref} enterKeyHint={inSheet ? "done" : undefined} className={inputClass(invalid, className)} {...props} />;
   },
 );
 

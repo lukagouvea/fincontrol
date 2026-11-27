@@ -1,6 +1,6 @@
-import type { BurnPoint, WeekStatus } from "../budget";
+import type { Burn, BurnForecast, BurnPoint, WeekStatus } from "../budget";
 import { formatShortDate, parseDateKey } from "../../lib/dates";
-import { formatMoney } from "../../lib/money";
+import { formatMoney, MINUS } from "../../lib/money";
 import { cx } from "../../lib/cx";
 import { Card } from "../../ui/Card";
 import { Badge } from "../../ui/Chip";
@@ -9,13 +9,31 @@ import { weekMessage } from "./WeekCard";
 
 function pace(points: BurnPoint[]) {
   const last = points.reduce<BurnPoint | null>((found, p) => (p.real !== null ? p : found), null);
-  if (!last) return { ahead: false, diff: 0, end: null as number | null };
-  return { ahead: last.real! < last.ideal, diff: last.ideal - last.real!, end: points.at(-1)?.projection ?? last.real };
+  if (!last) return { ahead: false, diff: 0 };
+  return { ahead: last.real! < last.ideal, diff: last.ideal - last.real! };
+}
+
+/** Valor do restante sem centavos, com "−" quando passou do limite. */
+const whole = (value: number) => `${value < 0 ? `${MINUS} ` : ""}${formatMoney(Math.abs(value), { cents: false })}`;
+
+/** Percentual sem arredondar para 0% ou 100% quando não é certeza. */
+export function chance(p: number) {
+  const pct = Math.round(p * 100);
+  return `${p > 0 && pct === 0 ? 1 : p < 1 && pct === 100 ? 99 : pct}%`;
+}
+
+/** "Deve sobrar ~R$ 320 (entre R$ 80 e R$ 540). Chance de fechar dentro do limite: 78%." */
+export function forecastMessage(forecast: BurnForecast) {
+  const { p10, p50, p90, pWithin } = forecast;
+  const main = p50 >= 0 ? `Deve sobrar ~${whole(p50)}` : `Deve passar do limite em ~${whole(-p50)}`;
+  const range = p10 === p90 ? "" : ` (restante entre ${whole(p10)} e ${whole(p90)})`;
+  return `${main}${range}. Chance de fechar dentro do limite: ${chance(pWithin)}.`;
 }
 
 /** Ritmo do mês: orçamento variável restante por dia. */
-export function MonthPaceCard({ points, variable, monthEnd }: { points: BurnPoint[]; variable: number; monthEnd: string }) {
-  const { ahead, diff, end } = pace(points);
+export function MonthPaceCard({ burn, variable, monthEnd }: { burn: Burn; variable: number; monthEnd: string }) {
+  const { points, forecast } = burn;
+  const { ahead, diff } = pace(points);
   const remaining = points.reduce<number | null>((found, p) => (p.real !== null ? p.real : found), null) ?? variable;
   return (
     <Card>
@@ -32,14 +50,14 @@ export function MonthPaceCard({ points, variable, monthEnd }: { points: BurnPoin
       <Burndown points={points} budget={variable} label="Ritmo do mês" />
       <p className={cx("rounded-2xl px-3 py-2 text-[13px]", ahead ? "bg-surface-2" : "bg-primary-tint")}>
         {ahead ? `Até hoje você gastou ${formatMoney(diff)} a mais que o ideal.` : `Até hoje você está ${formatMoney(-diff)} abaixo do ideal.`}{" "}
-        {end !== null && (end >= 0 ? `No ritmo atual, o mês fecha dentro do limite (sobram ${formatMoney(end)}).` : `No ritmo atual, o mês passa do limite em ${formatMoney(-end)}.`)}
+        {forecast && forecastMessage(forecast)}
       </p>
     </Card>
   );
 }
 
 /** Ritmo da semana: limite da semana restante por dia. */
-export function WeekPaceCard({ week, points }: { week: WeekStatus; points: BurnPoint[] }) {
+export function WeekPaceCard({ week, burn }: { week: WeekStatus; burn: Burn }) {
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
@@ -52,8 +70,11 @@ export function WeekPaceCard({ week, points }: { week: WeekStatus; points: BurnP
         <Badge tone={week.state === "ok" ? "primary" : "expense"}>{week.state === "ok" ? "No ritmo" : week.state === "atencao" ? "Atenção" : "Passou"}</Badge>
       </div>
       <p className="text-[13px] text-muted">Limite da semana que resta, em R$, por dia</p>
-      <Burndown points={points.map((p) => ({ ...p, label: ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][parseDateKey(p.x).getDay()] }))} budget={week.limit} label="Ritmo da semana" />
-      <p className={cx("rounded-2xl px-3 py-2 text-[13px]", week.state === "ok" ? "bg-primary-tint" : "bg-expense-tint text-expense")}>{weekMessage(week)}</p>
+      <Burndown points={burn.points.map((p) => ({ ...p, label: ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][parseDateKey(p.x).getDay()] }))} budget={week.limit} label="Ritmo da semana" />
+      <p className={cx("rounded-2xl px-3 py-2 text-[13px]", week.state === "ok" ? "bg-primary-tint" : "bg-expense-tint text-expense")}>
+        {weekMessage(week)}
+        {burn.forecast && ` Chance de fechar a semana dentro do limite: ${chance(burn.forecast.pWithin)}.`}
+      </p>
     </Card>
   );
 }

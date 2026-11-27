@@ -1,10 +1,15 @@
 import { useMemo } from "react";
 import { useBudgetLimits } from "../hooks/useBudget";
 import { useCategories } from "../hooks/useCategories";
+import { fromMonthIndex, monthIndex } from "../lib/dates";
 import { fromCents, toCents } from "../lib/money";
 import { burndown, fixedExpenses, monthKeyOf, monthLimits, weekOf, weekStatus, weeksOfMonth, type WeekStatus } from "./budget";
 import { summarizeLedger, type LedgerEntry } from "./ledger";
-import { todayKey } from "./useLedger";
+import { todayKey, useLedgerMonths } from "./useLedger";
+import { monthSamples } from "./forecast";
+
+/** Meses fechados usados como histórico na estimativa do burndown. */
+const HISTORY_MONTHS = 3;
 
 /** categoryId null = "Geral": cobre os gastos das categorias sem limite próprio. */
 export type CategoryBudget = { categoryId: string | null; limit: number | null; spent: number };
@@ -18,6 +23,21 @@ export function useMonthBudget(month: number, year: number, entries: LedgerEntry
   const categoriesQuery = useCategories();
   const isLoading = limitsQuery.isPending || categoriesQuery.isPending || !ready;
   const isError = limitsQuery.isError || categoriesQuery.isError;
+  // Histórico só para o mês em andamento (os outros não têm estimativa). Não
+  // trava a tela: enquanto carrega, a estimativa usa só o mês atual.
+  const current = todayKey().slice(0, 7) === monthKeyOf(year, month);
+  const historyMonths = useMemo(
+    () => (current ? Array.from({ length: HISTORY_MONTHS }, (_, i) => fromMonthIndex(monthIndex(year, month) - 1 - i)) : []),
+    [current, month, year],
+  );
+  const historyLedger = useLedgerMonths(historyMonths);
+  const history = useMemo(
+    () =>
+      historyLedger.isLoading || historyLedger.isError
+        ? []
+        : historyMonths.flatMap(({ month: m, year: y }) => monthSamples(historyLedger.entries, y, m)),
+    [historyLedger.isLoading, historyLedger.isError, historyLedger.entries, historyMonths],
+  );
 
   const data = useMemo(() => {
     if (isLoading || isError) return null;
@@ -58,14 +78,12 @@ export function useMonthBudget(month: number, year: number, entries: LedgerEntry
       categories,
       week,
       weeks,
-      monthBurn: total > 0 ? burndown(variable, entries, monthStart, monthEnd, today) : [],
+      monthBurn: total > 0 ? burndown(variable, entries, monthStart, monthEnd, today, { history }) : null,
       weekBurn:
-        week && week.limit >= 0
-          ? burndown(week.limit, entries.filter((e) => e.date >= week.week.start), week.week.start, week.week.end, today)
-          : [],
+        week && week.limit >= 0 ? burndown(week.limit, entries, week.week.start, week.week.end, today, { history, samplesFrom: monthStart }) : null,
       daysLeft: inMonth ? Number(monthEnd.slice(8)) - Number(today.slice(8)) + 1 : 0,
     };
-  }, [isLoading, isError, limitsQuery.data, categoriesQuery.data, entries, month, year]);
+  }, [isLoading, isError, limitsQuery.data, categoriesQuery.data, entries, month, year, history]);
 
   return { data, isLoading, isError, retry: () => limitsQuery.refetch() };
 }

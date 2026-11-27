@@ -169,7 +169,8 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
   - Limite vazio = sem limite.
 - **Orçamento variável** = orçamento − recorrentes fixas de despesa do mês. As parcelas contam no variável.
 - **Limite da semana:** fórmula escolhida pelo dono. Na segunda-feira, a semana recebe (variável que resta ÷ dias restantes do mês) × os dias dela que caem no mês. O valor fica fixo até domingo. Semanas que cruzam a virada do mês são cortadas no último dia do mês. Avisa aos 80% e quando passa do limite.
-- **Burndown do mês e da semana:** linhas real, ideal e "se mantiver o ritmo". "Semana a semana" compara o gasto variável com o limite de cada semana.
+- **Burndown do mês e da semana:** linhas real, ideal e estimativa. "Semana a semana" compara o gasto variável com o limite de cada semana.
+- **Estimativa do burndown por Monte Carlo** (`frontend/src/features/forecast.ts`, decisão do dono em 2026-11-27): substitui a extrapolação linear da média, que contava o dia de hoje como dia inteiro, ignorava parcelas futuras e oscilava muito com poucos dias. São 2000 simulações que sorteiam o gasto variável de cada dia que falta entre os dias completos do mês e os dos 3 meses fechados anteriores (peso do mês atual = d/(d+7), d = dias completos; por dia da semana quando há ≥ 3 amostras). Parcelas e lançamentos futuros entram como certos. O gráfico mostra a mediana pontilhada sobre a faixa P10–P90 e o card mostra a chance de fechar dentro do limite.
 - **Pausar recorrência:** pausa um mês, o do próximo lançamento, que não é gerado nesse mês. Tem "Retomar" e "Desfazer". As pausadas aparecem em "Pausadas em <mês>".
 - **Pendente para a fase 3i (alertas):** o "Avisar ao chegar em 80%" de DefinirOrcamento. Por enquanto o aviso aparece só no card da semana.
 

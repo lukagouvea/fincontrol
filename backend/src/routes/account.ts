@@ -29,10 +29,15 @@ app.post('/alerts/read', async (c) => {
   return c.json({ alertsReadAt: user.alertsReadAt?.toISOString() });
 });
 
-const csvCell = (value: unknown) => {
+/** Número puro como o export escreve ("-12,50", "1234"): pode começar com "-" sem virar fórmula. */
+const PLAIN_NUMBER = /^-?\d+(,\d+)?$/;
+
+export const csvCell = (value: unknown) => {
   const text = value === null || value === undefined ? '' : String(value);
-  // Evita fórmula em planilhas (=, +, -, @) e escapa aspas.
-  const safe = /^[=+\-@]/.test(text) && !/^-?\d/.test(text) ? `'${text}` : text;
+  // Evita fórmula em planilhas: qualquer célula que comece com = + - @ tab ou CR
+  // ganha um apóstrofo, exceto número puro. ("-1+HYPERLINK(...)" começa com
+  // "-" e dígito, mas não é número.) Depois escapa aspas.
+  const safe = /^[=+\-@\t\r]/.test(text) && !PLAIN_NUMBER.test(text) ? `'${text}` : text;
   return /[";\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 };
 

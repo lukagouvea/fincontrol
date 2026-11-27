@@ -38,7 +38,9 @@ export function GoalSheet({ open, goal, onClose }: { open: boolean; goal?: Goal 
     setInitial(null);
     setErrors({});
     setSubmitError("");
-  }, [open, goal]);
+    // Por id: um refetch recria o objeto e apagaria o que está sendo editado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, goal?.id]);
 
   const saved = goal ? goal.saved : initial ?? 0;
   const plan = target ? monthlyPlan(target, saved, deadline || null, todayKey()) : null;

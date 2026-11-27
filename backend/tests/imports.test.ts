@@ -58,7 +58,8 @@ test('importa tudo de uma vez, com o cartão só nas despesas', async () => {
   });
   assert.equal(response.status, 201);
   assert.deepEqual(await response.json(), { id: 'b1', count: 2, total: 122.3 });
-  assert.deepEqual(rows.map((r) => [r.cardId, r.importBatchId]), [[card, 'b1'], [null, 'b1']]);
+  // O estorno também fica no cartão (abate a fatura), não vira receita À vista.
+  assert.deepEqual(rows.map((r) => [r.cardId, r.importBatchId]), [[card, 'b1'], [card, 'b1']]);
 });
 
 test('recusa categoria de outro usuário ou do tipo errado', async () => {

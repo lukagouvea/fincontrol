@@ -51,7 +51,9 @@ app.post('/', zValidator('json', importSchema), async (c) => {
         date: new Date(item.date),
         type: item.type,
         categoryId: item.categoryId,
-        cardId: item.type === 'expense' ? body.cardId : null,
+        // Extrato de cartão: créditos (estornos) também são do cartão e abatem a
+        // fatura. Pagamentos de fatura já ficam de fora na revisão do cliente.
+        cardId: body.cardId,
         importBatchId: created.id,
       })),
     });

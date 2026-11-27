@@ -19,9 +19,12 @@ const categorySchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   description: z.string().optional(),
   type: z.enum(['income', 'expense']),
-  color: z.string().optional().default('#888888'),
+  color: z.string().optional(),
   icon: z.string().regex(/^[a-z0-9-]{1,40}$/, 'Ícone inválido').nullable().optional(),
 });
+
+// O padrão da cor fica só na criação (ver cards.ts: `.partial()` manteria o `.default()`).
+const createSchema = categorySchema.extend({ color: z.string().optional().default('#888888') });
 
 const updateSchema = categorySchema.partial().extend({
   // true restaura uma categoria arquivada.
@@ -50,7 +53,7 @@ app.get('/', async (c) => {
 });
 
 // 2. Criar Categoria (POST /categories)
-app.post('/', zValidator('json', categorySchema), async (c) => {
+app.post('/', zValidator('json', createSchema), async (c) => {
   const userId = c.var.userId;
   const body = c.req.valid('json');
 

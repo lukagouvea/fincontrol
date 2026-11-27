@@ -55,3 +55,10 @@
   --card-laranja:#E8873F; --card-laranja-tint:#3F2A1E; --card-laranja-ink:#F08A4B; --on-card-laranja:#0E1A14;
   --card-grafite:#4A5750; --card-grafite-tint:#262E29; --card-grafite-ink:#C3CCC6; --on-card-grafite:#EDF1EE;
 }
+/* Miniaturas de tema (Ajustes › Aparência): mostram cada tema como ele é,
+   então não mudam com o tema atual (sem redefinição no escuro). */
+:root{
+  --theme-preview-light-bg:#F5F2EA; --theme-preview-light-ink:#16201C; --theme-preview-light-primary:#1E4D3B;
+  --theme-preview-dark-bg:#121714; --theme-preview-dark-ink:#EDF1EE; --theme-preview-dark-primary:#58AD88;
+  --theme-preview-auto-ink:#7FB8A8;
+}

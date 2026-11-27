@@ -21,12 +21,18 @@ const themeOptions: Array<{ value: ThemePreference; label: string; hint: string 
 const themeLabel: Record<ThemePreference, string> = { light: "Claro", dark: "Escuro", system: "Automático" };
 
 /**
- * Miniatura do tema. As cores são fixas de propósito: mostram como o outro
- * tema fica, independente do tema atual (exceção à regra de tokens).
+ * Miniatura do tema. Usa os tokens --theme-preview-* (fixos): mostra como cada
+ * tema fica, independente do tema atual.
  */
 function ThemePreview({ value, large }: { value: ThemePreference; large?: boolean }) {
   const background =
-    value === "light" ? "#F5F2EA" : value === "dark" ? "#121714" : "linear-gradient(90deg,#F5F2EA 50%,#121714 50%)";
+    value === "light"
+      ? "var(--theme-preview-light-bg)"
+      : value === "dark"
+        ? "var(--theme-preview-dark-bg)"
+        : "linear-gradient(90deg, var(--theme-preview-light-bg) 50%, var(--theme-preview-dark-bg) 50%)";
+  const ink = value === "dark" ? "var(--theme-preview-dark-ink)" : value === "light" ? "var(--theme-preview-light-ink)" : "var(--theme-preview-auto-ink)";
+  const accent = value === "dark" ? "var(--theme-preview-dark-primary)" : "var(--theme-preview-light-primary)";
   return (
     <span
       aria-hidden="true"
@@ -36,8 +42,8 @@ function ThemePreview({ value, large }: { value: ThemePreference; large?: boolea
       )}
       style={{ background }}
     >
-      <span className={cx("rounded-[3px]", large ? "h-2 w-1/2" : "h-1.5 w-3/5")} style={{ background: value === "dark" ? "#EDF1EE" : value === "light" ? "#16201C" : "#7FB8A8" }} />
-      <span className={cx("rounded-[3px]", large ? "h-4" : "h-2.5")} style={{ background: value === "dark" ? "#58AD88" : "#1E4D3B" }} />
+      <span className={cx("rounded-[3px]", large ? "h-2 w-1/2" : "h-1.5 w-3/5")} style={{ background: ink }} />
+      <span className={cx("rounded-[3px]", large ? "h-4" : "h-2.5")} style={{ background: accent }} />
     </span>
   );
 }

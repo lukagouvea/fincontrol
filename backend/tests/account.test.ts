@@ -90,3 +90,14 @@ test('preferências de alerta mesclam com as salvas e recusam chaves desconhecid
   assert.deepEqual(saved, { recorrencia: false, semana: false });
   assert.equal((await send('/me/alerts/preferences', 'PUT', { outra: true })).status, 400);
 });
+
+test('CSV neutraliza fórmulas disfarçadas de número e prefixos de tab/CR', async () => {
+  const { csvCell } = await import('../src/routes/account.js');
+  assert.equal(csvCell('-12,50'), '-12,50');
+  assert.equal(csvCell('1234'), '1234');
+  assert.equal(csvCell('-1+HYPERLINK("http://x","a")'), `"'-1+HYPERLINK(""http://x"",""a"")"`);
+  assert.equal(csvCell('=SUM(A1)'), "'=SUM(A1)");
+  assert.equal(csvCell('\t=1+1'), "'\t=1+1");
+  assert.equal(csvCell('@cmd'), "'@cmd");
+  assert.equal(csvCell('Padaria'), 'Padaria');
+});

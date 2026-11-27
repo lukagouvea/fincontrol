@@ -41,7 +41,9 @@ export function SaveToGoalSheet({
     setValue(initialAmount ?? null);
     setDate(toDateKey(new Date()));
     setError("");
-  }, [goal, initialAmount]);
+    // Por id: um refetch recria o objeto e apagaria o que está sendo digitado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goal?.id, initialAmount]);
 
   if (!goal) return null;
   const signed = (value ?? 0) * (mode === "retirar" ? -1 : 1);

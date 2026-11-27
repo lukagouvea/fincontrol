@@ -51,6 +51,26 @@ describe("Orçamento", () => {
     expect(screen.getByText("R$ 1.061,30 de R$ 2.500,00")).toBeVisible();
   });
 
+  it("limite de categoria arquivada (ex.: mesclada) não soma no orçamento do mês", async () => {
+    installApiFixture({
+      ...withSpending,
+      "/categories": [
+        { id: "food", name: "Alimentação", type: "expense", active: true, color: "#16836b" },
+        { id: "fun", name: "Lazer", type: "expense", active: false, color: "#16836b" },
+        { id: "salary", name: "Trabalho", type: "income", active: true, color: "#5d6b80" },
+      ],
+      "/budgets": [
+        { categoryId: "food", month: "2026-10", amount: 2500, repeat: true },
+        { categoryId: "fun", month: "2026-10", amount: 300, repeat: true },
+      ],
+    });
+    window.history.replaceState({}, "", "/orcamento");
+    render(<App />);
+    // Só Alimentação (2.500): o limite de Lazer (300), arquivada, fica de fora.
+    expect(await screen.findByText("R$ 1.438,70")).toBeVisible();
+    expect(screen.getByText(/Limite: R\$\s2\.500,00/)).toBeVisible();
+  });
+
   it("Início mostra o limite da semana calculado na segunda", async () => {
     installApiFixture(withSpending);
     window.history.replaceState({}, "", "/");

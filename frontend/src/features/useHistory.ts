@@ -15,7 +15,8 @@ export function useHistory(count: number) {
   const isError = summaries.isError || limits.isError || categories.isError;
   const rows = useMemo<HistoryRow[]>(() => {
     if (isLoading || isError) return [];
-    const ids = (categories.data ?? []).filter((c) => c.type === "expense").map((c) => c.id);
+    // Só categorias ativas (ver useMonthBudget): arquivadas e mescladas não somam limite.
+    const ids = (categories.data ?? []).filter((c) => c.type === "expense" && c.active !== false).map((c) => c.id);
     return summaries.data.map(({ month, year, summary }) => {
       const key = monthKeyOf(year, month);
       const { total } = monthLimits(limits.data ?? [], ids, key);

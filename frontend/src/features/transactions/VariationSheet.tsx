@@ -30,7 +30,9 @@ export function VariationSheet({
     if (!entry) return;
     setValue(entry.amount);
     setError("");
-  }, [entry]);
+    // Por chave: um refetch recria o lançamento e apagaria o que está sendo digitado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entry?.key]);
 
   if (!entry) return null;
   const [year, month] = entry.date.split("-").map(Number);

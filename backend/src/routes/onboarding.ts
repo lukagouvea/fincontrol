@@ -23,15 +23,19 @@ export const DEFAULT_CATEGORIES = [
 const completeSchema = z.object({
   // Orçamento mensal inicial: vira o limite "Geral" do mês atual, repetido.
   budget: z.number().positive().nullable().optional(),
+  // Mês local de quem está configurando ("AAAA-MM"). O relógio do servidor é UTC:
+  // às 22h30 de 30/nov no Brasil ele já está em dezembro.
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
 });
 
 // Conclui a configuração inicial. Idempotente: categorias só são criadas se a
 // conta não tiver nenhuma.
 app.post('/complete', zValidator('json', completeSchema), async (c) => {
   const userId = c.var.userId;
-  const { budget } = c.req.valid('json');
+  const { budget, month: monthKey } = c.req.valid('json');
   const now = new Date();
-  const month = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+  // Sem o mês (cliente antigo durante o deploy), usa o do servidor.
+  const month = monthKey ? new Date(`${monthKey}-01T00:00:00Z`) : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
   const result = await prisma.$transaction(async (tx) => {
     let categoriesCreated = 0;

@@ -246,8 +246,20 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Fila offline:**
   - Sem internet, ou se a rede cair no envio, lançamentos simples ficam no aparelho (`localStorage`, por usuário), com aviso fixo "Sem conexão".
   - São enviados em ordem quando a conexão volta, ou pelo "Enviar agora".
-  - Erro 4xx descarta o item e avisa; rede ou 5xx mantêm na fila.
+  - Erro 4xx de recusa (400, 404, 422) descarta o item e avisa. Rede, 5xx, sessão expirada (401/403) e limites temporários (408/429) mantêm na fila.
   - Parcelas e recorrências pedem conexão.
   - **Limitação:** os lançamentos guardados ainda não aparecem nas listas e totais até serem enviados.
 - **Push:** não implementado, por decisão do dono. Exigiria um serviço de envio no servidor e, no iPhone, só funciona com o app instalado.
 - **Correção:** o Tailwind lia os arquivos de teste e gerava CSS inválido a partir de textos de exemplo (`[-3:BRT]` do OFX). Os testes saíram da varredura.
+
+### Revisão final antes do PR
+Revisão de código da branch inteira e roteiro e2e (ver `CLAUDE.md`). O que mudou de comportamento:
+- **Forma de pagamento da recorrente é versionada** (decisão do dono, com mudança de schema): migração `20261127190000_recurring_version_card` adiciona `card_id` em `recurring_rule_versions`, preenchido com o cartão atual de cada regra. Trocar o cartão vale a partir do mês escolhido, como valor, categoria e dia. Antes, a troca levava as cobranças dos últimos 24 meses para as faturas passadas do cartão novo. `recurring_rules.card_id` passa a espelhar a versão vigente hoje. Cartão que já foi usado por uma versão antiga é arquivado, não apagado.
+- **Compra parcelada no cartão:** o formulário mandava a compra sem o cartão, e as parcelas ficavam À vista, fora da fatura e do limite. Corrigido.
+- **Categoria arquivada ou mesclada não soma limite no orçamento** (total do mês, limite da semana, histórico). O limite continua salvo e volta se a categoria for restaurada.
+- **Orçamento do primeiro uso** vai para o mês local de quem configura, não para o mês UTC do servidor.
+- **Importar extrato de cartão:** estornos ficam no cartão e abatem a fatura, em vez de virar receita À vista.
+- **Edição parcial de cartão ou categoria** (arquivar, restaurar) não troca mais a cor para a padrão.
+- **Formulários abertos** (pagar fatura, cartão, meta, guardar na meta, variação) não perdem o que foi digitado quando os dados recarregam em segundo plano.
+- **Exportar CSV:** proteção contra fórmula também em células que começam com "-" e dígito mas não são número, e com tab/CR.
+- **Cookie de sessão** com `Secure` quando o `FRONTEND_URL` é https (produção: `https://fin.luka.dev.br`, com "Always Use HTTPS" ligado na Cloudflare).

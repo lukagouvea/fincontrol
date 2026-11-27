@@ -44,7 +44,7 @@ describe("Primeiro uso", () => {
     expect(screen.getByText("R$ 700 por semana")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Começar" }));
     await waitFor(() => expect(window.location.pathname).toBe("/"));
-    expect(requests.find((r) => r.method === "post" && r.url === "/onboarding/complete")?.data).toEqual({ budget: 3000 });
+    expect(requests.find((r) => r.method === "post" && r.url === "/onboarding/complete")?.data).toEqual({ budget: 3000, month: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}` });
     expect(requests.find((r) => r.method === "post" && r.url === "/cards")?.data).toMatchObject({ name: "Aurora", last4: "4821", closingDay: 8 });
     const checklist = await screen.findByRole("region", { name: "Comece por aqui" });
     expect(within(checklist).getByText("1 de 4")).toBeVisible();
@@ -61,7 +61,7 @@ describe("Primeiro uso", () => {
     await user.click(await screen.findByRole("button", { name: "Pular, só uso à vista" }));
     await user.click(await screen.findByRole("button", { name: "Começar" }));
     await waitFor(() => expect(window.location.pathname).toBe("/"));
-    expect(requests.find((r) => r.url === "/onboarding/complete")?.data).toEqual({ budget: null });
+    expect(requests.find((r) => r.url === "/onboarding/complete")?.data).toEqual({ budget: null, month: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}` });
     expect(requests.some((r) => r.method === "post" && r.url === "/cards")).toBe(false);
   });
 

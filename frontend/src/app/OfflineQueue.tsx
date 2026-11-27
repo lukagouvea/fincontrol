@@ -45,10 +45,16 @@ function save(userId: string, items: QueuedTransaction[]) {
 
 /** Erro sem resposta do servidor = rede (o interceptor da API remove o response nesses casos). */
 const isNetworkError = (error: unknown) => !(error as { response?: unknown })?.response;
-/** Vale tentar de novo depois: sem rede ou erro do servidor (5xx). 4xx não adianta repetir. */
+/**
+ * Vale tentar de novo depois: sem rede, erro do servidor (5xx), sessão expirada
+ * ou sem permissão no momento (401/403: o envio volta depois de entrar de novo)
+ * e limites temporários (408/429). Os outros 4xx são recusa do próprio lançamento
+ * (ex.: categoria apagada) e não adianta repetir.
+ */
+const RETRY_LATER = new Set([401, 403, 408, 429]);
 const isRetryable = (error: unknown) => {
   const status = (error as { response?: { status?: number } })?.response?.status;
-  return status === undefined || status >= 500;
+  return status === undefined || status >= 500 || RETRY_LATER.has(status);
 };
 
 const newId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);

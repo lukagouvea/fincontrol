@@ -50,7 +50,9 @@ export function CardSheet({
     setColor(card?.color ?? "verde");
     setErrors({});
     setSubmitError("");
-  }, [open, card]);
+    // Por id: um refetch recria o objeto e apagaria o que está sendo editado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, card?.id]);
 
   const busy = create.isPending || update.isPending || remove.isPending;
 

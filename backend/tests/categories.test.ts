@@ -98,3 +98,13 @@ test('listagem inclui arquivadas só quando pedido', async () => {
   await send('/categories?all=1', 'GET');
   assert.deepEqual(wheres, [{ userId, active: true }, { userId }]);
 });
+
+test('restaurar uma categoria arquivada não troca a cor', async () => {
+  const food = '33333333-3333-4333-8333-333333333333';
+  let data: Record<string, unknown> = {};
+  mock(prisma.category, 'findFirst', (async () => ({ id: food, userId, name: 'Lazer', type: 'expense', color: '#16836b', active: false })) as AnyFn);
+  mock(prisma.category, 'update', (async (args: { data: Record<string, unknown> }) => ((data = args.data), { id: food })) as AnyFn);
+  assert.equal((await send(`/categories/${food}`, 'PUT', { active: true })).status, 200);
+  assert.equal(data.color, undefined);
+  assert.equal(data.active, true);
+});

@@ -96,4 +96,22 @@ describe("atalhos e fila offline", () => {
     expect(left.map((item: { id: string }) => item.id)).toEqual(["b"]);
     expect(screen.getByText("Lançamentos aguardando envio")).toBeVisible();
   });
+
+  it("sessão expirada (401) ao reenviar mantém tudo na fila, sem descartar", async () => {
+    localStorage.setItem(
+      queueKey,
+      JSON.stringify([
+        { id: "a", createdAt: "x", payload: { description: "A", amount: 1, categoryId: "food", date: "2026-11-01T03:00:00.000Z", type: "expense", cardId: null } },
+        { id: "b", createdAt: "x", payload: { description: "B", amount: 2, categoryId: "food", date: "2026-11-01T03:00:00.000Z", type: "expense", cardId: null } },
+      ]),
+    );
+    installApiFixture({ "post /transactions": () => { throw Object.assign(new Error("401"), { response: { status: 401 } }); } });
+    window.history.replaceState({}, "", "/transacoes");
+    render(<App />);
+    expect(await screen.findByText("Lançamentos aguardando envio")).toBeVisible();
+    await waitFor(() => expect(requests.filter((r) => r.method === "post" && r.url === "/transactions").length).toBeGreaterThan(0));
+    expect(screen.queryByText(/descartado/)).not.toBeInTheDocument();
+    const left = JSON.parse(localStorage.getItem(queueKey) ?? "[]");
+    expect(left.map((item: { id: string }) => item.id)).toEqual(["a", "b"]);
+  });
 });

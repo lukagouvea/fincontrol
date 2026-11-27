@@ -40,7 +40,10 @@ export function PayInvoiceSheet({
     setValue(null);
     setDate(toDateKey(new Date()));
     setError("");
-  }, [invoice]);
+    // Reinicia ao abrir outra fatura, não quando os dados recarregam (o objeto
+    // é recriado a cada refetch e apagaria o que a pessoa digitou).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card?.id, invoice?.key]);
 
   if (!card || !invoice) return null;
   const amount = mode === "total" ? invoice.remaining : value ?? 0;

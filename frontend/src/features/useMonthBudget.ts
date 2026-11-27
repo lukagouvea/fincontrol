@@ -24,7 +24,10 @@ export function useMonthBudget(month: number, year: number, entries: LedgerEntry
     const key = monthKeyOf(year, month);
     const today = todayKey();
     const expenseCategories = (categoriesQuery.data ?? []).filter((category) => category.type === "expense");
-    const { limits, total } = monthLimits(limitsQuery.data ?? [], expenseCategories.map((c) => c.id), key);
+    // Categoria arquivada (ou origem de uma mesclagem) não entra no orçamento;
+    // o limite dela continua salvo e volta se a categoria for restaurada.
+    const budgeted = expenseCategories.filter((category) => category.active !== false).map((category) => category.id);
+    const { limits, total } = monthLimits(limitsQuery.data ?? [], budgeted, key);
     const summary = summarizeLedger(entries, { untilToday: true });
     const spentByCategory = new Map(summary.expenseByCategory.map((item) => [item.categoryId, item.total]));
     const byCategory: CategoryBudget[] = expenseCategories

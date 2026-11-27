@@ -52,6 +52,10 @@ export function Recurring() {
   const occurrences = ledger.entries.filter((entry) => entry.source === "recurring");
   const occurringIds = new Set(occurrences.map((entry) => entry.id));
   const ended = rules.filter(({ item }) => item.endDate && isoToDateKey(item.endDate) < today);
+  const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const paused = rules.filter(
+    (rule) => !!rule.item.pausedFrom && monthKey >= rule.item.pausedFrom && monthKey <= (rule.item.pausedUntil ?? rule.item.pausedFrom),
+  );
   const later = rules.filter(
     (rule) => !occurringIds.has(rule.item.id) && !ended.includes(rule) && isoToDateKey(rule.item.startDate) > today,
   );
@@ -137,6 +141,9 @@ export function Recurring() {
               </>
             )}
 
+            {paused.length > 0 && (
+              <RuleList title={`Pausadas em ${name}`} rules={paused} onOpen={open} describe={() => "Não lança neste mês"} />
+            )}
             {later.length > 0 && (
               <RuleList title="Começam depois" rules={later} onOpen={open} describe={({ item }) => `Começa em ${formatShortDate(isoToDateKey(item.startDate))} de ${isoToDateKey(item.startDate).slice(0, 4)}`} />
             )}
@@ -343,7 +350,7 @@ function RuleList({
   describe: (rule: Rule) => string;
 }) {
   return (
-    <Card>
+    <Card aria-label={title}>
       <CardHeader title={title} />
       <ul>
         {rules.map((rule) => (

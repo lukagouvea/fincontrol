@@ -47,6 +47,8 @@ export const generateParcelas = (valorTotal: number, numeroParcelas: number, des
 
 type FixedItemLike = {
   day: number;
+  pausedFrom?: string | null;
+  pausedUntil?: string | null;
   startDate: string;
   endDate?: string | null;
   amount?: number;
@@ -125,6 +127,9 @@ export const isItemActiveInMonth = (
 ): boolean => {
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
+  // Pausada nesse mês: não lança.
+  const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+  if (item.pausedFrom && key >= item.pausedFrom && key <= (item.pausedUntil ?? item.pausedFrom)) return false;
   const { day } = getFixedItemVersion(item, year, month);
   // 1. Cria a data exata da ocorrência para o mês e ano alvo.
   // Ex: Se targetDate é Outubro/2025 e o dia é 10, cria a data "10/10/2025".

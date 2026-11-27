@@ -12,7 +12,7 @@ import { Sheet } from "../../ui/Sheet";
 import { Button } from "../../ui/Button";
 import { Field, MoneyInput, SelectInput, TextInput } from "../../ui/Field";
 import { Segmented } from "../../ui/Segmented";
-import { ConfirmSheet } from "../../ui/ConfirmSheet";
+import { Pause, Square } from "lucide-react";
 import { useToast } from "../../ui/Toast";
 import type { EntryType } from "../ledger";
 
@@ -153,6 +153,12 @@ export function RecurringSheet({
     onSuccess: invalidate,
   });
 
+  const setPause = useMutation({
+    mutationFn: (month: string | null) =>
+      fixedTransactionService[type === "income" ? "updateIncome" : "updateExpense"](editing!.id, { pausedFrom: month, pausedUntil: month } as never),
+    onSuccess: invalidate,
+  });
+
   const endNow = useMutation({
     mutationFn: () => fixedTransactionService[type === "income" ? "deleteIncome" : "deleteExpense"](editing!.id),
     onSuccess: invalidate,
@@ -183,7 +189,10 @@ export function RecurringSheet({
 
   const ended = !!editing?.endDate && new Date(editing.endDate) <= new Date();
   const versions = [...(editing?.versions ?? [])].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
-  const busy = save.isPending || endNow.isPending;
+  const busy = save.isPending || endNow.isPending || setPause.isPending;
+  const pauseMonth = editing ? monthValue(defaultEffectiveMonth(editing)) : "";
+  const pausedLabel = editing?.pausedFrom ? `${monthNames[Number(editing.pausedFrom.slice(5, 7)) - 1].toLowerCase()} de ${editing.pausedFrom.slice(0, 4)}` : "";
+  const resumeMonth = editing?.pausedUntil ? monthValue(Number(editing.pausedUntil.slice(0, 4)) * 12 + Number(editing.pausedUntil.slice(5, 7))) : "";
 
   return (
     <>
@@ -200,13 +209,36 @@ export function RecurringSheet({
             </Button>
             {editing && !ended && (
               <Button variant="link" className="self-center !text-expense lg:mr-auto" disabled={busy} onClick={() => setConfirmEnd(true)}>
-                Encerrar recorrência
+                Pausar ou encerrar
               </Button>
             )}
           </>
         }
       >
         <form id={formId} onSubmit={submit} noValidate className="flex flex-col gap-4">
+          {editing?.pausedFrom && (
+            <div className="flex items-center justify-between gap-3 rounded-card bg-surface-2 p-4 text-sm">
+              <span>
+                <strong className="block text-[15px]">Pausada em {pausedLabel}</strong>
+                Volta a lançar em {monthNames[Number(resumeMonth.slice(5, 7)) - 1]?.toLowerCase()}.
+              </span>
+              <Button
+                variant="secondary"
+                loading={setPause.isPending}
+                onClick={async () => {
+                  try {
+                    await setPause.mutateAsync(null);
+                    showToast({ message: "Recorrência retomada" });
+                    onClose();
+                  } catch {
+                    setSubmitError("Não foi possível retomar. Tente de novo.");
+                  }
+                }}
+              >
+                Retomar
+              </Button>
+            </div>
+          )}
           {!editing && (
             <Segmented
               label="Tipo"
@@ -335,25 +367,89 @@ export function RecurringSheet({
           )}
         </form>
       </Sheet>
-      <ConfirmSheet
+      <PauseOrEndSheet
         open={confirmEnd}
+        name={editing?.description ?? ""}
+        pauseLabel={pauseMonth ? `${monthNames[Number(pauseMonth.slice(5, 7)) - 1].toLowerCase()}` : ""}
+        resumeLabel={pauseMonth ? `${monthNames[Number(pauseMonth.slice(5, 7)) % 12].toLowerCase()}, dia ${editing?.day ?? ""}` : ""}
+        busy={endNow.isPending || setPause.isPending}
         onClose={() => setConfirmEnd(false)}
-        title={`Encerrar “${editing?.description ?? ""}”?`}
-        description="Não lança mais a partir de hoje. O histórico de lançamentos continua como está e você pode recriar quando quiser."
-        confirmLabel="Encerrar"
-        busy={endNow.isPending}
-        onConfirm={async () => {
+        onConfirm={async (choice) => {
           try {
-            await endNow.mutateAsync();
+            if (choice === "pause") await setPause.mutateAsync(pauseMonth);
+            else await endNow.mutateAsync();
             setConfirmEnd(false);
-            showToast({ message: "Recorrência encerrada" });
+            showToast({
+              message: choice === "pause" ? "Recorrência pausada por um mês" : "Recorrência encerrada",
+              ...(choice === "pause" && { actionLabel: "Desfazer", onAction: () => setPause.mutate(null) }),
+            });
             onClose();
           } catch {
             setConfirmEnd(false);
-            setSubmitError("Não foi possível encerrar. Tente de novo.");
+            setSubmitError("Não foi possível concluir. Tente de novo.");
           }
         }}
       />
     </>
+  );
+}
+
+/** Pausar ou encerrar (EncerrarRecorrencia.html). O histórico não muda. */
+function PauseOrEndSheet({
+  open,
+  name,
+  pauseLabel,
+  resumeLabel,
+  busy,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  name: string;
+  pauseLabel: string;
+  resumeLabel: string;
+  busy: boolean;
+  onClose: () => void;
+  onConfirm: (choice: "pause" | "end") => void;
+}) {
+  const [choice, setChoice] = useState<"pause" | "end">("pause");
+  useEffect(() => {
+    if (open) setChoice("pause");
+  }, [open]);
+  const option = (value: "pause" | "end", icon: React.ReactNode, title: string, text: string) => (
+    <label className={cx("flex cursor-pointer items-center gap-3 rounded-card border-2 p-4", choice === value ? "border-primary bg-primary-tint" : "border-border bg-surface")}>
+      <input type="radio" name="pause-or-end" className="sr-only" checked={choice === value} onChange={() => setChoice(value)} />
+      <span aria-hidden="true" className="flex size-tap shrink-0 items-center justify-center rounded-tile bg-surface text-ink-2">
+        {icon}
+      </span>
+      <span>
+        <span className="block text-[15px] font-semibold">{title}</span>
+        <span className="block text-[13px] text-muted">{text}</span>
+      </span>
+    </label>
+  );
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      dismissible={!busy}
+      title={`Pausar ou encerrar “${name}”?`}
+      description="O histórico de lançamentos continua como está."
+      footer={
+        <>
+          <Button size="lg" block loading={busy} className="lg:w-auto" onClick={() => onConfirm(choice)}>
+            Confirmar
+          </Button>
+          <Button variant="secondary" size="lg" block disabled={busy} className="lg:w-auto" onClick={onClose}>
+            Cancelar
+          </Button>
+        </>
+      }
+    >
+      <div role="radiogroup" aria-label="Pausar ou encerrar" className="flex flex-col gap-3">
+        {option("pause", <Pause size={20} />, "Pausar por um mês", `Não lança em ${pauseLabel}. Volta a lançar em ${resumeLabel}.`)}
+        {option("end", <Square size={18} />, "Encerrar", "Não lança mais. Você pode recriar quando quiser.")}
+      </div>
+    </Sheet>
   );
 }

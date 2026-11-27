@@ -122,8 +122,31 @@ describe("Recorrentes", () => {
   it("encerra uma recorrência depois de confirmar", async () => {
     const user = renderRecurring({ "/recurring?type=expense": [rentWithVersions] });
     await user.click(await screen.findByRole("button", { name: "Editar Aluguel" }));
-    await user.click(within(await screen.findByRole("dialog", { name: "Editar recorrência" })).getByRole("button", { name: "Encerrar recorrência" }));
-    await user.click(within(await screen.findByRole("dialog", { name: "Encerrar “Aluguel”?" })).getByRole("button", { name: "Encerrar" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Editar recorrência" })).getByRole("button", { name: "Pausar ou encerrar" }));
+    const sheet = await screen.findByRole("dialog", { name: "Pausar ou encerrar “Aluguel”?" });
+    await user.click(within(sheet).getByLabelText(/Encerrar/));
+    await user.click(within(sheet).getByRole("button", { name: "Confirmar" }));
     await waitFor(() => expect(requests.some((r) => r.method === "delete" && r.url === "/recurring/rent")).toBe(true));
+  });
+
+  it("pausa o próximo lançamento por um mês e lista a pausada", async () => {
+    const user = renderRecurring({ "/recurring?type=expense": [rentWithVersions] });
+    await user.click(await screen.findByRole("button", { name: "Editar Aluguel" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Editar recorrência" })).getByRole("button", { name: "Pausar ou encerrar" }));
+    const sheet = await screen.findByRole("dialog", { name: "Pausar ou encerrar “Aluguel”?" });
+    // 3/nov e o aluguel cai dia 10: a pausa vale para novembro e volta em dezembro.
+    expect(within(sheet).getByText("Não lança em novembro. Volta a lançar em dezembro, dia 10.")).toBeVisible();
+    await user.click(within(sheet).getByRole("button", { name: "Confirmar" }));
+    await waitFor(() =>
+      expect(requests.find((r) => r.method === "put" && r.url === "/recurring/rent")?.data).toEqual({ pausedFrom: "2026-11", pausedUntil: "2026-11" }),
+    );
+  });
+
+  it("não lança no mês pausado e mostra a seção de pausadas", async () => {
+    const user = renderRecurring({ "/recurring?type=expense": [{ ...rentWithVersions, pausedFrom: "2026-11", pausedUntil: "2026-11" }] });
+    expect(await screen.findByRole("region", { name: "Pausadas em novembro" })).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Próximas" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Editar Aluguel" }));
+    expect(within(await screen.findByRole("dialog", { name: "Editar recorrência" })).getByText("Pausada em novembro de 2026")).toBeVisible();
   });
 });

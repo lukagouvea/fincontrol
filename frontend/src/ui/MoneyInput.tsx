@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type InputHTM
 import { cx } from "../lib/cx";
 import { formatMoney, toCents } from "../lib/money";
 import { inputClass } from "./Field";
+import { useInSheetWithFooter } from "./Sheet";
 
 /**
  * Campo de dinheiro do app, sem dependência externa. Dois modos de digitação:
@@ -115,6 +116,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
   forwarded,
 ) {
   const local = useRef<HTMLInputElement | null>(null);
+  const inSheet = useInSheetWithFooter();
   // Modo decimal guarda o que foi digitado ("19," precisa sobreviver até a próxima tecla).
   const [raw, setRaw] = useState(() => rawFromValue(value));
   // Onde pôr o cursor depois de reformatar: n caracteres que contam, ou o fim.
@@ -193,6 +195,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(function
       type="text"
       inputMode={mode === "cents" ? "numeric" : "decimal"}
       autoComplete="off"
+      enterKeyHint={props.enterKeyHint ?? (inSheet ? "done" : undefined)}
       placeholder={placeholder}
       aria-invalid={props["aria-invalid"] ?? (invalid ? true : undefined)}
       // Modo centavos: o cursor fica sempre no fim e não dá para movê-lo, então não precisa piscar.

@@ -1,5 +1,5 @@
 import * as RadixDialog from "@radix-ui/react-dialog";
-import { useRef, type ReactNode } from "react";
+import { createContext, useContext, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cx } from "../lib/cx";
 import { IconButton } from "./Button";
@@ -10,7 +10,19 @@ import { IconButton } from "./Button";
  *   viewport visível para acompanhar o teclado (useViewport);
  * - a partir de 1024px: diálogo centralizado (520px, 620px em `wide`) ou painel
  *   lateral (`desktop="panel"`).
+ *
+ * No mobile, o rodapé some enquanto o teclado está aberto (useViewport marca
+ * `data-keyboard="open"`) para não tampar o formulário. Para salvar sem fechar
+ * o teclado, Enter (o "Concluir" do teclado) num campo aciona o primeiro botão
+ * do rodapé, e os campos de texto mostram essa tecla como "Concluir".
  */
+
+/** Dentro de uma folha com rodapé: os campos usam `enterKeyHint="done"`. */
+const SheetFooterContext = createContext(false);
+export const useInSheetWithFooter = () => useContext(SheetFooterContext);
+
+const TEXT_INPUT_TYPES = new Set(["text", "search", "email", "tel", "url", "password", "number", "date", "datetime-local", "month", "time", "week"]);
+
 export function Sheet({
   open,
   onClose,
@@ -36,6 +48,18 @@ export function Sheet({
   dismissible?: boolean;
 }) {
   const returnTarget = useRef<HTMLElement | null>(null);
+  const footerRef = useRef<HTMLDivElement | null>(null);
+
+  const onContentKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (event.key !== "Enter" || event.defaultPrevented || event.nativeEvent.isComposing) return;
+    if (!(target instanceof HTMLInputElement) || !TEXT_INPUT_TYPES.has(target.type)) return;
+    const primary = footerRef.current?.querySelector("button");
+    // Campo de um formulário que não é o do rodapé (tem o próprio botão): fica com o navegador.
+    if (!primary || target.form !== primary.form) return;
+    event.preventDefault();
+    primary.click(); // desabilitado (salvando) não faz nada
+  };
   return (
     <RadixDialog.Root
       open={open}
@@ -93,11 +117,18 @@ export function Sheet({
               </IconButton>
             </RadixDialog.Close>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-5 pb-5 pt-2 lg:px-7">
-            {children}
+          <div
+            onKeyDown={footer ? onContentKeyDown : undefined}
+            className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-5 pb-5 pt-2 lg:px-7"
+          >
+            <SheetFooterContext.Provider value={!!footer}>{children}</SheetFooterContext.Provider>
           </div>
           {footer && (
-            <div className="flex flex-col gap-2 border-t border-border px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 lg:flex-row-reverse lg:px-7 lg:pb-7">
+            <div
+              ref={footerRef}
+              data-sheet-footer=""
+              className="flex flex-col gap-2 border-t border-border px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 max-lg:[:root[data-keyboard=open]_&]:hidden lg:flex-row-reverse lg:px-7 lg:pb-7"
+            >
               {footer}
             </div>
           )}

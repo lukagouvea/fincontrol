@@ -131,8 +131,15 @@ test("lança uma receita", async () => {
   await typeCents(sheet.getByLabel("Valor", { exact: true }), "500000");
   await sheet.getByRole("button", { name: "Salário" }).click();
   await sheet.getByLabel("Descrição").fill("Salário novembro");
-  await sheet.getByRole("button", { name: "Salvar receita" }).click();
+  // Teclado aberto (o Playwright não abre o teclado virtual, então marca como o
+  // useViewport marcaria): no celular o rodapé some e o "Concluir" (Enter) salva.
+  const save = sheet.getByRole("button", { name: "Salvar receita" });
+  await page.evaluate(() => (document.documentElement.dataset.keyboard = "open"));
+  if (page.viewportSize()!.width < 1024) await expect(save).toBeHidden();
+  else await expect(save).toBeVisible();
+  await sheet.getByLabel("Descrição").press("Enter");
   await expect(sheet).toBeHidden();
+  await page.evaluate(() => delete document.documentElement.dataset.keyboard);
   const salario = row(page, "Salário novembro");
   await expect(salario).toContainText(/\+\s*R\$\s5\.000,00/);
   await expect(salario).toContainText("Salário");

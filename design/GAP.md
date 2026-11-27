@@ -278,3 +278,9 @@ Marcar como paga a ocorrência de uma **recorrente de despesa À vista** e as **
   - `users.payments_tracked_from`;
   - `transactions.paid_at`;
   - tabela `recurring_payments` (regra + mês, porque as ocorrências não são gravadas).
+
+### Rodapé das folhas com o teclado aberto (pedido do dono, fora do design)
+No celular, o rodapé das folhas (o botão "Salvar") subia junto com o teclado e ocupava quase um terço do espaço que sobrava.
+- **Decisão do dono:** com o teclado aberto o rodapé some, e volta quando o teclado fecha. O `useViewport` marca `data-keyboard="open"` quando a área visível encolhe mais de 150px, descontado o zoom.
+- **Salvar sem fechar o teclado:** Enter num campo da folha aciona o primeiro botão do rodapé. Os campos mostram essa tecla como "Concluir" (`enterKeyHint="done"`). Um formulário que tem o próprio botão, como "Nova categoria" no seletor, continua com o comportamento do navegador.
+- **No desktop (≥1024px)** nada muda.

@@ -21,6 +21,8 @@ model User {
   alertPrefs        Json?              @map("alert_prefs")
   // Alertas com data até aqui já foram vistos (ponto no sino).
   alertsReadAt      DateTime?          @map("alerts_read_at") @db.Timestamp(6)
+  // Ocorrências e parcelas À vista que venceram antes deste mês contam como pagas.
+  paymentsTrackedFrom DateTime @default(dbgenerated("(date_trunc('month'::text, now()))::date")) @map("payments_tracked_from") @db.Date
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relações (CamelCase e Plural/Singular corretos)
@@ -34,6 +36,8 @@ model User {
   goals             Goal[]
   goalContributions GoalContribution[]
   importBatches     ImportBatch[]
+
+  recurringPayments RecurringPayment[]
 
   @@map("users")
 }
@@ -103,6 +107,7 @@ model RecurringRule {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   transactions Transaction[]
   versions     RecurringRuleVersion[]
+  payments     RecurringPayment[]
 
   @@index([userId, active], map: "idx_recurring_user_active")
   @@map("recurring_rules")
@@ -150,6 +155,8 @@ model Transaction {
 
   // Importação de extrato que criou esta transação (para desfazer a importação).
   importBatchId      String?           @map("import_batch_id") @db.Uuid
+  // Parcela À vista paga (contas a pagar). null = não marcada.
+  paidAt             DateTime?         @map("paid_at") @db.Timestamp(6)
   
   createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
 
@@ -288,4 +295,22 @@ model ImportBatch {
 
   @@index([userId], map: "idx_import_batches_user")
   @@map("import_batches")
+}
+
+/// Pagamento de uma ocorrência de recorrente À vista (regra + mês).
+model RecurringPayment {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  ruleId    String        @map("rule_id") @db.Uuid
+  /// Dia 1 do mês da ocorrência.
+  month     DateTime      @db.Date
+  paidAt    DateTime      @map("paid_at") @db.Timestamp(6)
+  createdAt DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rule      RecurringRule @relation(fields: [ruleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([ruleId, month], map: "unique_recurring_payment_month")
+  @@index([userId], map: "idx_recurring_payments_user")
+  @@map("recurring_payments")
 }

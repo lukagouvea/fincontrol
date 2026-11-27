@@ -6,6 +6,7 @@ import { useSelectedMonth } from "../app/MonthContext";
 import { usePendingDeletes } from "../app/PendingDeletes";
 import { useTransactionEditor } from "../app/TransactionEditor";
 import { useMonthLedger, todayKey } from "../features/useLedger";
+import { BillsCard } from "../features/billsui/BillsCard";
 import { useCardInvoices } from "../features/useCardInvoices";
 import { useMonthBudget } from "../features/useMonthBudget";
 import { useGoals } from "../hooks/useGoals";
@@ -223,6 +224,8 @@ export function Home() {
 
       <StartChecklist hasTransactions={entries.some((entry) => entry.source === "transaction")} />
       {period === "current" && !ledger.isLoading && <MonthTurnover currentEntries={entries} />}
+
+      {period === "current" && <BillsCard />}
 
       {period === "current" &&
         (budget?.week ? (

@@ -6,6 +6,8 @@ import { useFixedExpenses, useFixedIncomes } from "../hooks/useFixedTransactions
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useSelectedMonth } from "../app/MonthContext";
 import { useMonthLedger, todayKey } from "../features/useLedger";
+import { BillCheckButton } from "../features/billsui/BillControls";
+import { billLabel } from "../features/bills";
 import { summarizeLedger, type EntryType, type LedgerEntry } from "../features/ledger";
 import { makeCategoryLookup, type CategoryLookup } from "../features/categories";
 import { RecurringSheet, type RecurringSheetState } from "../features/recurring/RecurringSheet";
@@ -229,6 +231,17 @@ function DateTile({ date, done }: { date: string; done?: boolean }) {
   );
 }
 
+/** " · Vencida", " · A pagar", " · Paga" (contas a pagar), com a cor do status. */
+function BillStatusText({ entry, standalone }: { entry: LedgerEntry; standalone?: boolean }) {
+  const bill = entry.bill;
+  if (!bill || bill.presumed) return null;
+  return (
+    <span className={bill.status === "vencida" ? "font-semibold text-expense" : bill.status === "paga" ? "text-primary" : undefined}>
+      {standalone ? billLabel[bill.status] : ` · ${billLabel[bill.status].toLowerCase()}`}
+    </span>
+  );
+}
+
 function OccurrenceSection({
   title,
   entries,
@@ -250,24 +263,31 @@ function OccurrenceSection({
       <h2 className="pb-1 text-[15px] font-semibold">{title}</h2>
       <ul>
         {entries.map((entry) => (
-          <li key={entry.key}>
+          <li key={entry.key} className="-mx-2 flex items-center gap-1">
             <button
               type="button"
               aria-label={`Editar ${entry.description}`}
               onClick={() => onOpen(entry.id)}
-              className="-mx-2 flex min-h-16 w-[calc(100%+16px)] items-center gap-3 rounded-tile px-2 text-left hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
+              className="flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-tile px-2 text-left hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
             >
-              <DateTile date={entry.date} done={launched} />
+              {/* Conta a pagar: o ✓ do ladrilho ("lançada") confundiria com "paga"; mostra o dia. */}
+              <DateTile date={entry.date} done={launched && (!entry.bill || entry.bill.presumed)} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold">{entry.description}</span>
                 <span className="block truncate text-[13px] text-muted">
-                  {launched
-                    ? `Lançada dia ${parseDateKey(entry.date).getDate()} · ${category(entry.categoryId)?.name ?? "Sem categoria"}`
-                    : `Todo mês · ${formatRelativeDay(entry.date, today, { short: true }).toLowerCase()}`}
+                  {/* Conta a pagar: o dia já está no ladrilho; o texto é só o status (cabe em 360px). */}
+                  {entry.bill && !entry.bill.presumed ? (
+                    <BillStatusText entry={entry} standalone />
+                  ) : launched ? (
+                    `Lançada dia ${parseDateKey(entry.date).getDate()} · ${category(entry.categoryId)?.name ?? "Sem categoria"}`
+                  ) : (
+                    `Todo mês · ${formatRelativeDay(entry.date, today, { short: true }).toLowerCase()}`
+                  )}
                 </span>
               </span>
               <Money value={entry.amount} kind={entry.type} />
             </button>
+            {entry.bill && !entry.bill.presumed && <BillCheckButton entry={entry} className="mr-2" />}
           </li>
         ))}
       </ul>
@@ -295,7 +315,7 @@ function RecurringTable({
           <th scope="col" className={header}>Descrição</th>
           <th scope="col" className={header}>Categoria</th>
           <th scope="col" className={cx(header, "text-right")}>Valor</th>
-          <th scope="col" className="w-10"><span className="sr-only">Ações</span></th>
+          <th scope="col" className="w-24"><span className="sr-only">Ações</span></th>
         </tr>
       </thead>
       <tbody>
@@ -311,7 +331,8 @@ function RecurringTable({
               <span className="block text-[13px] text-muted">
                 Todo mês · dia {entry.recurring?.day}
                 {entry.recurring?.hasVariation ? " · valor ajustado neste mês" : ""}
-                {!entry.upcoming && entry.date <= today ? " · lançada" : ""}
+                {!entry.upcoming && entry.date <= today && !entry.bill ? " · lançada" : ""}
+                <BillStatusText entry={entry} />
               </span>
             </td>
             <td className="py-2.5 pr-3 text-[15px]">{category(entry.categoryId)?.name ?? "Sem categoria"}</td>
@@ -319,6 +340,8 @@ function RecurringTable({
               <Money value={entry.amount} kind={entry.type} size="sm" />
             </td>
             <td className="py-2.5 text-right">
+              <span className="inline-flex items-center gap-1">
+              {entry.bill && !entry.bill.presumed && <BillCheckButton entry={entry} />}
               <button
                 type="button"
                 aria-label={`Editar ${entry.description}`}
@@ -330,6 +353,7 @@ function RecurringTable({
               >
                 <ChevronRight size={18} aria-hidden="true" />
               </button>
+              </span>
             </td>
           </tr>
         ))}

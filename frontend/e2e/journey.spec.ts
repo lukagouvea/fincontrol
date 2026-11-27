@@ -238,6 +238,34 @@ test("relatórios mostram receitas e despesas do mês", async () => {
   await expect(page.getByRole("row").filter({ hasText: "Moradia" })).toContainText(/R\$\s1\.900,00/);
 });
 
+test("parcelada no Pix vira conta a pagar e é marcada como paga", async () => {
+  await go(page, "Transações", "/transacoes");
+  const sheet = await newTransaction(page);
+  await typeCents(sheet.getByLabel("Valor", { exact: true }), "30000");
+  await sheet.getByRole("button", { name: /^À vista/ }).click();
+  await sheet.getByLabel("Parcelas").selectOption("3");
+  await expect(sheet.getByText(/3x de R\$\s100,00/)).toBeVisible();
+  await sheet.getByRole("button", { name: "Outros" }).click();
+  await sheet.getByLabel("Descrição").fill("Curso");
+  await sheet.getByRole("button", { name: "Salvar despesa" }).click();
+  await expect(sheet).toBeHidden();
+
+  // A 1ª parcela vence hoje: aparece em "Contas a pagar" no Início.
+  await go(page, "Início", "/");
+  const bills = page.getByRole("region", { name: "Contas a pagar" });
+  await expect(bills.getByText("Vence hoje · parcela 1 de 3")).toBeVisible();
+  await bills.getByRole("button", { name: "Marcar Curso como paga" }).click();
+  await expect(page.getByText("Curso marcada como paga")).toBeVisible();
+  await expect(bills).toBeHidden();
+
+  // No detalhe, o pagamento fica registrado com a data.
+  await go(page, "Transações", "/transacoes");
+  await page.getByText("Curso").first().click();
+  await expect(page.getByText(/^Paga em \d+ \w+/)).toBeVisible();
+  const detail = dialog(page, "Detalhes");
+  if (await detail.isVisible()) await detail.getByRole("button", { name: "Fechar" }).click();
+});
+
 test("sai e entra de novo", async () => {
   await go(page, "Ajustes", "/ajustes");
   await page.getByRole("button", { name: "Sair da conta" }).click();

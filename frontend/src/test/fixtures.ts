@@ -36,6 +36,7 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
       "/recurring?type=income": [],
       "/recurring?type=expense": [],
       "/recurring/variations": [],
+      "/recurring/payments": [],
       "/cards": [],
       "/budgets": [],
       "/goals": [],

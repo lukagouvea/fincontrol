@@ -268,6 +268,38 @@ app.get('/variations', async (c) => {
 });
 
 // 3. CRIAR/ATUALIZAR VARIAÇÃO (POST /recurring/:id/variation)
+// Contas a pagar: pagamentos das ocorrências de recorrentes À vista, por mês.
+app.get('/payments', async (c) => {
+  const payments = await prisma.recurringPayment.findMany({
+    where: { userId: c.var.userId },
+    orderBy: { month: 'asc' },
+  });
+  return c.json(payments.map((p) => ({ ruleId: p.ruleId, month: p.month.toISOString().slice(0, 7), paidAt: p.paidAt.toISOString() })));
+});
+
+const paymentSchema = z.object({ paidAt: z.iso.datetime().nullable() });
+// Marca (ou desmarca, com null) a ocorrência do mês ('YYYY-MM') como paga.
+app.put('/:id/payments/:month', zValidator('json', paymentSchema), async (c) => {
+  const userId = c.var.userId;
+  const key = c.req.param('month');
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(key)) return c.json({ error: 'Use YYYY-MM' }, 400);
+  const rule = await prisma.recurringRule.findFirst({ where: { id: c.req.param('id'), userId } });
+  if (!rule) return c.json({ error: 'Regra não encontrada' }, 404);
+  if (rule.type !== 'expense') return c.json({ error: 'Só despesas têm pagamento a marcar' }, 400);
+  const month = new Date(`${key}-01T00:00:00Z`);
+  const { paidAt } = c.req.valid('json');
+  if (!paidAt) {
+    await prisma.recurringPayment.deleteMany({ where: { ruleId: rule.id, month } });
+    return c.json({ ruleId: rule.id, month: key, paidAt: null });
+  }
+  const saved = await prisma.recurringPayment.upsert({
+    where: { ruleId_month: { ruleId: rule.id, month } },
+    update: { paidAt: new Date(paidAt) },
+    create: { userId, ruleId: rule.id, month, paidAt: new Date(paidAt) },
+  });
+  return c.json({ ruleId: rule.id, month: key, paidAt: saved.paidAt.toISOString() });
+});
+
 app.post('/:id/variation', zValidator('json', variationSchema), async (c) => {
   const userId = c.var.userId;
   const ruleId = c.req.param('id');

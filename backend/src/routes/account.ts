@@ -9,7 +9,7 @@ import { authMiddleware } from '../middleware/auth.js';
 const app = new Hono<{ Variables: { userId: string } }>();
 app.use('/*', authMiddleware);
 
-export const ALERT_KEYS = ['semana', 'categorias', 'faturaFechando', 'vencimento', 'recorrencia', 'resumoSemanal'] as const;
+export const ALERT_KEYS = ['semana', 'categorias', 'faturaFechando', 'vencimento', 'contas', 'recorrencia', 'resumoSemanal'] as const;
 
 const prefsSchema = z.object(Object.fromEntries(ALERT_KEYS.map((key) => [key, z.boolean().optional()])) as Record<(typeof ALERT_KEYS)[number], z.ZodOptional<z.ZodBoolean>>).strict();
 

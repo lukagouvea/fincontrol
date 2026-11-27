@@ -290,6 +290,25 @@ app.post('/installment', zValidator('json', installmentSchema), async (c) => {
 });
 
 // 4. EDITAR (PUT /transactions/:id)
+// Contas a pagar: marca (ou desmarca, com null) uma parcela À vista como paga.
+// Compras no cartão são pagas pela fatura; avulsas À vista já nascem pagas.
+const paidSchema = z.object({ paidAt: z.iso.datetime().nullable() });
+app.put('/:id/paid', zValidator('json', paidSchema), async (c) => {
+  const userId = c.var.userId;
+  const existing = await prisma.transaction.findFirst({ where: { id: c.req.param('id'), userId } });
+  if (!existing) return c.json({ error: 'Transação não encontrada' }, 404);
+  if (existing.type !== 'expense' || existing.cardId || !existing.installmentGroupId) {
+    return c.json({ error: 'Só parcelas À vista têm pagamento a marcar' }, 400);
+  }
+  const { paidAt } = c.req.valid('json');
+  const updated = await prisma.transaction.update({
+    where: { id: existing.id },
+    data: { paidAt: paidAt ? new Date(paidAt) : null },
+    select: { id: true, paidAt: true },
+  });
+  return c.json({ id: updated.id, paidAt: updated.paidAt?.toISOString() ?? null });
+});
+
 app.put('/:id', zValidator('json', transactionSchema.partial()), async (c) => {
   const userId = c.var.userId;
   const id = c.req.param('id');

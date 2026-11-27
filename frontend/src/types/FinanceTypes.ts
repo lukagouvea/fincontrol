@@ -19,6 +19,8 @@ export interface TransactionBase {
   type: 'income' | 'expense';
   /** Cartão usado; null/ausente = À vista. */
   cardId?: string | null;
+  /** Parcela À vista paga (contas a pagar); null/ausente = não marcada. */
+  paidAt?: string | null;
 }
 
 export interface VariableTransaction extends TransactionBase {

@@ -14,6 +14,7 @@ import type {
   Transaction,
 } from "../types/FinanceTypes";
 import { resolveFixedItemForMonth } from "../utils/financeUtils";
+import { billStatus, isBill, type Bill, type BillContext } from "./bills";
 import { isoToDateKey } from "../lib/dates";
 import { fromCents, toCents } from "../lib/money";
 
@@ -37,12 +38,15 @@ export type LedgerEntry = {
   /** Cartão usado; null = À vista. */
   cardId: string | null;
   recurring?: { ruleId: string; day: number; hasVariation: boolean; variationId?: string };
+  /** Contas a pagar (recorrente ou parcela À vista): paga, a pagar ou vencida. */
+  bill?: Bill;
 };
 
 type ApiTransaction = Transaction & {
   recurringRuleId?: string | null;
   installmentGroupId?: string | null;
   installmentInfo?: { current: number; total: number } | null;
+  paidAt?: string | null;
 };
 
 export type LedgerInput = {
@@ -55,6 +59,8 @@ export type LedgerInput = {
   variations: MonthlyVariation[];
   /** 'YYYY-MM-DD' de hoje (injetável para testes). */
   today: string;
+  /** Pagamentos marcados; sem ele, as linhas saem sem status de conta. */
+  bills?: BillContext;
 };
 
 const pad = (value: number) => String(value).padStart(2, "0");
@@ -121,6 +127,19 @@ export function buildMonthLedger(input: LedgerInput): LedgerEntry[] {
   };
   addRecurring(input.fixedIncomes, "income");
   addRecurring(input.fixedExpenses, "expense");
+
+  if (input.bills) {
+    const { trackedFrom, recurringPayments } = input.bills;
+    const paidByTransaction = new Map((input.transactions as ApiTransaction[]).map((t) => [t.id, t.paidAt ?? null]));
+    for (const entry of entries) {
+      if (!isBill(entry)) continue;
+      const paidAt =
+        entry.source === "recurring"
+          ? recurringPayments.find((p) => p.ruleId === entry.id && p.month === monthKey)?.paidAt
+          : paidByTransaction.get(entry.id);
+      entry.bill = billStatus(entry.date, paidAt, trackedFrom, today);
+    }
+  }
 
   return entries.sort((a, b) =>
     a.date === b.date ? a.description.localeCompare(b.description, "pt-BR") : a.date < b.date ? 1 : -1,

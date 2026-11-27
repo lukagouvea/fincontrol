@@ -11,6 +11,7 @@ import { CategoryIcon } from "../../ui/CategoryIcon";
 import { ConfirmSheet } from "../../ui/ConfirmSheet";
 import { Badge } from "../../ui/Chip";
 import type { LedgerEntry } from "../ledger";
+import { billDescription, useToggleBillPaid } from "../billsui/BillControls";
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -43,6 +44,8 @@ export function TransactionDetail({
   onChangeMonthValue: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const billToggle = useToggleBillPaid();
+  const bill = entry.bill;
   const recurring = entry.source === "recurring";
   const installment = entry.installment;
   const rows = (
@@ -74,12 +77,32 @@ export function TransactionDetail({
         {recurring ? `Todo dia ${entry.recurring!.day}` : installment ? "Compra parcelada" : "Não se repete"}
       </Row>
       {recurring && entry.recurring?.hasVariation && <Row label="Neste mês">Valor ajustado</Row>}
+      {bill && (
+        <Row label="Pagamento">
+          <span className={bill.status === "vencida" ? "text-expense" : bill.status === "paga" ? "text-primary" : undefined}>{billDescription(bill)}</span>
+        </Row>
+      )}
     </dl>
   );
 
+  // Conta a pagar (recorrente ou parcela À vista): marcar vem antes das outras ações.
+  const payAction =
+    bill && !bill.presumed ? (
+      <Button
+        variant={bill.status === "paga" ? "secondary" : "primary"}
+        size={layout === "screen" ? "lg" : "md"}
+        block={layout === "screen"}
+        loading={billToggle.isPending}
+        onClick={() => void billToggle.toggle(entry)}
+      >
+        {bill.status === "paga" ? "Desmarcar pagamento" : "Marcar como paga"}
+      </Button>
+    ) : null;
+
   const actions = recurring ? (
     <>
-      <Button variant={layout === "screen" ? "primary" : "secondary"} size={layout === "screen" ? "lg" : "md"} block={layout === "screen"} onClick={onChangeMonthValue}>
+      {payAction}
+      <Button variant={layout === "screen" && !payAction ? "primary" : "secondary"} size={layout === "screen" ? "lg" : "md"} block={layout === "screen"} onClick={onChangeMonthValue}>
         Alterar valor deste mês
       </Button>
       <Link
@@ -92,8 +115,9 @@ export function TransactionDetail({
     </>
   ) : (
     <>
+      {payAction}
       <Button
-        variant={layout === "screen" ? "primary" : "secondary"}
+        variant={layout === "screen" && !payAction ? "primary" : "secondary"}
         size={layout === "screen" ? "lg" : "md"}
         block={layout === "screen"}
         icon={layout === "panel" ? <Pencil size={16} aria-hidden="true" /> : undefined}

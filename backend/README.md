@@ -149,6 +149,7 @@ Nome e tipo são únicos por usuário. Criar uma categoria já ativa retorna 409
 | POST | `/transactions` | Cria transação simples; retorna a transação com status 201 |
 | POST | `/transactions/installment` | Cria o grupo e suas parcelas; retorna `{ message, groupId }` com status 201 |
 | PUT | `/transactions/:id` | Atualiza os campos informados de uma transação |
+| PUT | `/transactions/:id/paid` | Marca (`{ paidAt }`) ou desmarca (`{ paidAt: null }`) uma parcela À vista como paga |
 | DELETE | `/transactions/:id` | Exclui uma transação simples ou o grupo inteiro se o ID for de uma parcela; retorna mensagem |
 
 Exemplo de transação simples:
@@ -176,6 +177,8 @@ Para parcelar, envie `description`, `totalAmount`, `totalInstallments` (de 2 a 6
 | PUT | `/recurring/:id` | Atualiza descrição, valor, dia, vigência e categoria |
 | DELETE | `/recurring/:id` | Define `endDate` como a data atual, encerrando a vigência; retorna mensagem |
 | GET | `/recurring/variations` | Lista transações vinculadas a recorrências no formato de variações |
+| GET | `/recurring/payments` | Contas a pagar: pagamentos marcados das ocorrências (`ruleId`, `month` 'YYYY-MM', `paidAt`) |
+| PUT | `/recurring/:id/payments/:month` | Marca (`{ paidAt }`) ou desmarca (`{ paidAt: null }`) a ocorrência do mês como paga; só despesas |
 | POST | `/recurring/:id/variation` | Cria ou atualiza o valor de uma recorrência para um mês |
 
 Exemplo de regra:

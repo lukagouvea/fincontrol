@@ -8,6 +8,7 @@ import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useSelectedMonth } from "../app/MonthContext";
 import { usePendingDeletes } from "../app/PendingDeletes";
 import { useTransactionEditor } from "../app/TransactionEditor";
+import { BillBadge } from "../features/billsui/BillControls";
 import { useLedgerMonths, todayKey } from "../features/useLedger";
 import { makeCategoryLookup, type CategoryLookup } from "../features/categories";
 import { makeCardLookup, type CardLookup } from "../features/cards/cardStyle";
@@ -625,7 +626,11 @@ function TransactionList({
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-0.5">
                       <Money value={entry.amount} kind={entry.type} />
-                      {entry.upcoming && <span className="text-xs text-muted">Previsto</span>}
+                      {entry.bill && entry.bill.status !== "paga" ? (
+                        <BillBadge bill={entry.bill} className="!min-h-0 !px-2 !text-xs" />
+                      ) : (
+                        entry.upcoming && <span className="text-xs text-muted">Previsto</span>
+                      )}
                     </span>
                   </button>
                 </li>
@@ -701,10 +706,14 @@ function TransactionTable({
               </td>
               <td className="py-3 pr-3 text-[15px]">
                 {category(entry.categoryId)?.name ?? "Sem categoria"}
-                {entry.upcoming && (
-                  <Badge tone="neutral" className="ml-2">
-                    Previsto
-                  </Badge>
+                {entry.bill && entry.bill.status !== "paga" ? (
+                  <BillBadge bill={entry.bill} className="ml-2" />
+                ) : (
+                  entry.upcoming && (
+                    <Badge tone="neutral" className="ml-2">
+                      Previsto
+                    </Badge>
+                  )
                 )}
               </td>
               <td className="py-3 pr-3">{entry.type === "expense" ? <PayChip card={card(entry.cardId)} /> : <span className="text-muted">—</span>}</td>

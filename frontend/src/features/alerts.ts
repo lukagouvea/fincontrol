@@ -11,7 +11,7 @@ import type { CategoryBudget } from "./useMonthBudget";
 import type { Invoice } from "./invoice";
 import type { LedgerEntry } from "./ledger";
 
-export type AlertKey = "semana" | "categorias" | "faturaFechando" | "vencimento" | "recorrencia" | "resumoSemanal";
+export type AlertKey = "semana" | "categorias" | "faturaFechando" | "vencimento" | "contas" | "recorrencia" | "resumoSemanal";
 export type AlertPrefs = Record<AlertKey, boolean>;
 
 export const ALERT_OPTIONS: Array<{ key: AlertKey; title: string; hint: string }> = [
@@ -19,6 +19,7 @@ export const ALERT_OPTIONS: Array<{ key: AlertKey; title: string; hint: string }
   { key: "categorias", title: "Limite das categorias", hint: "Avisa quando uma categoria passar do limite do mês" },
   { key: "faturaFechando", title: "Fatura fechando", hint: "2 dias antes do fechamento" },
   { key: "vencimento", title: "Vencimento da fatura", hint: "3 dias antes de vencer" },
+  { key: "contas", title: "Contas a pagar", hint: "No dia do vencimento e se passar sem pagar (À vista)" },
   { key: "recorrencia", title: "Recorrência lançada", hint: "Quando um lançamento automático entrar" },
   { key: "resumoSemanal", title: "Resumo semanal", hint: "Na segunda-feira, como foi a semana" },
 ];
@@ -28,6 +29,7 @@ export const DEFAULT_PREFS: AlertPrefs = {
   categorias: true,
   faturaFechando: true,
   vencimento: true,
+  contas: true,
   recorrencia: false,
   resumoSemanal: true,
 };
@@ -66,9 +68,11 @@ export type AlertInput = {
   categories: CategoryBudget[];
   categoryName: (id: string | null) => string;
   cards: Array<{ card: Card; invoices: Invoice[] }>;
+  /** Contas a pagar pendentes (vencidas e próximas), de qualquer mês. */
+  bills?: LedgerEntry[];
 };
 
-export function buildAlerts({ today, prefs, entries, weeks, categories, categoryName, cards }: AlertInput): AppAlert[] {
+export function buildAlerts({ today, prefs, entries, weeks, categories, categoryName, cards, bills = [] }: AlertInput): AppAlert[] {
   const alerts: AppAlert[] = [];
   const variable = entries.filter((e) => e.type === "expense" && e.source !== "recurring" && e.date <= today);
 
@@ -155,6 +159,31 @@ export function buildAlerts({ today, prefs, entries, weeks, categories, category
             tone: "warning",
           });
       }
+    }
+  }
+
+  if (prefs.contas) {
+    for (const entry of bills) {
+      if (!entry.bill || entry.bill.status === "paga") continue;
+      const parcel = entry.installment ? ` (parcela ${entry.installment.current} de ${entry.installment.total})` : "";
+      if (entry.bill.status === "vencida")
+        alerts.push({
+          id: `conta-vencida:${entry.key}`,
+          key: "contas",
+          date: shiftDateKey(entry.date, 1),
+          title: `${entry.description} está vencida`,
+          body: `Venceu em ${formatShortDate(entry.date)}${parcel}: ${formatMoney(entry.amount)}. Marque como paga quando pagar.`,
+          tone: "danger",
+        });
+      else if (entry.date === today)
+        alerts.push({
+          id: `conta-hoje:${entry.key}`,
+          key: "contas",
+          date: today,
+          title: `${entry.description} vence hoje`,
+          body: `${formatMoney(entry.amount)}${parcel}, à vista.`,
+          tone: "warning",
+        });
     }
   }
 

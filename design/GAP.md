@@ -263,3 +263,18 @@ Revisão de código da branch inteira e roteiro e2e (ver `CLAUDE.md`). O que mud
 - **Formulários abertos** (pagar fatura, cartão, meta, guardar na meta, variação) não perdem o que foi digitado quando os dados recarregam em segundo plano.
 - **Exportar CSV:** proteção contra fórmula também em células que começam com "-" e dígito mas não são número, e com tab/CR.
 - **Cookie de sessão** com `Secure` quando o `FRONTEND_URL` é https (produção: `https://fin.luka.dev.br`, com "Always Use HTTPS" ligado na Cloudflare).
+
+### Contas a pagar (pedido do dono, fora do design)
+Marcar como paga a ocorrência de uma **recorrente de despesa À vista** e as **parcelas À vista** (Pix, boleto). Compra no cartão é paga pela fatura. Despesa avulsa À vista já nasce paga.
+- **Status:** "a pagar" (até o dia do vencimento, inclusive), "vencida" (depois do dia) e "paga" (com a data). Marcar e desmarcar têm "Desfazer".
+- **Histórico** (decisão do dono): o que venceu antes do mês em que o controle começou conta como pago. Contas existentes começam no mês do deploy, e contas novas no mês do cadastro (`users.payments_tracked_from`).
+- **Gasto** (decisão do dono): continua contando pela data de vencimento, paga ou não. Orçamento, semana e relatórios não mudam.
+- **Onde aparece:**
+  - cartão "Contas a pagar" no Início, com as vencidas e as que vencem em até 7 dias (some quando não há nenhuma);
+  - selo "A pagar"/"Vencida" nas Transações;
+  - status e botão de marcar no detalhe e nas Recorrentes;
+  - alerta "Contas a pagar" (no dia do vencimento e quando vence sem pagamento), que pode ser desligado.
+- **Schema:** migração `20261127200000_bill_payments`, aditiva:
+  - `users.payments_tracked_from`;
+  - `transactions.paid_at`;
+  - tabela `recurring_payments` (regra + mês, porque as ocorrências não são gravadas).

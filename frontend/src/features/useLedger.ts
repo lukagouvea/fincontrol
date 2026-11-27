@@ -6,6 +6,8 @@ import { useMonthlyVariations } from "../hooks/useMonthlyVariations";
 import { transactionService } from "../services/transactionService";
 import { fromMonthIndex, monthIndex, toDateKey } from "../lib/dates";
 import { buildMonthLedger, summarizeLedger, type LedgerEntry, type LedgerSummary } from "./ledger";
+import { useBillContext } from "../hooks/useBills";
+import { pendingBills } from "./bills";
 
 export const todayKey = () => toDateKey(new Date());
 
@@ -15,6 +17,7 @@ export function useMonthLedger(month: number, year: number) {
   const fixedIncomes = useFixedIncomes();
   const fixedExpenses = useFixedExpenses();
   const variations = useMonthlyVariations();
+  const bills = useBillContext();
   const queries = [transactions, fixedIncomes, fixedExpenses, variations];
   const isLoading = queries.some((query) => query.isPending);
   const isError = queries.some((query) => query.isError);
@@ -30,8 +33,10 @@ export function useMonthLedger(month: number, year: number) {
             fixedExpenses: fixedExpenses.data ?? [],
             variations: variations.data ?? [],
             today: todayKey(),
+            bills,
           }),
-    [isLoading, isError, year, month, transactions.data, fixedIncomes.data, fixedExpenses.data, variations.data],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isLoading, isError, year, month, transactions.data, fixedIncomes.data, fixedExpenses.data, variations.data, bills?.trackedFrom, bills?.recurringPayments],
   );
   return {
     entries,
@@ -96,6 +101,7 @@ export function useLedgerMonths(months: Array<{ month: number; year: number }>) 
   const fixedIncomes = useFixedIncomes();
   const fixedExpenses = useFixedExpenses();
   const variations = useMonthlyVariations();
+  const bills = useBillContext();
   const results = useQueries({
     queries: months.map(({ month: m, year: y }) => ({
       queryKey: ["transactions", m, y],
@@ -120,15 +126,31 @@ export function useLedgerMonths(months: Array<{ month: number; year: number }>) 
           fixedExpenses: fixedExpenses.data ?? [],
           variations: variations.data ?? [],
           today,
+          bills,
         }),
       )
       .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isError, dataKey, fixedIncomes.data, fixedExpenses.data, variations.data, JSON.stringify(months)]);
+  }, [isLoading, isError, dataKey, fixedIncomes.data, fixedExpenses.data, variations.data, bills?.trackedFrom, bills?.recurringPayments, JSON.stringify(months)]);
   return {
     entries,
     isLoading,
     isError,
     retry: () => [...base, ...results].forEach((query) => query.isError && query.refetch()),
   };
+}
+
+/**
+ * Contas a pagar que pedem atenção: vencidas desde o início do controle (até
+ * 12 meses atrás) e as que vencem nos próximos 7 dias, da mais antiga à mais nova.
+ */
+export function usePendingBills() {
+  const bills = useBillContext();
+  const now = new Date();
+  const current = monthIndex(now.getFullYear(), now.getMonth());
+  const start = bills ? Math.max(current - 11, monthIndex(Number(bills.trackedFrom.slice(0, 4)), Number(bills.trackedFrom.slice(5, 7)) - 1)) : current;
+  const months = Array.from({ length: current + 1 - start + 1 }, (_, i) => fromMonthIndex(start + i));
+  const ledger = useLedgerMonths(months);
+  const entries = useMemo(() => pendingBills(ledger.entries, todayKey()), [ledger.entries]);
+  return { entries, isLoading: ledger.isLoading || !bills, isError: ledger.isError };
 }

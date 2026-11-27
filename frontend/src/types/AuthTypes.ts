@@ -11,6 +11,8 @@ export type User = {
   alertPrefs?: Record<string, boolean> | null;
   /** ISO: alertas até aqui já foram vistos. */
   alertsReadAt?: string | null;
+  /** ISO (dia 1 do mês): contas que venceram antes disso contam como pagas. */
+  paymentsTrackedFrom?: string;
   token?: string; // Futuro JWT
 };
 

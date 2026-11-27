@@ -27,8 +27,11 @@ const args = process.argv.slice(2);
 const refMode = args[0] === "--ref";
 const targets = refMode ? args.slice(1) : args;
 
+const PUBLIC_ROUTES = ["/boas-vindas", "/entrar", "/criar-conta"];
 const DEFAULT_ROUTES = [
+  "/boas-vindas",
   "/entrar",
+  "/criar-conta",
   "/",
   "/transacoes",
   "/cartoes",
@@ -113,10 +116,19 @@ async function main() {
             await page.screenshot({ path: path.join(dir, `${id}.png`), fullPage: true });
           }
         } else {
-          const loggedIn = await login(page);
           const routes = targets.length ? targets : DEFAULT_ROUTES;
-          for (const route of routes) {
-            if (!loggedIn && route !== "/entrar" && route !== "/criar-conta") continue;
+          // Telas públicas antes do login: logado, /entrar redireciona para o Início.
+          const isPublic = (route) => PUBLIC_ROUTES.includes(route);
+          for (const route of routes.filter(isPublic)) {
+            await page.goto(`${baseUrl}${route}`);
+            await page.waitForLoadState("networkidle");
+            const extra = await horizontalOverflow(page);
+            if (extra > 0) overflows.push(`${route} em ${width}px (${theme}): passa ${extra}px da tela`);
+            await page.screenshot({ path: path.join(dir, `${nameFor(route)}.png`), fullPage: true });
+          }
+          const loggedIn = await login(page);
+          for (const route of routes.filter((route) => !isPublic(route))) {
+            if (!loggedIn) continue;
             await page.goto(`${baseUrl}${route}`);
             await page.waitForLoadState("networkidle");
             const extra = await horizontalOverflow(page);

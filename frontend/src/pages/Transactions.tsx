@@ -241,7 +241,7 @@ export function Transactions() {
           </Button>
         ) : (
         <>
-          <MonthSwitcher month={month} year={year} onChange={setMonth} />
+          {desktop && <MonthSwitcher month={month} year={year} onChange={setMonth} />}
           <Button variant="secondary" onClick={() => setSelecting(true)} disabled={!pickable.length}>
             Selecionar
           </Button>
@@ -276,6 +276,13 @@ export function Transactions() {
   return (
     <>
       {header}
+      {/* Celular: o cabeçalho fica só com Selecionar e "+" (Transacoes.html); o mês
+          vai numa linha própria, como em Orçamento. Em 360px os três não cabiam juntos. */}
+      {!desktop && !selecting && (
+        <div className="-mt-1">
+          <MonthSwitcher month={month} year={year} onChange={setMonth} />
+        </div>
+      )}
 
       <div className={cx("grid grid-cols-1 items-start gap-4 lg:gap-6", !selecting && "lg:grid-cols-[minmax(0,1fr)_340px]")}>
         <div className={cx("flex min-w-0 flex-col gap-4", desktop && "rounded-card border border-border bg-surface p-5")}>

@@ -196,3 +196,12 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Fechamento:** sobra, entradas, faturas pagas no mês (pela data do pagamento), maior gasto e as categorias com limite. "Guardar a sobra numa meta" registra o aporte com o mês de origem (`sourceMonth`), e o que já foi guardado do mês sai da sugestão.
 - **Virada:** aparece no Início na primeira visita depois que o mês fecha. Não aparece para contas criadas no mês corrente nem quando o mês anterior não teve lançamentos. Mostra o resultado e o que o mês novo já traz: orçamento repetido, recorrentes, parcelas e limite da semana. O orçamento e as recorrentes já "nascem" no mês novo porque são derivados, sem tarefa agendada.
 - **Pendente para a fase 3i:** o "Exportar CSV" do Histórico desktop, junto com "Segurança e dados".
+
+### Fase 3g: filtros e seleção em lote (concluída)
+- **Filtros:** período (este mês, mês passado, 3 meses ou datas escolhidas, com até 12 meses), forma de pagamento, categoria e faixa de valor. Vale tudo relativo ao mês selecionado. Os filtros aplicados viram chips removíveis, com contagem e total do resultado, e o botão da folha mostra quantos resultados o rascunho daria. No desktop, os filtros abrem em painel lateral.
+- **Lote:** só transações gravadas podem ser selecionadas. As recorrentes projetadas aparecem desabilitadas e se editam pela recorrência.
+  - **Mudar categoria:** exige uma seleção só de despesas ou só de receitas.
+  - **Mudar pagamento:** só para despesas, e compras parceladas mudam por inteiro.
+  - **Excluir:** pede confirmação, e uma parcela exclui a compra inteira.
+  - **Desfazer:** mudanças voltam cada transação ao valor anterior. Exclusões só chamam a API quando o aviso some.
+- **Backend:** `POST /transactions/batch` é tudo ou nada, até 500 por vez.

@@ -90,3 +90,45 @@ export function useMonthsSummary(month: number, year: number, count: number, ena
     retry: () => [...base, ...results].forEach((query) => query.isError && query.refetch()),
   };
 }
+
+/** Livro de vários meses (para filtros de período), do mais recente ao mais antigo. */
+export function useLedgerMonths(months: Array<{ month: number; year: number }>) {
+  const fixedIncomes = useFixedIncomes();
+  const fixedExpenses = useFixedExpenses();
+  const variations = useMonthlyVariations();
+  const results = useQueries({
+    queries: months.map(({ month: m, year: y }) => ({
+      queryKey: ["transactions", m, y],
+      queryFn: () => transactionService.getAll(m, y),
+      staleTime: 1000 * 60 * 5,
+    })),
+  });
+  const base = [fixedIncomes, fixedExpenses, variations];
+  const isLoading = [...base, ...results].some((query) => query.isPending);
+  const isError = [...base, ...results].some((query) => query.isError);
+  const dataKey = results.map((query) => query.dataUpdatedAt).join(",");
+  const entries = useMemo<LedgerEntry[]>(() => {
+    if (isLoading || isError) return [];
+    const today = todayKey();
+    return months
+      .flatMap(({ month: m, year: y }, i) =>
+        buildMonthLedger({
+          year: y,
+          month: m,
+          transactions: results[i].data ?? [],
+          fixedIncomes: fixedIncomes.data ?? [],
+          fixedExpenses: fixedExpenses.data ?? [],
+          variations: variations.data ?? [],
+          today,
+        }),
+      )
+      .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isError, dataKey, fixedIncomes.data, fixedExpenses.data, variations.data, JSON.stringify(months)]);
+  return {
+    entries,
+    isLoading,
+    isError,
+    retry: () => [...base, ...results].forEach((query) => query.isError && query.refetch()),
+  };
+}

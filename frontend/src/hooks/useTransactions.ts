@@ -214,3 +214,12 @@ export const useAddCompraParcelada = () => {
     },
   });
 };
+
+/** Lote de transações; invalida tudo que depende delas (faturas, orçamento…). */
+export const useBatchTransactions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: transactionService.batch,
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+};

@@ -49,6 +49,13 @@ export const transactionService = {
     return updated;
   },
 
+  // POST /transactions/batch — lote: mudar categoria/pagamento ou excluir
+  batch: async (
+    body:
+      | { action: 'update'; ids: string[]; data: { categoryId?: string; cardId?: string | null } }
+      | { action: 'delete'; ids: string[] },
+  ) => (await api.post('/transactions/batch', body)).data,
+
   // DELETE /transactions/:id
   delete: async (id: string): Promise<void> => {
     await api.delete(`/transactions/${id}`);

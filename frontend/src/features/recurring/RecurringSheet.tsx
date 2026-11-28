@@ -32,9 +32,8 @@ const versionLabel = (effectiveFrom: string) => {
 };
 
 /**
- * Primeiro mês em que uma edição deveria valer: o lançamento deste mês, se
- * ainda não aconteceu; senão o próximo ("editar vale a partir do próximo
- * lançamento" — PRODUCT_RULES).
+ * Mês do próximo lançamento: o deste mês, se ainda não aconteceu; senão o
+ * próximo. É o mês que "Pausar por um mês" pula.
  */
 export function defaultEffectiveMonth(item: FixedTransaction, today = new Date()) {
   const { day } = getFixedItemVersion(item, today.getFullYear(), today.getMonth());
@@ -88,7 +87,9 @@ export function RecurringSheet({
     setEnds(item?.endDate ? "date" : "never");
     setEnd(item?.endDate ? isoToDateKey(item.endDate) : "");
     setScope("from");
-    setFrom(item ? monthValue(defaultEffectiveMonth(item)) : "");
+    // Edição vale por padrão a partir do mês atual, inclusive se o lançamento
+    // dele já aconteceu (decisão do dono, GAP.md). A pausa usa o próximo lançamento.
+    setFrom(item ? monthValue(monthIndex(new Date().getFullYear(), new Date().getMonth())) : "");
     setErrors({});
     setSubmitError("");
     // eslint-disable-next-line react-hooks/exhaustive-deps

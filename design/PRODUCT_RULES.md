@@ -7,7 +7,7 @@ O design foi pensado com este modelo. **Onde o FinControl atual divergir, não m
 - Cartão: apelido, final (4 dígitos, nunca o número completo), limite, dia de fechamento, dia de vencimento, cor. Exemplos: Aurora •••• 4821 (limite 6.000, fecha dia 8, vence 15) e Vento •••• 7730 (limite 3.000, fecha 20, vence 27).
 - Transação: valor, tipo (despesa/receita), descrição, categoria, data, forma de pagamento (cartão ou À vista), recorrência opcional, parcelas opcionais.
 - **Fatura**: derivada das transações do cartão pela data de fechamento. “Pagar fatura” registra o pagamento e libera o limite; **não é um gasto novo** (as compras já contam no mês em que foram feitas).
-- **Recorrentes**: lançamentos mensais automáticos (aluguel, assinaturas, salário). Editar vale a partir do próximo lançamento; encerrar não apaga o histórico; pausar existe.
+- **Recorrentes**: lançamentos mensais automáticos (aluguel, assinaturas, salário). Editar vale, por padrão, a partir do mês atual (o usuário escolhe outro mês ou "corrigir todo o histórico"); encerrar não apaga o histórico; pausar existe.
 - **Parceladas**: compra de N parcelas iguais no cartão. O limite do cartão cai pelo **valor total** na compra; **cada parcela conta como gasto no mês da fatura em que cai**, não tudo de uma vez. Tela “Compromissos futuros” soma parcelas dos próximos meses e as fixas.
 - **Categorias**: ícone (sem cor escolhida; a cor é atribuída da paleta), mesclar e arquivar (apagar pede destino das transações).
 - **Orçamento**: total mensal + limite por categoria. O “orçamento variável” = total − recorrentes fixas.

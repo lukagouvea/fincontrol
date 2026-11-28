@@ -172,6 +172,12 @@ Pontos que ficaram para as próximas fases ou que divergem do design:
 - **Burndown do mês e da semana:** linhas real, ideal e estimativa. "Semana a semana" compara o gasto variável com o limite de cada semana.
 - **Estimativa do burndown por Monte Carlo** (`frontend/src/features/forecast.ts`, decisão do dono em 2026-11-27): substitui a extrapolação linear da média, que contava o dia de hoje como dia inteiro, ignorava parcelas futuras e oscilava muito com poucos dias. São 2000 simulações que sorteiam o gasto variável de cada dia que falta entre os dias completos do mês e os dos 3 meses fechados anteriores (peso do mês atual = d/(d+7), d = dias completos; por dia da semana quando há ≥ 3 amostras). Parcelas e lançamentos futuros entram como certos. O gráfico mostra a mediana pontilhada sobre a faixa P10–P90 e o card mostra a chance de fechar dentro do limite.
 - **Edição de recorrência vale a partir do mês atual por padrão** (decisão do dono em 2026-11-27): antes o padrão era o próximo lançamento, então, com o lançamento do mês já feito, trocar a categoria agendava a mudança para o mês seguinte e parecia que a edição não tinha sido salva. O mês continua escolhível em "Quando a alteração vale".
+- **Ritmo sem orçamento** (`paceReference` em `frontend/src/features/budget.ts`, decisão do dono em 2026-11-27): "Ritmo do mês", "Ritmo da semana" e "Semana a semana" deixam de sumir sem orçamento. Eles usam a primeira referência que existir no mês exibido:
+  - orçamento − fixas;
+  - receitas do mês inteiro (com as recorrentes previstas) − fixas, se sobrar algo;
+  - mês típico: mediana do gasto variável (com parcelas) dos 3 meses anteriores com algum gasto.
+
+  O gráfico continua sendo um burndown, com a referência no papel de limite. Os textos dizem qual referência está em uso. O orçamento de hoje nunca vale para meses passados. Início e alertas continuam usando só o orçamento.
 - **Pausar recorrência:** pausa um mês, o do próximo lançamento, que não é gerado nesse mês. Tem "Retomar" e "Desfazer". As pausadas aparecem em "Pausadas em <mês>".
 - **Pendente para a fase 3i (alertas):** o "Avisar ao chegar em 80%" de DefinirOrcamento. Por enquanto o aviso aparece só no card da semana.
 

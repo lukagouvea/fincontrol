@@ -149,13 +149,18 @@ export function Reports() {
         </Card>
       </section>
 
-      {budget?.hasBudget && (
+      {budget?.pace && (
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
-            {budget.monthBurn && <MonthPaceCard burn={budget.monthBurn} variable={budget.variable} monthEnd={budget.monthBurn.points.at(-1)?.x ?? `${budget.key}-28`} />}
-            {isCurrent && budget.week && budget.weekBurn && <WeekPaceCard week={budget.week} burn={budget.weekBurn} />}
+            <MonthPaceCard
+              burn={budget.pace.monthBurn}
+              variable={budget.pace.reference}
+              kind={budget.pace.kind}
+              monthEnd={budget.pace.monthBurn.points.at(-1)?.x ?? `${budget.key}-28`}
+            />
+            {isCurrent && budget.pace.weekBurn && <WeekPaceCard week={budget.pace.week} burn={budget.pace.weekBurn} kind={budget.pace.kind} />}
           </div>
-          <WeeksCard weeks={budget.weeks} today={today} />
+          <WeeksCard weeks={budget.pace.weeks} today={today} kind={budget.pace.kind} />
         </>
       )}
 

@@ -18,6 +18,7 @@ export const categories = [
   },
 ];
 export const requests: { url: string; method: string; data: unknown }[] = [];
+let fixtureInterceptor: number | null = null;
 export function installApiFixture(overrides: Record<string, unknown> = {}) {
   requests.length = 0;
   const adapter: AxiosAdapter = async (config) => {
@@ -57,4 +58,8 @@ export function installApiFixture(overrides: Record<string, unknown> = {}) {
     return { config, data, status: 200, statusText: "OK", headers: {} };
   };
   api.defaults.adapter = adapter;
+  // Pedidos com adaptador próprio (ex.: `survivesUnload`, fetch com keepalive)
+  // passariam por cima do padrão e iriam para a rede: força o do fixture.
+  if (fixtureInterceptor !== null) api.interceptors.request.eject(fixtureInterceptor);
+  fixtureInterceptor = api.interceptors.request.use((config) => Object.assign(config, { adapter }));
 }
